@@ -1,0 +1,31 @@
+[tool.isort]
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+profile = "black"
+
+[tool.black]
+line_length = 88
+
+[tool.poetry]
+name = "SINDIT"
+version = "0.0.1"
+authors = ["author <author@sintef.no>"]
+description = "SINTEF Digital Twin Framework"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+fastapi = "^0.109.0"
+uvicorn = {extras = ["standard"], version = "^0.26.0"}
+httpx = "^0.26.0"
+mkdocs = "^1.5.3"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.3"
+coverage = "^7.3.2"
+coverage-badge = "^1.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

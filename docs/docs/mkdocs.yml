@@ -1,0 +1,6 @@
+site_name: SINDIT 2.0
+site_url: https://sindit.no/
+theme: readthedocs
+nav:
+  - Home: index.md
+  - About: about.md
