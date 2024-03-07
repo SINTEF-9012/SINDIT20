@@ -1,14 +1,12 @@
-[![Quality Gate Status](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?project=Example-Python-Project-Monorepo&metric=alert_status&token=sqb_2c6a90a8bcd1b02f97007e205ee6722e48a2dabd)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=Example-Python-Project-Monorepo)
-[![Coverage](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?project=Example-Python-Project-Monorepo&metric=coverage&token=sqb_2c6a90a8bcd1b02f97007e205ee6722e48a2dabd)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=Example-Python-Project-Monorepo)
+[![Quality Gate Status](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?project=SINDIT&metric=alert_status&token=sqb_daa44a05f36e549bc45f72c29dcb10b1b04bb781)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT)
+[![Coverage](https://kubikk-ekkolodd.sintef.cloud/api/project_badges/measure?project=SINDIT&metric=coverage&token=sqb_daa44a05f36e549bc45f72c29dcb10b1b04bb781)](https://kubikk-ekkolodd.sintef.cloud/dashboard?id=SINDIT)
 
 ![Code Style Black](https://img.shields.io/badge/code%20style-black-black)
 ![Python Version](https://img.shields.io/badge/python-3.11-blue)
 
-# The Example Python Project
-This is an example project written in Python
+# SINDIT
+<img src="./docs/img/favicon.ico" width=100> 
 
-## Key features
-* fastapi
-* pytest
-* coverage
-* sonarqube
+SINTEF Digital Twin project
+
+
