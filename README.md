@@ -8,3 +8,5 @@
 <img src="./docs/img/favicon.ico" width=100>
 
 SINTEF Digital Twin project
+
+The development of this project has just begun...s
