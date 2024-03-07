@@ -5,8 +5,6 @@
 ![Python Version](https://img.shields.io/badge/python-3.11-blue)
 
 # SINDIT
-<img src="./docs/img/favicon.ico" width=100> 
+<img src="./docs/img/favicon.ico" width=100>
 
 SINTEF Digital Twin project
-
-
