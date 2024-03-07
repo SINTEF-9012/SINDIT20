@@ -1,0 +1,102 @@
+image: python:3.11
+
+stages:
+  - unittest
+  - coverage
+  - analysis
+
+variables:
+  # Set PROJECT_NAME to the name of the project folder.
+  # Do not touch the other variables.
+  PROJECT_NAME: sindit
+  ROOTDIR: $CI_PROJECT_DIR/projects/$PROJECT_NAME
+  RULES_CHANGES_PATH: $ROOTDIR/**/*
+
+before_script:
+  - cd projects/$PROJECT_NAME
+  - pip install poetry
+  - poetry install
+
+.base-rules:
+  rules:
+    # Do not run when creating tags
+    - if: $CI_COMMIT_TAG
+      when: never
+    # Always run on default branch (main)
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+    # Run on merge requests
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+      allow_failure: false
+    # Run when triggered by parent pipeline
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+    # Avoid duplicate jobs on merge requests
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # Run if on a branch and not a merge request
+    - if: $CI_COMMIT_BRANCH
+
+
+pytest:
+  stage: unittest
+  extends: .base-rules
+  script:
+    - pip install junit-xml
+    - poetry run pytest --junitxml=junit.xml
+  artifacts:
+    when: always
+    expire_in: 1 weeks
+    paths:
+      - $ROOTDIR/junit.xml
+    reports:
+      junit: $ROOTDIR/junit.xml
+
+coverage:
+  stage: coverage
+  extends: .base-rules
+  dependencies:
+    - pytest
+  script:
+    - pip install coverage
+    - pip install coverage-badge
+    - poetry run coverage run -m pytest
+    - coverage report
+    - coverage xml -o coverage.xml
+    - coverage-badge -o coverage.svg
+    - echo $ROOTDIR
+    - echo ${PROJECT_NAME}-${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}
+  coverage: '/^TOTAL.*\s+(\d+\%)$/'
+  artifacts:
+    name: ${PROJECT_NAME}-${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}
+    expire_in: 1 week
+    paths:
+      - $ROOTDIR/coverage.xml
+      - $ROOTDIR/coverage.svg
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: $ROOTDIR/coverage.xml
+
+sonarqube:
+  stage: analysis
+  extends: .base-rules
+  dependencies:
+    - coverage
+  before_script:
+    - cd projects/$PROJECT_NAME
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: $ROOTDIR/.sonar
+    GIT_DEPTH: "0"
+  cache:
+    key: $CI_JOB_NAME
+    paths:
+      - $ROOTDIR/.sonar/cache
+  script:
+    - pwd
+    - ls -la
+    - sonar-scanner
+  allow_failure: true
