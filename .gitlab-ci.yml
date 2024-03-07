@@ -16,6 +16,7 @@ before_script:
   - cd projects/$PROJECT_NAME
   - pip install poetry
   - poetry install
+  - echo $SONAR_HOST_URL
 
 .base-rules:
   rules:
