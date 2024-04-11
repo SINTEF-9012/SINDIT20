@@ -1,0 +1,212 @@
+# Copyright (c) 2024 Robert Bosch Manufacturing Solutions GmbH
+#
+# See the AUTHORS file(s) distributed with this work for
+# additional information regarding authorship.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+
+@prefix samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#> .
+@prefix samm-c: <urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#> .
+@prefix samm-e: <urn:samm:org.eclipse.esmf.samm:entity:2.1.0#> .
+@prefix unit: <urn:samm:org.eclipse.esmf.samm:unit:2.1.0#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <urn:samm:sindit.sintef.no:1.0.0#> .
+@prefix samm-u: <urn:samm:org.eclipse.esmf.samm:unit:2.1.0#> .
+
+:SINDITKG a samm:Aspect ;
+   samm:preferredName "SINDIT Knowledge Graph"@en ;
+   samm:description "Information model for the SINDIT Knowledge Graph\n"@en ;
+   samm:properties ( :assets :streamingConnections :databaseConnections ) ;
+   samm:operations ( ) ;
+   samm:events ( ) .
+
+:assets a samm:Property ;
+   samm:description "A list of Digital Twin Asset"@en ;
+   samm:characteristic :AssetList .
+
+:streamingConnections a samm:Property ;
+   samm:preferredName "Streaming Connections"@en ;
+   samm:description "A list of connections to streaming server"@en ;
+   samm:characteristic :StreamingConnectionList .
+
+:databaseConnections a samm:Property ;
+   samm:preferredName "Database Connections"@en ;
+   samm:description "A list of connections information to connect to the databases\n"@en ;
+   samm:characteristic :DatabaseConnectionList .
+
+:AssetList a samm-c:List ;
+   samm:preferredName "Asset List"@en ;
+   samm:dataType :AbstractAsset .
+
+:StreamingConnectionList a samm-c:List ;
+   samm:preferredName "Streaming Connection List"@en ;
+   samm:description "Represent a list of streaming connections "@en ;
+   samm:dataType :StreamingConnection .
+
+:DatabaseConnectionList a samm-c:List ;
+   samm:preferredName "Database Connection List"@en ;
+   samm:description "Represent a list of database connections"@en ;
+   samm:dataType :DatabaseConnection .
+
+:AbstractAsset a samm:Entity ;
+   samm:preferredName "Asset"@en ;
+   samm:description "Represent an asset information model"@en ;
+   samm:properties ( :assetName :assetProperties :assetDescription ) .
+
+:StreamingConnection a samm:Entity ;
+   samm:extends :Connection ;
+   samm:properties ( ) .
+
+:DatabaseConnection a samm:Entity ;
+   samm:extends :Connection ;
+   samm:preferredName "DatabaseConnection"@en ;
+   samm:properties ( :dbName ) .
+
+:assetName a samm:Property ;
+   samm:preferredName "Asset Name"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "Machine1" .
+
+:assetProperties a samm:Property ;
+   samm:preferredName "Asset Properties"@en ;
+   samm:description "A list of asset properties"@en ;
+   samm:characteristic :AssetPropertyList .
+
+:assetDescription a samm:Property ;
+   samm:preferredName "description of the asset"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "This is a milling machine" .
+
+:Connection a samm:Entity ;
+   samm:preferredName "Connection"@en ;
+   samm:description "Connection information to connect to a server"@en ;
+   samm:properties ( :token :type :password :username :port :host ) .
+
+:dbName a samm:Property ;
+   samm:preferredName "Database Name"@en ;
+   samm:description "Name of the database instance"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "temperature_db" .
+
+:AssetPropertyList a samm-c:List ;
+   samm:preferredName "Asset Property List"@en ;
+   samm:dataType :AbstractAssetProperty .
+
+:token a samm:Property ;
+   samm:description "token to use to connect if user name and password are not provided"@en ;
+   samm:characteristic samm-c:Text .
+
+:type a samm:Property ;
+   samm:description "type of the connection (e.g., name of the database INFLUXDB or protocol MQTT)"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "INFLUXDB" .
+
+:password a samm:Property ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "admin" .
+
+:username a samm:Property ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "admin" .
+
+:port a samm:Property ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "8080" .
+
+:host a samm:Property ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "0.0.0.0" .
+
+:AbstractAssetProperty a samm:Entity ;
+   samm:description "Represent an abstract property of an asset"@en ;
+   samm:properties ( :propertyUnit :propertySemanticID :propertyDescription :propertyDataType :propertyValue :propertyName ) .
+
+:propertyUnit a samm:Property ;
+   samm:preferredName "PropertyUnit"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "-" .
+
+:propertySemanticID a samm:Property ;
+   samm:preferredName "Property Semantic ID"@en ;
+   samm:description "Reference to the concept defined in other information model (e.g., ontology)"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "http://sindit.sintef.no/color" .
+
+:propertyDescription a samm:Property ;
+   samm:preferredName "Property Description"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "Color of the machine" .
+
+:propertyDataType a samm:Property ;
+   samm:preferredName "Property Data Type"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "String" .
+
+:propertyValue a samm:Property ;
+   samm:preferredName "Asset Property Value"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "Red" .
+
+:propertyName a samm:Property ;
+   samm:preferredName "Property Name"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "Machine1_Color" .
+
+:StreamingPropertyConnection a samm-c:SingleEntity ;
+   samm:dataType :StreamingConnection .
+
+:fileType a samm:Property ;
+   samm:characteristic samm-c:MimeType ;
+   samm:exampleValue "application/pdf" .
+
+:streamingTopic a samm:Property ;
+   samm:description "The topic of the value (MQTT) or the URL (REST)"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "topic/temperature" .
+
+:DatabaseProperty a samm:Entity ;
+   samm:extends :AbstractAssetProperty ;
+   samm:description "A property that refers to a value stored in a database"@en ;
+   samm:properties ( :databasePropertyConnection :query ) .
+
+:DatabasePropertyConnection a samm-c:SingleEntity ;
+   samm:dataType :DatabaseConnection .
+
+:databasePropertyConnection a samm:Property ;
+   samm:description "Refer to the connection of the database"@en ;
+   samm:characteristic :DatabasePropertyConnection .
+
+:query a samm:Property ;
+   samm:description "The query used to retrieve the data from database"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "SQL query or influxdb query" .
+
+:filePath a samm:Property ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "path/to/file.pdf" .
+
+:streamingPropertyConnection a samm:Property ;
+   samm:description "Refer to the connection of the streaming server"@en ;
+   samm:characteristic :StreamingPropertyConnection .
+
+:File a samm:Entity ;
+   samm:extends :DatabaseProperty ;
+   samm:description "Refers to a file stored in a database"@en ;
+   samm:properties ( :fileType :filePath ) .
+
+:StreamingProperty a samm:Entity ;
+   samm:extends :AbstractAssetProperty ;
+   samm:description "A property that refers to a value from a streaming server"@en ;
+   samm:properties ( :streamingPropertyConnection :streamingTopic ) .
+
+:TimeseriesProperty a samm:Entity ;
+   samm:extends :DatabaseProperty ;
+   samm:description "A property that refers to a timeseries value stored in a database"@en ;
+   samm:properties ( ) .
+

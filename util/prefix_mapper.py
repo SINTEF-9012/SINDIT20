@@ -1,0 +1,122 @@
+prefixes = {
+    "afn": "http://jena.apache.org/ARQ/function#",
+    "agg": "http://jena.apache.org/ARQ/function/aggregate#",
+    "annotations": "http://emmo.info/emmo/top/annotations#",
+    "apf": "http://jena.apache.org/ARQ/property#",
+    "array": "http://www.w3.org/2005/xpath-functions/array",
+    "cc": "http://creativecommons.org/ns#",
+    "constant": "http://qudt.org/vocab/constant/",
+    "creativecommons": "http://creativecommons.org/ns#",
+    "cur": "http://qudt.org/vocab/currency/",
+    "datatype": "http://qudt.org/vocab/datatype/",
+    "dbo": "http://dbpedia.org/ontology/",
+    "dc": "http://purl.org/dc/elements/1.1/",
+    "dcam": "http://purl.org/dc/dcam/",
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dcmitype": "http://purl.org/dc/dcmitype/",
+    "dct": "http://purl.org/dc/terms/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "dctype": "http://purl.org/dc/dcmitype/",
+    "dol": "http://www.loa-cnr.it/ontologies/DOLCE-Lite.owl#",
+    "dqv": "http://www.w3.org/ns/dqv#",
+    "drm": "http://vocab.data.gov/def/drm#",
+    "dtype": "http://www.linkedmodel.org/schema/dtype#",
+    "electrochemistry": "https://big-map.github.io/BattINFO/ontology/electrochemistry#",
+    "emmo": "https://w3id.org/emmo#",
+    "fn": "http://www.w3.org/2005/xpath-functions",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "geo": "http://www.opengis.net/def/function/geosparql/",
+    "geoext": "http://rdf.useekm.com/ext#",
+    "geof": "http://www.opengis.net/def/function/geosparql/",
+    "gn": "http://www.geonames.org/ontology#",
+    "gpo": "https://gpo.ontology.link/",
+    "gr": "http://purl.org/goodrelations/v1#",
+    "graphdb": "http://www.ontotext.com/config/graphdb#",
+    "greg": "http://www.w3.org/ns/time/gregorian#",
+    "gufo": "http://purl.org/nemo/gufo#",
+    "ids": "https://w3id.org/idsa/core/",
+    "idsc": "https://w3id.org/idsa/code/",
+    "iof-av": "https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/",
+    "isq": "http://emmo.info/emmo/middle/isq#",
+    "lis": "http://rds.posccaesar.org/ontology/lis14/rdl/",
+    "lis12": "http://standards.iso.org/iso/15926/ontology/life-cycle-integration/",
+    "lis2": "http://rds.posccaesar.org/2008/02/OWL/ISO-15926-2_2003#",
+    "list": "http://jena.apache.org/ARQ/list#",
+    "locn": "http://www.w3.org/ns/locn#",
+    "map": "http://www.w3.org/2005/xpath-functions/map",
+    "math": "http://www.w3.org/2005/xpath-functions/math",
+    "mc": "http://www.linkedmodel.org/owl/schema/core#",
+    "nist": "http://physics.nist.gov/cuu/",
+    "obo": "http://purl.obolibrary.org/obo/",
+    "odrl": "http://www.w3.org/ns/odrl/2/",
+    "oecc": "http://www.oegov.org/models/common/cc#",
+    "ofn": "http://www.ontotext.com/sparql/functions/",
+    "om": "http://www.ontology-of-units-of-measure.org/resource/om-2/",
+    "omgeo": "http://www.ontotext.com/owlim/geo#",
+    "org": "http://www.w3.org/ns/org#",
+    "org1": "http://www.w3.org/TR/vocab-org/#org:",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "path": "http://www.ontotext.com/path#",
+    "pav": "http://purl.org/pav/",
+    "prefix": "http://qudt.org/vocab/prefix/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "pv": "http://ns.inria.fr/provoc#",
+    "qkdv": "http://qudt.org/vocab/dimensionvector/",
+    "quantity": "http://qudt.org/vocab/quantity/",
+    "quantitykind": "http://qudt.org/vocab/quantitykind/",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "qudt-refdata": "http://qudt.org/vocab/refdata/",
+    "qudt.type": "http://qudt.org/vocab/type/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "rep": "http://www.openrdf.org/config/repository#",
+    "s4inma": "https://saref.etsi.org/saref4inma/",
+    "sail": "http://www.openrdf.org/config/sail#",
+    "saref4inma": "https://saref.etsi.org/saref4inma/",
+    "schema": "http://schema.org/",
+    "sdo": "http://schema.org/",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "soqk": "http://qudt.org/vocab/soqk/",
+    "sosa": "http://www.w3.org/ns/sosa/",
+    "sou": "http://qudt.org/vocab/sou/",
+    "spec": "http://xmlns.com/foaf/spec/#",
+    "spif": "http://spinrdf.org/spif#",
+    "sr": "http://www.openrdf.org/config/repository/sail#",
+    "ssn": "http://www.w3.org/ns/ssn/",
+    "swrl": "http://www.w3.org/2003/11/swrl#",
+    "terms": "http://purl.org/dc/terms/",
+    "time": "http://www.w3.org/2006/time#",
+    "unit": "http://qudt.org/vocab/unit/",
+    "v1": "http://www.heppnetz.de/ontologies/goodrelations/v1#",
+    "vaem": "http://www.linkedmodel.org/schema/vaem#",
+    "vann": "http://purl.org/vocab/vann/",
+    "vcard": "http://www.w3.org/2006/vcard/ns#",
+    "voaf": "http://purl.org/vocommons/voaf#",
+    "voag": "http://voag.linkedmodel.org/schema/voag#",
+    "void": "http://rdfs.org/ns/void#",
+    "wgs": "http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "wgs84": "http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "xml": "http://www.w3.org/XML/1998/namespace",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+}
+
+uri_to_prefix = {uri: prefix for prefix, uri in prefixes.items()}
+
+def convert_uri_to_label(uri):
+    ret = uri
+    pos = uri.rfind("#")
+    if pos == -1:
+        pos = uri.rfind("/")
+    if pos != -1:
+        full_fx = uri[:pos+1]
+        remaining_fx = uri[pos+1:]
+        if full_fx in uri_to_prefix:
+            ret = uri_to_prefix[full_fx] + ":" + remaining_fx
+        else:
+            ret = remaining_fx
+
+
+    if ret.endswith(":"):
+        ret = ret[:-1]
+    return ret
