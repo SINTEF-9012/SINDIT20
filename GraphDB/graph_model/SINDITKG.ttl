@@ -1,13 +1,4 @@
-# Copyright (c) 2024 Robert Bosch Manufacturing Solutions GmbH
-#
-# See the AUTHORS file(s) distributed with this work for
-# additional information regarding authorship.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
-#
-# SPDX-License-Identifier: MPL-2.0
+
 
 @prefix samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#> .
 @prefix samm-c: <urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#> .
@@ -21,7 +12,7 @@
 
 :SINDITKG a samm:Aspect ;
    samm:preferredName "SINDIT Knowledge Graph"@en ;
-   samm:description "Information model for the SINDIT Knowledge Graph\n"@en ;
+   samm:description "Information model for the SINDIT Knowledge Graph"@en ;
    samm:properties ( :assets :streamingConnections :databaseConnections ) ;
    samm:operations ( ) ;
    samm:events ( ) .
@@ -37,7 +28,7 @@
 
 :databaseConnections a samm:Property ;
    samm:preferredName "Database Connections"@en ;
-   samm:description "A list of connections information to connect to the databases\n"@en ;
+   samm:description "A list of connections information to connect to the databases"@en ;
    samm:characteristic :DatabaseConnectionList .
 
 :AssetList a samm-c:List ;
@@ -79,14 +70,14 @@
    samm:characteristic :AssetPropertyList .
 
 :assetDescription a samm:Property ;
-   samm:preferredName "description of the asset"@en ;
+   samm:preferredName "Description of the asset"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "This is a milling machine" .
 
 :Connection a samm:Entity ;
    samm:preferredName "Connection"@en ;
    samm:description "Connection information to connect to a server"@en ;
-   samm:properties ( :token :type :password :username :port :host ) .
+   samm:properties ( :token :type :password :username :port :host :isConnected ) .
 
 :dbName a samm:Property ;
    samm:preferredName "Database Name"@en ;
@@ -123,14 +114,19 @@
    samm:characteristic samm-c:Text ;
    samm:exampleValue "0.0.0.0" .
 
+:isConnected a samm:Property ;
+   samm:preferredName "is Connected"@en ;
+   samm:characteristic samm-c:Boolean ;
+   samm:exampleValue True .
+
 :AbstractAssetProperty a samm:Entity ;
    samm:description "Represent an abstract property of an asset"@en ;
    samm:properties ( :propertyUnit :propertySemanticID :propertyDescription :propertyDataType :propertyValue :propertyName ) .
 
 :propertyUnit a samm:Property ;
-   samm:preferredName "PropertyUnit"@en ;
-   samm:characteristic samm-c:Text ;
-   samm:exampleValue "-" .
+   samm:preferredName "Property Unit"@en ;
+   samm:description "Describes a Property containing a reference to one of the units in the Unit Catalog."@en ;
+   samm:characteristic samm-c:UnitReference .
 
 :propertySemanticID a samm:Property ;
    samm:preferredName "Property Semantic ID"@en ;
