@@ -27,7 +27,7 @@ class SemanticKGPersistenceService:
         '''
         Execute an update query on the graph database, including INSERT, DELETE queries.
         :param update: The update query to be executed
-        :return: the response body text
+        :return: True if the update was successful, False otherwise
         '''
         pass
 

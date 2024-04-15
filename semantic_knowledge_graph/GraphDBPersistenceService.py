@@ -64,11 +64,4 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
         }
         response = self.__client_api.post("/statements", params=params, retries=5, auth=(self.__username, self.__password))
 
-        """ response = requests.post(
-            f"{self.__sparql_endpoint}/statements",
-            params=params,
-            auth=(self.__username, self.__password)
-        ) """
-
-
-        return response
+        return response.ok
