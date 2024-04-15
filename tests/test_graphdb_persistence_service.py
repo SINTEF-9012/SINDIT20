@@ -14,4 +14,4 @@ def test_graph_query():
     assert kg_service.graph_query(query, "application/sparql-results+json") != None
 
 def test_graph_update():
-    assert kg_service.graph_update(update) == True
+    assert kg_service.graph_update(update).status_code == 204

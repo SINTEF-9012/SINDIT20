@@ -48,7 +48,7 @@ class ClientAPI:
         for i in range(range_limit):
             try:
                 resp_dict = requests.get(
-                    self.api_uri + relative_path, params=kwargs, timeout=timeout
+                    self.api_uri + relative_path, timeout=timeout, **kwargs
                 ).json()
 
                 if result_class is not None:
@@ -71,14 +71,14 @@ class ClientAPI:
         Get request to the specified api endpoint
         :param relative_path:
         :param retries: how often to retry if the call failed. Negative numbners mean (about) unlimited.
-        :return: the raw response
+        :return: Complete response object
         """
         range_limit = retries + 1 if retries >= 0 else 999999999999999999999999
         for i in range(range_limit):
             try:
                 return requests.get(
-                    self.api_uri + relative_path, params=kwargs, timeout=300
-                ).content
+                    self.api_uri + relative_path, timeout=300, **kwargs
+                )
             except ReqExc:
                 self._handle_request_exception(i)
 
@@ -91,7 +91,7 @@ class ClientAPI:
         range_limit = retries + 1 if retries >= 0 else 999999999999999999999999
         for i in range(range_limit):
             try:
-                return requests.get(self.api_uri + relative_path, params=kwargs, timeout=30).text
+                return requests.get(self.api_uri + relative_path, timeout=30, **kwargs).text
             except ReqExc:
                 self._handle_request_exception(i)
 
@@ -106,8 +106,7 @@ class ClientAPI:
         for i in range(range_limit):
             try:
                 return int(
-                    requests.get(self.api_uri + relative_path,
-                                 params=kwargs, timeout=30).text
+                    requests.get(self.api_uri + relative_path, timeout=30, **kwargs).text
                 )
             except ReqExc:
                 self._handle_request_exception(i)
@@ -123,8 +122,7 @@ class ClientAPI:
         for i in range(range_limit):
             try:
                 return float(
-                    requests.get(self.api_uri + relative_path,
-                                 params=kwargs, timeout=30).text
+                    requests.get(self.api_uri + relative_path, timeout=30, **kwargs).text
                 )
             except ReqExc:
                 self._handle_request_exception(i)
@@ -133,7 +131,7 @@ class ClientAPI:
         range_limit = retries + 1 if retries >= 0 else 999999999999999999999999
         for i in range(range_limit):
             try:
-                return requests.patch(self.api_uri + relative_path, params=kwargs)
+                return requests.patch(self.api_uri + relative_path, **kwargs)
             except ReqExc:
                 self._handle_request_exception(i)
 
@@ -153,19 +151,19 @@ class ClientAPI:
             data (Dict, optional): _description_. Defaults to None.
             json (Dict, optional): _description_. Defaults to None.
 
-        Returns:
-            _type_: _description_
+        Returns: Complete response object
         """
         range_limit = retries + 1 if retries >= 0 else 999999999999999999999999
         for i in range(range_limit):
             try:
                 response = requests.post(
-                    self.api_uri + relative_path, params=kwargs, data=data, json=json
+                    self.api_uri + relative_path, data=data, json=json, **kwargs
                 )
-                text = response.text
-                if text[0] == '"' and text[-1] == '"':
-                    text = text[1:-1]
-                return text
+                #text = response.text
+                #print(response.status_code)
+                #if text[0] == '"' and text[-1] == '"':
+                #    text = text[1:-1]S
+                return response
             except ReqExc:
                 self._handle_request_exception(i)
 
@@ -177,17 +175,16 @@ class ClientAPI:
         retries: how often to retry if the call failed. Negative numbners mean (about) unlimited.
 
 
-        Returns:
-            _type_: _description_
+        Returns: Complete response object
         """
         range_limit = retries + 1 if retries >= 0 else 999999999999999999999999
         for i in range(range_limit):
             try:
                 response = requests.delete(
-                    self.api_uri + relative_path, params=kwargs)
-                text = response.text
-                if text[0] == '"' and text[-1] == '"':
-                    text = text[1:-1]
-                return text
+                    self.api_uri + relative_path, **kwargs)
+                #text = response.text
+                #if text[0] == '"' and text[-1] == '"':
+                #    text = text[1:-1]
+                return response
             except ReqExc:
                 self._handle_request_exception(i)

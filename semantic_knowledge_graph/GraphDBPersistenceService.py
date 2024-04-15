@@ -2,11 +2,11 @@ import requests
 import json
 import re
 import time
-from projects.sindit.util.client_api import ClientAPI
+from util.client_api import ClientAPI
 from util.log import logger
 
 
-from projects.sindit.semantic_knowledge_graph.SemanticKGPersistenceService import SemanticKGPersistenceService
+from semantic_knowledge_graph.SemanticKGPersistenceService import SemanticKGPersistenceService
 
 
 class GraphDBPersistenceService(SemanticKGPersistenceService):
@@ -31,7 +31,7 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
                 logger.info(f"Trying to connect to uri {self.__health_check_uri}.")
 
                 response = requests.get(
-                    self.__health_check_uri, headers=self.__headers, timeout=5, auth=(self.__username, self.__password)
+                    self.__health_check_uri, timeout=5, auth=(self.__username, self.__password)
                 )
                 if not response.ok:
                     raise Exception(f"Failed to connect to {self.__health_check_uri}. Response: {response.content}")
@@ -55,13 +55,20 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
         headers = {
             "Accept": accept_content
         }
-        response = self.__client_api.get_string("", params=params, headers=headers, retries=5, auth=(self.__username, self.__password))
+        response = self.__client_api.get_str("", params=params, headers=headers, retries=5, auth=(self.__username, self.__password))
         return response
 
     def graph_update(self, update:str)-> bool:
         params = {
             "update": update,
         }
-        response = self.__client_api.post("statements", params=params, retries=5, auth=(self.__username, self.__password))
+        response = self.__client_api.post("/statements", params=params, retries=5, auth=(self.__username, self.__password))
 
-        return response.ok
+        """ response = requests.post(
+            f"{self.__sparql_endpoint}/statements",
+            params=params,
+            auth=(self.__username, self.__password)
+        ) """
+
+
+        return response

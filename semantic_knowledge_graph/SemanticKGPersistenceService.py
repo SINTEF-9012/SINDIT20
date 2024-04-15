@@ -23,11 +23,11 @@ class SemanticKGPersistenceService:
         '''
         pass
 
-    def graph_update(self, update:str)-> bool:
+    def graph_update(self, update:str)-> any:
         '''
         Execute an update query on the graph database, including INSERT, DELETE queries.
         :param update: The update query to be executed
-        :return: True if the query was successful, False otherwise
+        :return: the response body text
         '''
         pass
 
