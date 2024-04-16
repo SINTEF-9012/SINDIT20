@@ -13,7 +13,7 @@
 :SINDITKG a samm:Aspect ;
    samm:preferredName "SINDIT Knowledge Graph"@en ;
    samm:description "Information model for the SINDIT Knowledge Graph"@en ;
-   samm:properties ( :assets :streamingConnections :databaseConnections ) ;
+   samm:properties ( :assets :dataConnections ) ;
    samm:operations ( ) ;
    samm:events ( ) .
 
@@ -21,48 +21,29 @@
    samm:description "A list of Digital Twin Asset"@en ;
    samm:characteristic :AssetList .
 
-:streamingConnections a samm:Property ;
-   samm:preferredName "Streaming Connections"@en ;
-   samm:description "A list of connections to streaming server"@en ;
-   samm:characteristic :StreamingConnectionList .
-
-:databaseConnections a samm:Property ;
-   samm:preferredName "Database Connections"@en ;
-   samm:description "A list of connections information to connect to the databases"@en ;
-   samm:characteristic :DatabaseConnectionList .
+:dataConnections a samm:Property ;
+   samm:preferredName "Data Connections"@en ;
+   samm:description "A list of connections to streaming or database server"@en ;
+   samm:characteristic :DataConnectionList .
 
 :AssetList a samm-c:List ;
    samm:preferredName "Asset List"@en ;
    samm:dataType :AbstractAsset .
 
-:StreamingConnectionList a samm-c:List ;
-   samm:preferredName "Streaming Connection List"@en ;
-   samm:description "Represent a list of streaming connections "@en ;
-   samm:dataType :StreamingConnection .
-
-:DatabaseConnectionList a samm-c:List ;
-   samm:preferredName "Database Connection List"@en ;
-   samm:description "Represent a list of database connections"@en ;
-   samm:dataType :DatabaseConnection .
+:DataConnectionList a samm-c:List ;
+   samm:preferredName "Data Connection List"@en ;
+   samm:description "Represent a list of connections "@en ;
+   samm:dataType :Connection .
 
 :AbstractAsset a samm:Entity ;
    samm:preferredName "Asset"@en ;
    samm:description "Represent an asset information model"@en ;
-   samm:properties ( :assetName :assetProperties :assetDescription ) .
+   samm:properties ( :assetProperties :assetDescription ) .
 
-:StreamingConnection a samm:Entity ;
-   samm:extends :Connection ;
-   samm:properties ( ) .
-
-:DatabaseConnection a samm:Entity ;
-   samm:extends :Connection ;
-   samm:preferredName "DatabaseConnection"@en ;
-   samm:properties ( :dbName ) .
-
-:assetName a samm:Property ;
-   samm:preferredName "Asset Name"@en ;
-   samm:characteristic samm-c:Text ;
-   samm:exampleValue "Machine1" .
+:Connection a samm:Entity ;
+   samm:preferredName "Connection"@en ;
+   samm:description "Connection information to connect to a server"@en ;
+   samm:properties ( :token :type :password :username :port :host :isConnected :connectionDescription ) .
 
 :assetProperties a samm:Property ;
    samm:preferredName "Asset Properties"@en ;
@@ -73,21 +54,6 @@
    samm:preferredName "Description of the asset"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "This is a milling machine" .
-
-:Connection a samm:Entity ;
-   samm:preferredName "Connection"@en ;
-   samm:description "Connection information to connect to a server"@en ;
-   samm:properties ( :token :type :password :username :port :host :isConnected ) .
-
-:dbName a samm:Property ;
-   samm:preferredName "Database Name"@en ;
-   samm:description "Name of the database instance"@en ;
-   samm:characteristic samm-c:Text ;
-   samm:exampleValue "temperature_db" .
-
-:AssetPropertyList a samm-c:List ;
-   samm:preferredName "Asset Property List"@en ;
-   samm:dataType :AbstractAssetProperty .
 
 :token a samm:Property ;
    samm:description "token to use to connect if user name and password are not provided"@en ;
@@ -117,11 +83,19 @@
 :isConnected a samm:Property ;
    samm:preferredName "is Connected"@en ;
    samm:characteristic samm-c:Boolean ;
-   samm:exampleValue True .
+   samm:exampleValue true .
+
+:connectionDescription a samm:Property ;
+   samm:preferredName "Connection Description"@en ;
+   samm:characteristic samm-c:Text .
+
+:AssetPropertyList a samm-c:List ;
+   samm:preferredName "Asset Property List"@en ;
+   samm:dataType :AbstractAssetProperty .
 
 :AbstractAssetProperty a samm:Entity ;
    samm:description "Represent an abstract property of an asset"@en ;
-   samm:properties ( :propertyUnit :propertySemanticID :propertyDescription :propertyDataType :propertyValue :propertyName ) .
+   samm:properties ( :propertyUnit :propertySemanticID :propertyDescription :propertyDataType :propertyValue ) .
 
 :propertyUnit a samm:Property ;
    samm:preferredName "Property Unit"@en ;
@@ -141,21 +115,17 @@
 
 :propertyDataType a samm:Property ;
    samm:preferredName "Property Data Type"@en ;
+   samm:description "ref to xsd data type"@en ;
    samm:characteristic samm-c:Text ;
-   samm:exampleValue "String" .
+   samm:exampleValue "xsd:string" .
 
 :propertyValue a samm:Property ;
    samm:preferredName "Asset Property Value"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "Red" .
 
-:propertyName a samm:Property ;
-   samm:preferredName "Property Name"@en ;
-   samm:characteristic samm-c:Text ;
-   samm:exampleValue "Machine1_Color" .
-
 :StreamingPropertyConnection a samm-c:SingleEntity ;
-   samm:dataType :StreamingConnection .
+   samm:dataType :Connection .
 
 :fileType a samm:Property ;
    samm:characteristic samm-c:MimeType ;
@@ -172,7 +142,7 @@
    samm:properties ( :databasePropertyConnection :query ) .
 
 :DatabasePropertyConnection a samm-c:SingleEntity ;
-   samm:dataType :DatabaseConnection .
+   samm:dataType :Connection .
 
 :databasePropertyConnection a samm:Property ;
    samm:description "Refer to the connection of the database"@en ;
