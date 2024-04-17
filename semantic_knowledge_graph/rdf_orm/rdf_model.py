@@ -71,13 +71,13 @@ class RDFModel:
             return f'<{self.label}>'
         else:
             return f'<{self.uri}>' """
-    
+
     def __str__(self):
         ret_str = ""
         for key, rdf_property in self.mapping.items():
             value = getattr(self, key, None)
             if value is not None:
-                #if value is an object of RDFModel, add newline before the value
+                # if value is an object of RDFModel, add newline before the value
                 if isinstance(value, RDFModel):
                     ret_str += f'{key}:\n'
                     ret_str += f'{value}\n'
@@ -91,10 +91,9 @@ class RDFModel:
                 else:
                     ret_str += f'{key}: {value}\n'
 
-        #indent the string
+        # indent the string
         ret_str = "\n".join(["\t" + line for line in ret_str.split("\n")])
         return f"<{self.__class__.__name__}:\n{ret_str}\n>"
-            
 
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, URIRef) or isinstance(value, BNode) or isinstance(value, Literal):
@@ -205,7 +204,8 @@ class RDFModel:
         if node_uri is not None:
             individuals = [node_uri]
         elif class_uri is not None:
-            individuals = [ind for ind, _, _ in g.triples((None, RDF.type, class_uri))]
+            individuals = [ind for ind, _, _ in g.triples(
+                (None, RDF.type, class_uri))]
 
         for ind in individuals:
             # for ind, _, _ in g.triples(None, RDF.type, class_uri):
@@ -216,8 +216,9 @@ class RDFModel:
                 for att_name, att_uri in node_class.mapping.items():
                     if isinstance(att_uri, MapTo):
                         att_uri = att_uri.value
-                    #att_value = g.value(subject=ind, predicate=att_uri)
-                    att_value = [value for _, _, value in g.triples((ind, att_uri, None))]
+                    # att_value = g.value(subject=ind, predicate=att_uri)
+                    att_value = [value for _, _,
+                                 value in g.triples((ind, att_uri, None))]
 
                     if att_value is not None:
                         return_individuals = RDFModel._set_att_from_graph(
@@ -229,11 +230,11 @@ class RDFModel:
         att_type_hint = get_type_hints(ind_obj.__class__).get(att_name)
         if att_type_hint is not None:
             # if the type hint is a list
-            #if(str(att_type_hint).startswith('typing.List') ):
-            #print(att_type_hint)
-            #print(type(att_type_hint))
-            
-            if  "__origin__" in dir(att_type_hint) and (att_type_hint.__origin__ == list or att_type_hint.__origin__ == List):
+            # if(str(att_type_hint).startswith('typing.List') ):
+            # print(att_type_hint)
+            # print(type(att_type_hint))
+
+            if "__origin__" in dir(att_type_hint) and (att_type_hint.__origin__ == list or att_type_hint.__origin__ == List):
                 # get the exising value
                 existing_value = getattr(ind_obj, att_name, None)
                 # if the existing value is not None
