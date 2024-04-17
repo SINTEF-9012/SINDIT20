@@ -1,8 +1,9 @@
 from rdflib import XSD, Graph, URIRef
 from semantic_knowledge_graph.SemanticKGPersistenceService import SemanticKGPersistenceService
 from semantic_knowledge_graph.GraphDBPersistenceService import GraphDBPersistenceService
-from semantic_knowledge_graph.graph_model.graph_model import AbstractAsset, Connection, DatabaseProperty, TimeseriesProperty
+from semantic_knowledge_graph.graph_model.graph_model import AbstractAsset, Connection, DatabaseProperty, StreamingProperty, TimeseriesProperty, URIClassMapping
 from semantic_knowledge_graph.graph_model.graph_model import GraphNamespace
+from semantic_knowledge_graph.rdf_orm.rdf_model import RDFModel
 
 if __name__ == "__main__":
 
@@ -15,44 +16,68 @@ if __name__ == "__main__":
     g = Graph()
     g.namespace_manager.bind('sindit', GraphNamespace.SINDIT.value)
     g.namespace_manager.bind('sindit_kg', GraphNamespace.SINDIT_KG.value)
+    g.namespace_manager.bind('samm_unit', GraphNamespace.SAMM_UNIT.value)
 
-    connection = Connection(URIRef("http://sindit.sintef.no/2.0#influxdb-connection"),
+    fluxdb_connection = Connection(URIRef("http://sindit.sintef.no/2.0#influxdb-connection"),
                             type="INFLUXDB",
                             host="localhost",
                             port=8080,
                             username="admin",
                             password="admin",
-                            # token = "abcdef",
+                            token = "abcdef",
                             label="InfluxDB Connection")
-
-    dbproperty = DatabaseProperty(URIRef("http://sindit.sintef.no/2.0#temperature"),
-                                  label="Temperature",
-                                  propertyDataType=XSD.float,
-                                  databasePropertyConnection=connection,
-                                  propertyDescription="Temperature data from the sensor"
-                                  )
-
-    timeseries = TimeseriesProperty(URIRef("http://sindit.sintef.no/2.0#temperature-timeseries"),
-
-                                           label="Temperature Timeseries",
-                                           query="SELECT * FROM temperature", 
-                                           propertyUnit="unit:degreeCelsius",)
     
-    asset = AbstractAsset(URIRef("http://sindit.sintef.no/2.0#temperature-sensor"),
-                            label="Temperature Sensor",
-                            assetDescription="Temperature sensor in the living room",
-                            assetProperties=[dbproperty, timeseries])
+    mqtt_connection = Connection(URIRef("http://sindit.sintef.no/2.0#mqtt-connection"),
+                                        type="MQTT",
+                                        host="localhost",
+                                        port=1883,
+                                        username="admin",
+                                        password="admin",
+                                        label="MQTT Connection")
 
-    dbproperty.query = "SELECT * FROM temperature"
+    temperature = StreamingProperty(URIRef("http://sindit.sintef.no/2.0#temperature"),
+                                     label="Temperature",
+                                     propertyDataType=XSD.float,
+                                     streamingPropertyConnection=mqtt_connection,
+                                     propertyDescription="Temperature data from the sensor",
+                                     streamingTopic="topic/temp",
+                                     propertyUnit=GraphNamespace.SAMM_UNIT.value.degreeCelsius
+                                     )
 
-    g += connection.g
-    g += dbproperty.g
-    g += timeseries.g
+    humidity = TimeseriesProperty(URIRef("http://sindit.sintef.no/2.0#humidity"),
+
+                                  label="Humidity",
+                                  propertyDescription="Humidity data from the sensor",
+                                  query="SELECT * FROM humidity",
+                                  propertyUnit=GraphNamespace.SAMM_UNIT.value.percent,
+                                  propertyDataType=XSD.float,
+                                  databasePropertyConnection=fluxdb_connection,)
+
+    asset = AbstractAsset(URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
+                          label="Temperature Sensor",
+                          assetDescription="Sensor in the factory",
+                          assetProperties=[temperature, humidity])
+
+    g += fluxdb_connection.g
+    g += temperature.g
+    g += humidity.g
     g += asset.g
 
     # Print the global graph object.
     print(g.serialize(format='longturtle'))
 
-    #print(connection.host)
-    #print(connection.port)
-    #print(connection.isConnected)
+    # print(connection.host)
+    # print(connection.port)
+    # print(connection.isConnected)
+
+    ret = RDFModel.deserialize(AbstractAsset, g, URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
+                                 uri_class_mapping=  URIClassMapping)  
+
+    print(ret["http://sindit.sintef.no/2.0#factory-sensor"])                
+
+    #for key, value in ret.items():
+    #    print(f"--------------")
+    #    print(key)
+    #    print(value)
+        
+    

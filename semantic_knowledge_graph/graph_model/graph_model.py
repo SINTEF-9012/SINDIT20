@@ -17,7 +17,10 @@ class GraphNamespace(Enum):
     SINDIT_KG = Namespace("http://sindit.sintef.no/2.0#")
     SAMM_UNIT = Namespace("urn:samm:org.eclipse.esmf.samm:unit:2.1.0#")
     SAMM = Namespace("urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#")
-    SAMM_CHARACTERISTIC = Namespace("urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#")
+    SAMM_CHARACTERISTIC = Namespace(
+        "urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#")
+    
+
 
 
 GRAPH_MODEL = GraphNamespace.SINDIT.value
@@ -250,3 +253,17 @@ class SINDITKG(RDFModel):
                  ):
         super().__init__()
         self.assign_constructor_vars(locals())
+
+
+
+URIClassMapping = {
+    Connection.class_uri: Connection,
+    AbstractAssetProperty.class_uri: AbstractAssetProperty,
+    DatabaseProperty.class_uri: DatabaseProperty,
+    StreamingProperty.class_uri: StreamingProperty,
+    TimeseriesProperty.class_uri: TimeseriesProperty,
+    File.class_uri: File,
+    AbstractAsset.class_uri: AbstractAsset,
+    SINDITKG.class_uri: SINDITKG,
+    
+}

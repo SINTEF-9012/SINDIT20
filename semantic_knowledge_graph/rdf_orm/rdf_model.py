@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, List, Union, get_type_hints
 from uuid import uuid4
 
 from rdflib import RDFS, XSD, URIRef, RDF, Graph
@@ -34,8 +34,6 @@ class RDFModel:
         if self.mapping is None:
             raise PropertyNotSetException(
                 f'mapping in {self.__class__.__name__} class is not defined.')
-        
-        
 
         # This gets set in self._rdf()
         # self._g = Graph()
@@ -43,7 +41,7 @@ class RDFModel:
     def assign_constructor_vars(self, local_vars: locals):
         for key, val in local_vars.items():
             if key != 'self' and key != 'kwargs' and key != '__class__':
-                
+
                 # if isinstance(val, URIRef) or isinstance(val, BNode) or isinstance(val, Literal):
                 #     new_val = val
                 # elif isinstance(val, str):
@@ -56,7 +54,7 @@ class RDFModel:
                 #     new_val = Literal(val, datatype=XSD.boolean)
                 # else:
                 #     new_val = val
-                    
+
                 # setattr(self, key, new_val)
 
                 self.__setattr__(key, val)
@@ -68,12 +66,36 @@ class RDFModel:
         if hasattr(self, 'label'):
             self.mapping["label"] = RDFS.label
 
-    def __str__(self):
+    """def __str__(self):
         if hasattr(self, 'label'):
             return f'<{self.label}>'
         else:
-            return f'<{self.uri}>'
-        
+            return f'<{self.uri}>' """
+    
+    def __str__(self):
+        ret_str = ""
+        for key, rdf_property in self.mapping.items():
+            value = getattr(self, key, None)
+            if value is not None:
+                #if value is an object of RDFModel, add newline before the value
+                if isinstance(value, RDFModel):
+                    ret_str += f'{key}:\n'
+                    ret_str += f'{value}\n'
+                elif isinstance(value, list) or isinstance(value, tuple):
+                    ret_str += f'{key}:\n'
+                    for item in value:
+                        if isinstance(item, RDFModel):
+                            ret_str += f'{item}\n'
+                        else:
+                            ret_str += f'{key}: {value}\n'
+                else:
+                    ret_str += f'{key}: {value}\n'
+
+        #indent the string
+        ret_str = "\n".join(["\t" + line for line in ret_str.split("\n")])
+        return f"<{self.__class__.__name__}:\n{ret_str}\n>"
+            
+
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, URIRef) or isinstance(value, BNode) or isinstance(value, Literal):
             new_val = value
@@ -166,40 +188,104 @@ class RDFModel:
                                     type(value)} for value {value}')
         return self._g.serialize(format=format)
 
-    def reverse_mapping(self):
-        """Create a reverse mapping for the mapping"""
-        return_val = {}
-        for k, v in self.mapping.items():
-            if isinstance(v, MapTo):
-                return_val[v.value] = k
-                return_val[v.inverse] = k
-            else:
-                return_val[v] = k
-        
-        return return_val
-    
-
     @property
     def rdf(self):
         return self._rdf()
 
-""" def deserialize(self, g: Graph):
-        
-        #for rdf triple in g
-        return_individuals = []
-        reverse_mapping = self.reverse_mapping()
+    def deserialize(node_class, g: Graph, node_uri: URIRef = None, class_uri: URIRef = None, created_individuals: dict = {}, uri_class_mapping: dict = {}):
 
-        for ind, _, _ in g.triples(None, RDF.type, self.class_uri):
-            new_ind = self.__class__()
-            for s, p, o in g.triples(ind, None, None):
-                if p == RDF.type:
-                    continue
-                if p in reverse_mapping:
-                    #if o is a literal
-                    if isinstance(o, Literal):
-                        setattr(new_ind, reverse_mapping[p], o)
-                    elif isinstance(o, URIRef): """
+        # for rdf triple in g
+        return_individuals = created_individuals
+        if return_individuals is None or return_individuals == {}:
+            return_individuals = {}
 
+        if node_uri is None and class_uri is None:
+            raise ValueError('node_uri or class_uri must be set')
 
-    
+        if node_uri is not None:
+            individuals = [node_uri]
+        elif class_uri is not None:
+            individuals = [ind for ind, _, _ in g.triples((None, RDF.type, class_uri))]
 
+        for ind in individuals:
+            # for ind, _, _ in g.triples(None, RDF.type, class_uri):
+            if str(ind) not in return_individuals:
+                new_ind = node_class(uri=ind)
+                return_individuals[str(ind)] = new_ind
+
+                for att_name, att_uri in node_class.mapping.items():
+                    if isinstance(att_uri, MapTo):
+                        att_uri = att_uri.value
+                    #att_value = g.value(subject=ind, predicate=att_uri)
+                    att_value = [value for _, _, value in g.triples((ind, att_uri, None))]
+
+                    if att_value is not None:
+                        return_individuals = RDFModel._set_att_from_graph(
+                            new_ind, g, ind, att_name, att_value, return_individuals, uri_class_mapping)
+
+        return return_individuals
+
+    def _set_obj_att(ind_obj, att_name, att_value):
+        att_type_hint = get_type_hints(ind_obj.__class__).get(att_name)
+        if att_type_hint is not None:
+            # if the type hint is a list
+            #if(str(att_type_hint).startswith('typing.List') ):
+            #print(att_type_hint)
+            #print(type(att_type_hint))
+            
+            if  "__origin__" in dir(att_type_hint) and (att_type_hint.__origin__ == list or att_type_hint.__origin__ == List):
+                # get the exising value
+                existing_value = getattr(ind_obj, att_name, None)
+                # if the existing value is not None
+                if existing_value is not None:
+                    # append the new value to the existing value
+                    setattr(ind_obj, att_name, existing_value + [att_value])
+                # if the existing value is None
+                else:
+                    # set the value as a list
+                    setattr(ind_obj, att_name, [att_value])
+            else:
+                setattr(ind_obj, att_name, att_value)
+        else:
+            setattr(ind_obj, att_name, att_value)
+
+    def _set_att_from_graph(ind_obj, g: Graph, ind: URIRef, att_name: str, att_value: Any, created_individuals: dict = {}, uri_class_mapping: dict = {}):
+        return_individuals = created_individuals
+
+        # value = g.value(subject=ind, predicate=att_uri)
+
+        # if value is not None:
+        value = att_value
+        if isinstance(value, Literal):
+            RDFModel._set_obj_att(ind_obj, att_name, value)
+        elif isinstance(value, URIRef) or isinstance(value, BNode):
+            if str(value) in return_individuals:
+                RDFModel._set_obj_att(
+                    ind_obj, att_name, return_individuals[str(value)])
+            else:
+                new_node_uri = value
+                new_node_class_uri = g.value(
+                    subject=value, predicate=RDF.type)
+                if new_node_class_uri is not None and new_node_class_uri in uri_class_mapping:
+                    new_node_class = uri_class_mapping[new_node_class_uri]
+                    new_node_class_uri = URIRef(new_node_class_uri)
+                    return_individuals = RDFModel.deserialize(
+                        new_node_class, g, new_node_uri, new_node_class_uri, return_individuals, uri_class_mapping)
+                    if str(value) in return_individuals:
+                        RDFModel._set_obj_att(
+                            ind_obj, att_name, return_individuals[str(value)])
+                    else:
+                        raise ValueError(
+                            f'Could not create object for {value} with class {new_node_class_uri}')
+                else:
+                    RDFModel._set_obj_att(ind_obj, att_name, value)
+
+        elif isinstance(value, list):
+            for item in value:
+                return_individuals = RDFModel._set_att_from_graph(
+                    ind_obj, g, ind, att_name, item, return_individuals, uri_class_mapping)
+        else:
+            raise TypeError(f'Unexpected type {
+                            type(value)} for value {value}')
+
+        return return_individuals
