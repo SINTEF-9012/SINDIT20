@@ -1,8 +1,8 @@
 from rdflib import XSD, Graph, URIRef
 from semantic_knowledge_graph.SemanticKGPersistenceService import SemanticKGPersistenceService
 from semantic_knowledge_graph.GraphDBPersistenceService import GraphDBPersistenceService
-from semantic_knowledge_graph.graph_model.graph_model import AbstractAsset, Connection, DatabaseProperty, StreamingProperty, TimeseriesProperty, URIClassMapping
-from semantic_knowledge_graph.graph_model.graph_model import GraphNamespace
+from semantic_knowledge_graph.sindit_graph_model.graph_model import AbstractAsset, Connection, DatabaseProperty, StreamingProperty, TimeseriesProperty, URIClassMapping
+from semantic_knowledge_graph.sindit_graph_model.graph_model import GraphNamespace
 from semantic_knowledge_graph.rdf_orm.rdf_model import RDFModel
 
 if __name__ == "__main__":
