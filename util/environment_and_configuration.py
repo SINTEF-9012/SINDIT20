@@ -1,11 +1,10 @@
-import os
-
 import configparser
+import os
 from enum import Enum
 
-
 """
-Allows an easy access to the global configuration parameters and environmental variables
+Allows an easy access to the global configuration parameters
+and environmental variables
 """
 
 PATH_TO_CONFIG = "environment_and_configuration/config.cfg"
@@ -29,8 +28,11 @@ def get_environment_variable(
 
     Args:
         key (str): key of the variable
-        optional (bool, optional): whether an exception shall be raised if not availlable. Defaults to False.
-        default (_type_, optional): Defaul value if optional is True. Defaults to None.
+        optional (bool, optional):
+            whether an exception shall be raised if not available.
+            Defaults to False.
+        default (_type_, optional): Default value if optional is True.
+            Defaults to None.
 
     Returns:
         str | None: the value or None
@@ -45,7 +47,10 @@ def get_environment_variable(
         if optional:
             value = default
         else:
-            raise Exception(f"The environmental variable {key} is not available but set to required!")
+            raise Exception(
+                "The environmental variable "
+                "{key} is not available but set to required!"
+            )
 
     return value
 
@@ -57,8 +62,12 @@ def get_environment_variable_int(
 
     Args:
         key (str): key of the variable
-        optional (bool, optional): whether an exception shall be raised if not availlable. Defaults to False.
-        default (_type_, optional): Defaul value if optional is True. Defaults to None.
+        optional (bool, optional):
+            whether an exception shall be raised if not available.
+            Defaults to False.
+        default (_type_, optional):
+            Defaul value if optional is True.
+            Defaults to None.
 
     Returns:
         int | None: the value or None
@@ -76,8 +85,12 @@ def get_environment_variable_bool(
 
     Args:
         key (str): key of the variable
-        optional (bool, optional): whether an exception shall be raised if not availlable. Defaults to False.
-        default (_type_, optional): Defaul value if optional is True. Defaults to None.
+        optional (bool, optional):
+            whether an exception shall be raised if not available.
+            Defaults to False.
+        default (_type_, optional):
+            Defaul value if optional is True.
+            Defaults to None.
 
     Returns:
         bool | None: the value or None

@@ -175,4 +175,3 @@
    samm:extends :DatabaseProperty ;
    samm:description "A property that refers to a timeseries value stored in a database"@en ;
    samm:properties ( ) .
-

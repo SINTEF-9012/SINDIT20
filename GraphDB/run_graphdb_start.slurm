@@ -14,7 +14,7 @@ cd /home/anl/SINDIT20/monorepo/projects/sindit/GraphDB
 export DATE=`date +%F_%H%M`
 
 
-srun bash graphdb_start.sh 
+srun bash graphdb_start.sh
 
 time=$(date)
 echo "***** End on $time *****"

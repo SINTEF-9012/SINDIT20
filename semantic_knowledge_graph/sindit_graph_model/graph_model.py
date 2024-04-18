@@ -1,26 +1,20 @@
 from enum import Enum
 from typing import List, Union
 
-from semantic_knowledge_graph.rdf_orm.rdf_model import RDFModel, MapTo
-from rdflib import Literal, URIRef, Namespace, Graph
-from rdflib.namespace import OWL, RDFS, RDF
-
-from util.environment_and_configuration import (
-    get_environment_variable,
-    get_environment_variable_int,
-)
+from rdflib import Literal, Namespace, URIRef
+from semantic_knowledge_graph.rdf_orm.rdf_model import RDFModel
 
 
 class GraphNamespace(Enum):
     """Enum for the namespaces used in the graph"""
+
     SINDIT = Namespace("urn:samm:sindit.sintef.no:1.0.0#")
     SINDIT_KG = Namespace("http://sindit.sintef.no/2.0#")
     SAMM_UNIT = Namespace("urn:samm:org.eclipse.esmf.samm:unit:2.1.0#")
     SAMM = Namespace("urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#")
     SAMM_CHARACTERISTIC = Namespace(
-        "urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#")
-    
-
+        "urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#"
+    )
 
 
 GRAPH_MODEL = GraphNamespace.SINDIT.value
@@ -49,18 +43,19 @@ class Connection(RDFModel):
     isConnected: Literal
     connectionDescription: Literal
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 type: Literal = None,
-                 host: Literal = None,
-                 port: Literal = None,
-                 username: Literal = None,
-                 password: Literal = None,
-                 token: Literal = None,
-                 isConnected: Literal = False,
-                 connectionDescription=None
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        type: Literal = None,
+        host: Literal = None,
+        port: Literal = None,
+        username: Literal = None,
+        password: Literal = None,
+        token: Literal = None,
+        isConnected: Literal = False,
+        connectionDescription=None,
+    ):
         super().__init__()
         self.assign_constructor_vars(locals())
 
@@ -84,17 +79,17 @@ class AbstractAssetProperty(RDFModel):
     propertyValue: Literal
     propertyName: Literal
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 propertyUnit: Literal = None,
-                 propertySemanticID: Literal = None,
-                 propertyDescription: Literal = None,
-                 propertyDataType: Literal = None,
-                 propertyValue: Literal = None,
-                 propertyName: Literal = None,
-
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        propertyUnit: Literal = None,
+        propertySemanticID: Literal = None,
+        propertyDescription: Literal = None,
+        propertyDataType: Literal = None,
+        propertyValue: Literal = None,
+        propertyName: Literal = None,
+    ):
         super().__init__()
         self.assign_constructor_vars(locals())
 
@@ -111,18 +106,19 @@ class DatabaseProperty(AbstractAssetProperty):
         "query": GRAPH_MODEL.query,
     }
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 propertyUnit: Literal = None,
-                 propertySemanticID: Literal = None,
-                 propertyDescription: Literal = None,
-                 propertyDataType: Literal = None,
-                 propertyValue: Literal = None,
-                 propertyName: Literal = None,
-                 databasePropertyConnection: Connection = None,
-                 query: Literal = None,
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        propertyUnit: Literal = None,
+        propertySemanticID: Literal = None,
+        propertyDescription: Literal = None,
+        propertyDataType: Literal = None,
+        propertyValue: Literal = None,
+        propertyName: Literal = None,
+        databasePropertyConnection: Connection = None,
+        query: Literal = None,
+    ):
         super().__init__(uri)
         self.assign_constructor_vars(locals())
 
@@ -139,18 +135,19 @@ class StreamingProperty(AbstractAssetProperty):
         "streamingTopic": GRAPH_MODEL.streamingTopic,
     }
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 propertyUnit: Literal = None,
-                 propertySemanticID: Literal = None,
-                 propertyDescription: Literal = None,
-                 propertyDataType: Literal = None,
-                 propertyValue: Literal = None,
-                 propertyName: Literal = None,
-                 streamingPropertyConnection: Connection = None,
-                 streamingTopic: Literal = None,
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        propertyUnit: Literal = None,
+        propertySemanticID: Literal = None,
+        propertyDescription: Literal = None,
+        propertyDataType: Literal = None,
+        propertyValue: Literal = None,
+        propertyName: Literal = None,
+        streamingPropertyConnection: Connection = None,
+        streamingTopic: Literal = None,
+    ):
         super().__init__(uri)
         self.assign_constructor_vars(locals())
 
@@ -162,18 +159,19 @@ class TimeseriesProperty(DatabaseProperty):
         **DatabaseProperty.mapping,
     }
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 propertyUnit: Literal = None,
-                 propertySemanticID: Literal = None,
-                 propertyDescription: Literal = None,
-                 propertyDataType: Literal = None,
-                 propertyValue: Literal = None,
-                 propertyName: Literal = None,
-                 databasePropertyConnection: Connection = None,
-                 query: Literal = None,
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        propertyUnit: Literal = None,
+        propertySemanticID: Literal = None,
+        propertyDescription: Literal = None,
+        propertyDataType: Literal = None,
+        propertyValue: Literal = None,
+        propertyName: Literal = None,
+        databasePropertyConnection: Connection = None,
+        query: Literal = None,
+    ):
         super().__init__(uri)
         self.assign_constructor_vars(locals())
 
@@ -190,20 +188,21 @@ class File(DatabaseProperty):
     fileType: Literal
     filePath: Literal
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 propertyUnit: Literal = None,
-                 propertySemanticID: Literal = None,
-                 propertyDescription: Literal = None,
-                 propertyDataType: Literal = None,
-                 propertyValue: Literal = None,
-                 propertyName: Literal = None,
-                 databasePropertyConnection: Connection = None,
-                 query: Literal = None,
-                 fileType: Literal = None,
-                 filePath: Literal = None,
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        propertyUnit: Literal = None,
+        propertySemanticID: Literal = None,
+        propertyDescription: Literal = None,
+        propertyDataType: Literal = None,
+        propertyValue: Literal = None,
+        propertyName: Literal = None,
+        databasePropertyConnection: Connection = None,
+        query: Literal = None,
+        fileType: Literal = None,
+        filePath: Literal = None,
+    ):
         super().__init__(uri)
         self.assign_constructor_vars(locals())
 
@@ -214,20 +213,34 @@ class AbstractAsset(RDFModel):
     mapping = {
         "assetProperties": GRAPH_MODEL.assetProperties,
         "assetDescription": GRAPH_MODEL.assetDescription,
-
     }
 
-    assetProperties: List[Union[AbstractAssetProperty,
-                                DatabaseProperty, StreamingProperty, TimeseriesProperty, File]]
+    assetProperties: List[
+        Union[
+            AbstractAssetProperty,
+            DatabaseProperty,
+            StreamingProperty,
+            TimeseriesProperty,
+            File,
+        ]
+    ]
     assetDescription: Literal
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 assetProperties: List[Union[AbstractAssetProperty, DatabaseProperty,
-                                             StreamingProperty, TimeseriesProperty, File]] = None,
-                 assetDescription: Literal = None,
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        assetProperties: List[
+            Union[
+                AbstractAssetProperty,
+                DatabaseProperty,
+                StreamingProperty,
+                TimeseriesProperty,
+                File,
+            ]
+        ] = None,
+        assetDescription: Literal = None,
+    ):
         super().__init__()
         self.assign_constructor_vars(locals())
 
@@ -238,22 +251,21 @@ class SINDITKG(RDFModel):
     mapping = {
         "assets": GRAPH_MODEL.assets,
         "dataConnections": GRAPH_MODEL.dataConnections,
-
     }
 
     # :assets :dataConnections
     assets: List[AbstractAsset]
     dataConnections: List[Connection]
 
-    def __init__(self,
-                 uri: URIRef,
-                 label: Literal = None,
-                 assets: List[AbstractAsset] = None,
-                 dataConnections: List[Connection] = None,
-                 ):
+    def __init__(
+        self,
+        uri: URIRef,
+        label: Literal = None,
+        assets: List[AbstractAsset] = None,
+        dataConnections: List[Connection] = None,
+    ):
         super().__init__()
         self.assign_constructor_vars(locals())
-
 
 
 URIClassMapping = {
@@ -265,5 +277,4 @@ URIClassMapping = {
     File.class_uri: File,
     AbstractAsset.class_uri: AbstractAsset,
     SINDITKG.class_uri: SINDITKG,
-    
 }

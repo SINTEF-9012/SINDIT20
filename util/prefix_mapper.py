@@ -36,7 +36,8 @@ prefixes = {
     "gufo": "http://purl.org/nemo/gufo#",
     "ids": "https://w3id.org/idsa/core/",
     "idsc": "https://w3id.org/idsa/code/",
-    "iof-av": "https://spec.industrialontologies.org/ontology/core/meta/AnnotationVocabulary/",
+    "iof-av": "https://spec.industrialontologies.org/ontology/core/"
+    "meta/AnnotationVocabulary/",
     "isq": "http://emmo.info/emmo/middle/isq#",
     "lis": "http://rds.posccaesar.org/ontology/lis14/rdl/",
     "lis12": "http://standards.iso.org/iso/15926/ontology/life-cycle-integration/",
@@ -98,10 +99,11 @@ prefixes = {
     "wgs": "http://www.w3.org/2003/01/geo/wgs84_pos#",
     "wgs84": "http://www.w3.org/2003/01/geo/wgs84_pos#",
     "xml": "http://www.w3.org/XML/1998/namespace",
-    "xsd": "http://www.w3.org/2001/XMLSchema#"
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
 }
 
 uri_to_prefix = {uri: prefix for prefix, uri in prefixes.items()}
+
 
 def convert_uri_to_label(uri):
     ret = uri
@@ -109,13 +111,12 @@ def convert_uri_to_label(uri):
     if pos == -1:
         pos = uri.rfind("/")
     if pos != -1:
-        full_fx = uri[:pos+1]
-        remaining_fx = uri[pos+1:]
+        full_fx = uri[: pos + 1]
+        remaining_fx = uri[pos + 1 :]
         if full_fx in uri_to_prefix:
             ret = uri_to_prefix[full_fx] + ":" + remaining_fx
         else:
             ret = remaining_fx
-
 
     if ret.endswith(":"):
         ret = ret[:-1]

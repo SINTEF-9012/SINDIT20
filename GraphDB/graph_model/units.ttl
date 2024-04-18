@@ -14825,4 +14825,3 @@ unit:zettabyte a samm:Unit ;
 unit:zone a samm:Unit ;
    samm:preferredName            "zone"@en ;
    samm:commonCode               "E57" .
-
