@@ -1,5 +1,7 @@
-from semantic_knowledge_graph.GraphDBPersistenceService import GraphDBPersistenceService
-from semantic_knowledge_graph.SemanticKGPersistenceService import (
+from common.semantic_knowledge_graph.GraphDBPersistenceService import (
+    GraphDBPersistenceService,
+)
+from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
 

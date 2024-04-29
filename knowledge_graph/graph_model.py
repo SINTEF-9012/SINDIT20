@@ -2,7 +2,8 @@ from enum import Enum
 from typing import List, Union
 
 from rdflib import Literal, Namespace, URIRef
-from semantic_knowledge_graph.rdf_orm.rdf_model import RDFModel
+
+from common.semantic_knowledge_graph.rdf_model import RDFModel
 
 
 class GraphNamespace(Enum):

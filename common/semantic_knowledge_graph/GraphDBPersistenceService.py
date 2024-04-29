@@ -1,7 +1,8 @@
 import time
 
 import requests
-from semantic_knowledge_graph.SemanticKGPersistenceService import (
+
+from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
 from util.client_api import ClientAPI

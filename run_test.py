@@ -1,5 +1,6 @@
 from rdflib import XSD, Graph, URIRef
-from semantic_knowledge_graph.sindit_graph_model.graph_model import (
+
+from knowledge_graph.graph_model import (
     AbstractAsset,
     Connection,
     GraphNamespace,
