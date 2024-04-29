@@ -39,8 +39,8 @@ if __name__ == "__main__":
         host="localhost",
         port=8080,
         username="admin",
-        password="admin",
-        token="abcdef",
+        passwordPath="admin",
+        tokenPath="abcdef",
         label="InfluxDB Connection",
     )
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         host="localhost",
         port=1883,
         username="admin",
-        password="admin",
+        passwordPath="admin",
         label="MQTT Connection",
     )
 

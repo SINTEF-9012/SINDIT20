@@ -25,9 +25,9 @@ class Connection(RDFModel):
     class_uri = GRAPH_MODEL.Connection
 
     mapping = {
-        "token": GRAPH_MODEL.token,
+        "tokenPath": GRAPH_MODEL.tokenPath,
         "type": GRAPH_MODEL.type,
-        "password": GRAPH_MODEL.password,
+        "passwordPath": GRAPH_MODEL.passwordPath,
         "port": GRAPH_MODEL.port,
         "host": GRAPH_MODEL.host,
         "isConnected": GRAPH_MODEL.isConnected,
@@ -39,8 +39,8 @@ class Connection(RDFModel):
     host: Literal
     port: Literal
     username: Literal
-    password: Literal
-    token: Literal
+    passwordPath: Literal
+    tokenPath: Literal
     isConnected: Literal
     connectionDescription: Literal
 
@@ -52,8 +52,8 @@ class Connection(RDFModel):
         host: Literal = None,
         port: Literal = None,
         username: Literal = None,
-        password: Literal = None,
-        token: Literal = None,
+        passwordPath: Literal = None,
+        tokenPath: Literal = None,
         isConnected: Literal = False,
         connectionDescription=None,
     ):

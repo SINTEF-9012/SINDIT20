@@ -43,7 +43,7 @@
 :Connection a samm:Entity ;
    samm:preferredName "Connection"@en ;
    samm:description "Connection information to connect to a server"@en ;
-   samm:properties ( :token :type :password :username :port :host :isConnected :connectionDescription ) .
+   samm:properties ( :tokenPath :type :passwordPath :username :port :host :isConnected :connectionDescription ) .
 
 :assetProperties a samm:Property ;
    samm:preferredName "Asset Properties"@en ;
@@ -55,8 +55,9 @@
    samm:characteristic samm-c:Text ;
    samm:exampleValue "This is a milling machine" .
 
-:token a samm:Property ;
-   samm:description "token to use to connect if user name and password are not provided"@en ;
+:tokenPath a samm:Property ;
+   samm:preferredName "Token path"@en ;
+   samm:description "Path to the token stored in the vault to use to establish the connection if user name and password are not provided"@en ;
    samm:characteristic samm-c:Text .
 
 :type a samm:Property ;
@@ -64,7 +65,9 @@
    samm:characteristic samm-c:Text ;
    samm:exampleValue "INFLUXDB" .
 
-:password a samm:Property ;
+:passwordPath a samm:Property ;
+   samm:preferredName "Password path"@en ;
+   samm:description "Path to the password stored in the vault"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "admin" .
 
