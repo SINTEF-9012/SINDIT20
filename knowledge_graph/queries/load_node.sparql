@@ -1,0 +1,21 @@
+CONSTRUCT {
+  ?s ?p ?o .
+}
+where {
+
+    Bind(<[node_uri]> as ?s) .
+    ?s ?p ?o .
+}
+
+
+# CONSTRUCT {
+#   ?s ?p ?o .
+#   ?o ?p2 ?o2 .
+# }
+# WHERE {
+#   BIND(<[node_uri]> as ?s)
+#   ?s ?p ?o .
+#   OPTIONAL {
+#     ?o ?p2 ?o2 .
+#   }
+# }

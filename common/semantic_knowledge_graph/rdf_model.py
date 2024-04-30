@@ -92,7 +92,7 @@ class RDFModel:
                         if isinstance(item, RDFModel):
                             ret_str += f"{item}\n"
                         else:
-                            ret_str += f"{key}: {value}\n"
+                            ret_str += f"\t{item}\n"
                 else:
                     ret_str += f"{key}: {value}\n"
 

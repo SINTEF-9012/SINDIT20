@@ -1,6 +1,8 @@
 import hvac
 from jproperties import Properties
 
+from util.log import logger
+
 
 class Vault:
     """
@@ -45,6 +47,7 @@ class FsVault(Vault):
         with open(vaultPath, "rb") as f:
             configs.load(f, "utf-8")
         self.configs = configs
+        logger.info(f"Loaded vault from {vaultPath}")
 
     def resolveSecret(self, secretPath) -> str:
         return self.configs.get(secretPath)
@@ -73,6 +76,7 @@ class HashiCorpVault(Vault):
         self.vaultUrl = vaultUrl
         self.token = token
         self.client = hvac.Client(url=vaultUrl, token=token)
+        logger.info(f"Connected to HashiCorp Vault at {vaultUrl}")
 
     def resolveSecret(self, secretPath) -> str:
         response = self.client.secrets.kv.v2.read_secret_version(path=secretPath)

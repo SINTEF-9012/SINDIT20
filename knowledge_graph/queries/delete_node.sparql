@@ -1,0 +1,8 @@
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+
+      Bind(<[node_uri]> as ?s) .
+      ?s ?p ?o .
+}

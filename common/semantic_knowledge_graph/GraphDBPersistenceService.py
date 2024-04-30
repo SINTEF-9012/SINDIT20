@@ -34,7 +34,7 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
         while not self.__connected:
             try:
                 logger.info("Connecting to GraphDB...")
-                logger.info(f"Trying to connect to uri {self.__health_check_uri}.")
+                logger.debug(f"Trying to connect to uri {self.__health_check_uri}.")
 
                 response = requests.get(
                     self.__health_check_uri,
@@ -52,7 +52,7 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
 
                 logger.info("Connected to GraphDB.")
             except Exception as e:
-                logger.info(
+                logger.error(
                     "GraphDB unavailable or Authentication invalid!. "
                     + f"Reason: {e}. Trying again in 10 seconds..."
                 )

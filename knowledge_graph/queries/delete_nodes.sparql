@@ -1,0 +1,8 @@
+DELETE {
+  ?s ?p ?o .
+}
+WHERE {
+
+      VALUES ?s { [nodes_uri] }
+      ?s ?p ?o .
+}
