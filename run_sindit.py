@@ -9,6 +9,7 @@ from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
 from common.vault.vault import FsVault, Vault
+from knowledge_graph.kg_connector import SINDITKGConnector
 from util.environment_and_configuration import (
     get_environment_variable,
     get_environment_variable_bool,
@@ -27,6 +28,9 @@ kg_service: SemanticKGPersistenceService = GraphDBPersistenceService(
     get_environment_variable("GRAPHDB_USERNAME"),
     get_environment_variable("GRAPHDB_PASSWORD"),
 )
+
+sindit_kg_connector = SINDITKGConnector(kg_service)
+
 
 use_hashicorp_vault = get_environment_variable_bool(
     "USE_HASHICORP_VAULT", optional=True, default="false"

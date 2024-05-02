@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Union
+from typing import ClassVar, List, Union
 
 from rdflib import Literal, Namespace, URIRef
 
@@ -22,9 +22,9 @@ GRAPH_MODEL = GraphNamespace.SINDIT.value
 
 
 class Connection(RDFModel):
-    class_uri = GRAPH_MODEL.Connection
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.Connection
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         "tokenPath": GRAPH_MODEL.tokenPath,
         "type": GRAPH_MODEL.type,
         "passwordPath": GRAPH_MODEL.passwordPath,
@@ -35,36 +35,43 @@ class Connection(RDFModel):
         "connectionDescription": GRAPH_MODEL.connectionDescription,
     }
     # uri: URIRef
-    type: Literal
-    host: Literal
-    port: Literal
-    username: Literal
-    passwordPath: Literal
-    tokenPath: Literal
-    isConnected: Literal
-    connectionDescription: Literal
+    type: Literal | str = None
+    host: Literal | str = None
+    port: Literal | int = None
+    username: Literal | str = None
+    passwordPath: Literal | str = None
+    tokenPath: Literal | str = None
+    isConnected: Literal | bool = None
+    connectionDescription: Literal | str = None
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        type: Literal = None,
-        host: Literal = None,
-        port: Literal = None,
-        username: Literal = None,
-        passwordPath: Literal = None,
-        tokenPath: Literal = None,
-        isConnected: Literal = False,
-        connectionDescription=None,
-    ):
-        super().__init__()
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     type: Literal = None,
+    #     host: Literal = None,
+    #     port: Literal = None,
+    #     username: Literal = None,
+    #     passwordPath: Literal = None,
+    #     tokenPath: Literal = None,
+    #     isConnected: Literal = False,
+    #     connectionDescription=None,
+    # ):
+    #     super().__init__()
+    #     self.assign_constructor_vars(locals())
+
+    # def __init__(
+    #     self,
+    #     **kwargs,
+    # ):
+    #     super().__init__(**kwargs)
+    #     self.assign_constructor_vars(locals())
 
 
 class AbstractAssetProperty(RDFModel):
-    class_uri = GRAPH_MODEL.AbstractAssetProperty
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.AbstractAssetProperty
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         "propertyUnit": GRAPH_MODEL.propertyUnit,
         "propertySemanticID": GRAPH_MODEL.propertySemanticID,
         "propertyDescription": GRAPH_MODEL.propertyDescription,
@@ -73,145 +80,145 @@ class AbstractAssetProperty(RDFModel):
         "propertyName": GRAPH_MODEL.propertyName,
     }
 
-    propertyUnit: Literal
-    propertySemanticID: Literal
-    propertyDescription: Literal
-    propertyDataType: Literal
-    propertyValue: Literal
-    propertyName: Literal
+    propertyUnit: URIRef | Literal | str = None
+    propertySemanticID: Literal | str = None
+    propertyDescription: Literal | str = None
+    propertyDataType: Literal | str = None
+    propertyValue: Literal | str = None
+    propertyName: Literal | str = None
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        propertyUnit: Literal = None,
-        propertySemanticID: Literal = None,
-        propertyDescription: Literal = None,
-        propertyDataType: Literal = None,
-        propertyValue: Literal = None,
-        propertyName: Literal = None,
-    ):
-        super().__init__()
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     propertyUnit: Literal = None,
+    #     propertySemanticID: Literal = None,
+    #     propertyDescription: Literal = None,
+    #     propertyDataType: Literal = None,
+    #     propertyValue: Literal = None,
+    #     propertyName: Literal = None,
+    # ):
+    #     super().__init__()
+    #     self.assign_constructor_vars(locals())
 
 
 class DatabaseProperty(AbstractAssetProperty):
-    class_uri = GRAPH_MODEL.DatabaseProperty
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.DatabaseProperty
 
-    databasePropertyConnection: Connection
-    query: Literal
+    databasePropertyConnection: Connection | URIRef = None
+    query: Literal | str = None
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
         "databasePropertyConnection": GRAPH_MODEL.databasePropertyConnection,
         "query": GRAPH_MODEL.query,
     }
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        propertyUnit: Literal = None,
-        propertySemanticID: Literal = None,
-        propertyDescription: Literal = None,
-        propertyDataType: Literal = None,
-        propertyValue: Literal = None,
-        propertyName: Literal = None,
-        databasePropertyConnection: Connection = None,
-        query: Literal = None,
-    ):
-        super().__init__(uri)
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     propertyUnit: Literal = None,
+    #     propertySemanticID: Literal = None,
+    #     propertyDescription: Literal = None,
+    #     propertyDataType: Literal = None,
+    #     propertyValue: Literal = None,
+    #     propertyName: Literal = None,
+    #     databasePropertyConnection: Connection = None,
+    #     query: Literal = None,
+    # ):
+    #     super().__init__(uri)
+    #     self.assign_constructor_vars(locals())
 
 
 class StreamingProperty(AbstractAssetProperty):
-    class_uri = GRAPH_MODEL.StreamingProperty
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.StreamingProperty
 
-    streamingPropertyConnection: Connection
-    streamingTopic: Literal
+    streamingPropertyConnection: Connection | URIRef = None
+    streamingTopic: Literal | str = None
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
         "streamingPropertyConnection": GRAPH_MODEL.streamingPropertyConnection,
         "streamingTopic": GRAPH_MODEL.streamingTopic,
     }
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        propertyUnit: Literal = None,
-        propertySemanticID: Literal = None,
-        propertyDescription: Literal = None,
-        propertyDataType: Literal = None,
-        propertyValue: Literal = None,
-        propertyName: Literal = None,
-        streamingPropertyConnection: Connection = None,
-        streamingTopic: Literal = None,
-    ):
-        super().__init__(uri)
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     propertyUnit: Literal = None,
+    #     propertySemanticID: Literal = None,
+    #     propertyDescription: Literal = None,
+    #     propertyDataType: Literal = None,
+    #     propertyValue: Literal = None,
+    #     propertyName: Literal = None,
+    #     streamingPropertyConnection: Connection = None,
+    #     streamingTopic: Literal = None,
+    # ):
+    #     super().__init__(uri)
+    #     self.assign_constructor_vars(locals())
 
 
 class TimeseriesProperty(DatabaseProperty):
-    class_uri = GRAPH_MODEL.TimeseriesProperty
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.TimeseriesProperty
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         **DatabaseProperty.mapping,
     }
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        propertyUnit: Literal = None,
-        propertySemanticID: Literal = None,
-        propertyDescription: Literal = None,
-        propertyDataType: Literal = None,
-        propertyValue: Literal = None,
-        propertyName: Literal = None,
-        databasePropertyConnection: Connection = None,
-        query: Literal = None,
-    ):
-        super().__init__(uri)
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     propertyUnit: Literal = None,
+    #     propertySemanticID: Literal = None,
+    #     propertyDescription: Literal = None,
+    #     propertyDataType: Literal = None,
+    #     propertyValue: Literal = None,
+    #     propertyName: Literal = None,
+    #     databasePropertyConnection: Connection = None,
+    #     query: Literal = None,
+    # ):
+    #     super().__init__(uri)
+    #     self.assign_constructor_vars(locals())
 
 
 class File(DatabaseProperty):
-    class_uri = GRAPH_MODEL.File
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.File
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         **DatabaseProperty.mapping,
         "fileType": GRAPH_MODEL.fileType,
         "filePath": GRAPH_MODEL.filePath,
     }
 
-    fileType: Literal
-    filePath: Literal
+    fileType: Literal | str = None
+    filePath: Literal | str = None
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        propertyUnit: Literal = None,
-        propertySemanticID: Literal = None,
-        propertyDescription: Literal = None,
-        propertyDataType: Literal = None,
-        propertyValue: Literal = None,
-        propertyName: Literal = None,
-        databasePropertyConnection: Connection = None,
-        query: Literal = None,
-        fileType: Literal = None,
-        filePath: Literal = None,
-    ):
-        super().__init__(uri)
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     propertyUnit: Literal = None,
+    #     propertySemanticID: Literal = None,
+    #     propertyDescription: Literal = None,
+    #     propertyDataType: Literal = None,
+    #     propertyValue: Literal = None,
+    #     propertyName: Literal = None,
+    #     databasePropertyConnection: Connection = None,
+    #     query: Literal = None,
+    #     fileType: Literal = None,
+    #     filePath: Literal = None,
+    # ):
+    #     super().__init__(uri)
+    #     self.assign_constructor_vars(locals())
 
 
 class AbstractAsset(RDFModel):
-    class_uri = GRAPH_MODEL.AbstractAsset
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.AbstractAsset
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         "assetProperties": GRAPH_MODEL.assetProperties,
         "assetDescription": GRAPH_MODEL.assetDescription,
     }
@@ -224,49 +231,49 @@ class AbstractAsset(RDFModel):
             TimeseriesProperty,
             File,
         ]
-    ]
-    assetDescription: Literal
+    ] = None
+    assetDescription: Literal | str = None
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        assetProperties: List[
-            Union[
-                AbstractAssetProperty,
-                DatabaseProperty,
-                StreamingProperty,
-                TimeseriesProperty,
-                File,
-            ]
-        ] = None,
-        assetDescription: Literal = None,
-    ):
-        super().__init__()
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     assetProperties: List[
+    #         Union[
+    #             AbstractAssetProperty,
+    #             DatabaseProperty,
+    #             StreamingProperty,
+    #             TimeseriesProperty,
+    #             File,
+    #         ]
+    #     ] = None,
+    #     assetDescription: Literal = None,
+    # ):
+    #     super().__init__()
+    #     self.assign_constructor_vars(locals())
 
 
 class SINDITKG(RDFModel):
-    class_uri = GRAPH_MODEL.SINDITKG
+    class_uri: ClassVar[URIRef] = GRAPH_MODEL.SINDITKG
 
-    mapping = {
+    mapping: ClassVar[dict] = {
         "assets": GRAPH_MODEL.assets,
         "dataConnections": GRAPH_MODEL.dataConnections,
     }
 
     # :assets :dataConnections
-    assets: List[AbstractAsset]
-    dataConnections: List[Connection]
+    assets: List[AbstractAsset] = None
+    dataConnections: List[Connection] = None
 
-    def __init__(
-        self,
-        uri: URIRef,
-        label: Literal = None,
-        assets: List[AbstractAsset] = None,
-        dataConnections: List[Connection] = None,
-    ):
-        super().__init__()
-        self.assign_constructor_vars(locals())
+    # def __init__(
+    #     self,
+    #     uri: URIRef,
+    #     label: Literal = None,
+    #     assets: List[AbstractAsset] = None,
+    #     dataConnections: List[Connection] = None,
+    # ):
+    #     super().__init__()
+    #     self.assign_constructor_vars(locals())
 
 
 URIClassMapping = {

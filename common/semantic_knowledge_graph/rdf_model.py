@@ -1,6 +1,7 @@
-from typing import Any, List, Union, get_type_hints
+from typing import Any, ClassVar, List, Union, get_type_hints
 from uuid import uuid4
 
+from pydantic import BaseModel, ConfigDict
 from rdflib import RDF, RDFS, XSD, Graph, URIRef
 from rdflib.term import BNode, Literal, Node
 
@@ -19,17 +20,20 @@ class MapTo:
         self.inverse = inverse
 
 
-class RDFModel:
+class RDFModel(BaseModel):
     """RDF Model"""
 
-    class_uri: URIRef = None
-    mapping: dict = None
-    g: Graph
-    rdf: str
-    uri: Union[URIRef, BNode]
-    label: str
+    class_uri: ClassVar[URIRef] = None
+    mapping: ClassVar[dict] = None
+    # g: Graph
+    # rdf: str
+    uri: Union[URIRef, BNode, str] = None
+    label: str | Literal = None
 
-    def __init__(self):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         if self.class_uri is None:
             raise PropertyNotSetException(
                 f"class_uri in {self.__class__.__name__} class is not defined."
@@ -42,7 +46,16 @@ class RDFModel:
         # This gets set in self._rdf()
         # self._g = Graph()
 
-    def assign_constructor_vars(self, local_vars: locals):
+        if self.uri is not None and isinstance(self.uri, str):
+            self.uri = URIRef(self.uri)
+
+        if not hasattr(self, "uri") or self.uri is None:
+            self.uri = BNode(str(uuid4()))
+
+        if hasattr(self, "label"):
+            self.mapping["label"] = RDFS.label
+
+    """ def assign_constructor_vars(self, local_vars: locals):
         for key, val in local_vars.items():
             if key != "self" and key != "kwargs" and key != "__class__":
                 # if isinstance(val, URIRef)
@@ -69,7 +82,7 @@ class RDFModel:
             self.uri = BNode(str(uuid4()))
 
         if hasattr(self, "label"):
-            self.mapping["label"] = RDFS.label
+            self.mapping["label"] = RDFS.label """
 
     """def __str__(self):
         if hasattr(self, 'label'):
@@ -78,7 +91,7 @@ class RDFModel:
             return f'<{self.uri}>' """
 
     def __str__(self):
-        ret_str = ""
+        ret_str = f"uri: {self.uri}\n"
         for key, rdf_property in self.mapping.items():
             value = getattr(self, key, None)
             if value is not None:
@@ -100,7 +113,7 @@ class RDFModel:
         ret_str = "\n".join(["\t" + line for line in ret_str.split("\n")])
         return f"<{self.__class__.__name__}:\n{ret_str}\n>"
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    """ def __setattr__(self, name: str, value: Any) -> None:
         if (
             isinstance(value, URIRef)
             or isinstance(value, BNode)
@@ -118,12 +131,31 @@ class RDFModel:
         else:
             new_val = value
 
-        super().__setattr__(name, new_val)
+        super().__setattr__(name, new_val) """
 
-    @property
+    def _process_attr(self, value: Any) -> None:
+        if (
+            isinstance(value, URIRef)
+            or isinstance(value, BNode)
+            or isinstance(value, Literal)
+        ):
+            new_val = value
+        elif isinstance(value, str):
+            new_val = Literal(value, datatype=XSD.string)
+        elif isinstance(value, int):
+            new_val = Literal(value, datatype=XSD.integer)
+        elif isinstance(value, float):
+            new_val = Literal(value, datatype=XSD.float)
+        elif isinstance(value, bool):
+            new_val = Literal(value, datatype=XSD.boolean)
+        else:
+            new_val = value
+
+        return new_val
+
     def g(self) -> Graph:
         """Lazy load the rdflib.Graph object."""
-        self._rdf()
+        self.rdf()
         return self._g
 
     def _add(self, s: Node, p: Node, o: Node):
@@ -135,27 +167,28 @@ class RDFModel:
         else:
             raise TypeError(f"Unexpected type {type(p)} for value {p}")
 
-    def _rdf(self, format: str = "turtle"):
+    def rdf(self, format: str = "turtle") -> str:
         # Set/reset g
         self._g = Graph()
 
         self._g.add((self.uri, RDF.type, self.class_uri))
         for key, rdf_property in self.mapping.items():
             value = getattr(self, key, None)
+            value = self._process_attr(value)
             # Check for optional values and skip if they are None.
             if value is not None:
                 if isinstance(value, RDFModel):
                     self._add(self.uri, rdf_property, value.uri)
                     # if type(value.uri) == BNode:
                     #     self._g += value.g
-                    self._g += value.g
+                    self._g += value.g()
                 elif isinstance(value, list) or isinstance(value, tuple):
                     for item in value:
                         if isinstance(item, RDFModel):
                             self._add(self.uri, rdf_property, item.uri)
                             # if type(item.uri) == BNode:
                             #     self._g += item.g
-                            self._g += item.g
+                            self._g += item.g()
                         elif isinstance(item, URIRef):
                             self._add(self.uri, rdf_property, item)
                         else:
@@ -168,13 +201,14 @@ class RDFModel:
                     raise TypeError(f"Unexpected type {type(value)} for value {value}")
         return self._g.serialize(format=format)
 
-    @property
-    def rdf(self):
-        return self._rdf()
+    # @computed_field
+    # @property
+    # def rdf(self) -> str:
+    #     return self._compute_rdf()
 
     def deserialize(
-        node_class,
         g: Graph,
+        node_class=None,
         node_uri: URIRef = None,
         class_uri: URIRef = None,
         created_individuals: dict = {},
@@ -190,8 +224,18 @@ class RDFModel:
 
         if node_uri is not None:
             individuals = [node_uri]
+            # get class_uri from the graph
+            if node_class is None:
+                class_uri = g.value(subject=node_uri, predicate=RDF.type)
+                node_class = uri_class_mapping.get(class_uri)
+
         elif class_uri is not None:
             individuals = [ind for ind, _, _ in g.triples((None, RDF.type, class_uri))]
+            if node_class is None:
+                node_class = uri_class_mapping.get(class_uri)
+
+        if node_class is None:
+            raise ValueError("Cannot determine node_class from class_uri or node_uri.")
 
         for ind in individuals:
             # for ind, _, _ in g.triples(None, RDF.type, class_uri):
@@ -273,11 +317,11 @@ class RDFModel:
                     new_node_class_uri is not None
                     and new_node_class_uri in uri_class_mapping
                 ):
-                    new_node_class = uri_class_mapping[new_node_class_uri]
+                    new_node_class = uri_class_mapping.get(new_node_class_uri)
                     new_node_class_uri = URIRef(new_node_class_uri)
                     return_individuals = RDFModel.deserialize(
-                        new_node_class,
                         g,
+                        new_node_class,
                         new_node_uri,
                         new_node_class_uri,
                         return_individuals,

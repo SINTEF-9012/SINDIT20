@@ -11,8 +11,8 @@ tags_metadata = [
         "description": "Operations related to the knowledge graph",
     },
     {
-        "name": "Connector",
-        "description": "Operations related to the data connectors",
+        "name": "Vault",
+        "description": "Operations related to the secret vault",
     },
 ]
 

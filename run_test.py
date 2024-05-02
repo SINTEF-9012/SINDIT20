@@ -3,6 +3,7 @@ from rdflib import XSD, Graph, URIRef
 from common.semantic_knowledge_graph.GraphDBPersistenceService import (
     GraphDBPersistenceService,
 )
+from common.semantic_knowledge_graph.rdf_model import RDFModel
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
@@ -12,8 +13,8 @@ from knowledge_graph.graph_model import (
     GraphNamespace,
     StreamingProperty,
     TimeseriesProperty,
+    URIClassMapping,
 )
-from knowledge_graph.kg_connector import SINDITKGConnector
 
 if __name__ == "__main__":
     g = Graph()
@@ -22,7 +23,7 @@ if __name__ == "__main__":
     g.namespace_manager.bind("samm_unit", GraphNamespace.SAMM_UNIT.value)
 
     fluxdb_connection: Connection = Connection(
-        URIRef("http://sindit.sintef.no/2.0#influxdb-connection"),
+        uri=URIRef("http://sindit.sintef.no/2.0#influxdb-connection"),
         type="INFLUXDB",
         host="localhost",
         port=8080,
@@ -33,7 +34,7 @@ if __name__ == "__main__":
     )
 
     mqtt_connection = Connection(
-        URIRef("http://sindit.sintef.no/2.0#mqtt-connection"),
+        uri=URIRef("http://sindit.sintef.no/2.0#mqtt-connection"),
         type="MQTT",
         host="localhost",
         port=1883,
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     )
 
     temperature = StreamingProperty(
-        URIRef("http://sindit.sintef.no/2.0#temperature"),
+        uri=URIRef("http://sindit.sintef.no/2.0#temperature"),
         label="Temperature",
         propertyDataType=XSD.float,
         streamingPropertyConnection=mqtt_connection,
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     )
 
     humidity = TimeseriesProperty(
-        URIRef("http://sindit.sintef.no/2.0#humidity"),
+        uri=URIRef("http://sindit.sintef.no/2.0#humidity"),
         label="Humidity",
         propertyDescription="Humidity data from the sensor",
         query="SELECT * FROM humidity",
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     )
 
     asset = AbstractAsset(
-        URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
+        uri=URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
         label="Temperature Sensor",
         assetDescription="Sensor in the factory",
         assetProperties=[temperature, humidity],
@@ -72,16 +73,19 @@ if __name__ == "__main__":
     # g += fluxdb_connection.g
     # g += temperature.g
     # g += humidity.g
-    # g += asset.g
+    g += asset.g()
 
     # print(g.serialize(format="longturtle"))
 
-    # ret = RDFModel.deserialize(
-    #     AbstractAsset,
-    #     g,
-    #     URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
-    #     uri_class_mapping=URIClassMapping,
-    # )
+    # print(asset)
+    # print(asset.model_dump_json(exclude_none=True))
+
+    ret = RDFModel.deserialize(
+        g=g,
+        node_class=AbstractAsset,
+        node_uri=URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
+        uri_class_mapping=URIClassMapping,
+    )
 
     # print(ret["http://sindit.sintef.no/2.0#factory-sensor"])
 
@@ -89,9 +93,16 @@ if __name__ == "__main__":
         "localhost", "7200", "SINDIT", "sindit20", "sindit20"
     )
 
-    kg_connector = SINDITKGConnector(kg_service)
-    # node = kg_connector.load_node("http://sindit.sintef.no/2.0#factory-sensor",
-    # AbstractAsset, depth=1)
+    # kg_connector = SINDITKGConnector(kg_service)
+    # node = kg_connector.load_node_by_uri(
+    #     "http://sindit.sintef.no/2.0#factory-sensor", AbstractAsset, depth=1
+    # )
+    # node = kg_connector.load_node_by_uri(
+    #     "http://sindit.sintef.no/2.0#factory-sensor", AbstractAsset, depth=2
+    # )
+    # node = kg_connector.load_node_by_uri(
+    #     "http://sindit.sintef.no/2.0#factory-sensor", AbstractAsset, depth=3
+    # )
     # print(node)
 
     # fluxdb_connection.port = 888888
@@ -104,7 +115,7 @@ if __name__ == "__main__":
     # kg_connector.delete_node("http://factory/ABC")
 
     xyz_connection = Connection(
-        URIRef("http://sindit.sintef.no/2.0#xyz-connection"),
+        uri=URIRef("http://sindit.sintef.no/2.0#xyz-connection"),
         type="MQTT",
         host="localhost",
         port=1883,
@@ -112,5 +123,9 @@ if __name__ == "__main__":
         passwordPath="admin",
         label="MQTT Connection",
     )
-    result = kg_connector.save_node(xyz_connection)
+
+    result = xyz_connection.model_dump_json(exclude_none=True, indent=4)
+    # pretty_print(result)
     print(result)
+    # result = kg_connector.save_node(xyz_connection)
+    # print(result)

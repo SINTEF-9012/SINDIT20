@@ -24,7 +24,24 @@ class SINDITKGConnector:
         self.__kg_service = kg_service
 
     def load_node_by_uri(
-        self, node_uri: str, node_class, depth: int = 1, created_individuals: dict = {}
+        self,
+        node_uri: str,
+        node_class=None,
+        depth: int = 1,
+    ) -> RDFModel:
+        ret = self._load_node(node_uri, node_class, depth)
+        node = ret[node_uri]
+
+        # print(f"node uri: {node_uri}, depth: {depth}")
+        # print(node)
+        return node
+
+    def _load_node(
+        self,
+        node_uri: str,
+        node_class=None,
+        depth: int = 1,
+        created_individuals: dict = {},
     ) -> RDFModel:
         # read the sparql query from the file
         with open(load_node_query_file, "r") as f:
@@ -63,17 +80,14 @@ class SINDITKGConnector:
         # print(f"Lenght of g: {len(full_graph)}")
 
         ret = RDFModel.deserialize(
-            node_class,
             full_graph,
+            node_class,
             URIRef(node_uri),
             created_individuals=created_individuals,
             uri_class_mapping=URIClassMapping,
         )
-        created_individuals.update(ret)
-        node = ret[node_uri]
 
-        # print(node)
-        return node
+        return ret
 
     def load_nodes_by_class(self, class_uri, depth: int = 1) -> list:
         with open(get_uris_by_class_uri_query_file, "r") as f:
@@ -85,13 +99,15 @@ class SINDITKGConnector:
         created_individuals = {}
         nodes = []
         for uri in df["node"]:
-            ret = self.load_node_by_uri(
+            ret = self._load_node(
                 uri,
                 URIClassMapping[class_uri],
                 depth,
                 created_individuals=created_individuals,
             )
-            nodes.append(ret)
+            created_individuals.update(ret)
+            node = ret[uri]
+            nodes.append(node)
 
         # print(created_individuals)
         # print(nodes)
@@ -119,7 +135,7 @@ class SINDITKGConnector:
         serialized in the subgraph.
         """
 
-        g = node.g
+        g = node.g()
         # get the list of subject in g
         subjects = set([s for s, _, _ in g])
         # concat the subject as a string, each surrounded by < and >,
