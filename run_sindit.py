@@ -2,6 +2,7 @@ import logging
 
 import uvicorn
 
+from api import kg_endpoints  # noqa: F401
 from common.semantic_knowledge_graph.GraphDBPersistenceService import (
     GraphDBPersistenceService,
 )
@@ -16,8 +17,6 @@ from util.environment_and_configuration import (
     get_environment_variable_int,
 )
 from util.log import logger
-
-# from api.api import app
 
 logger.setLevel(get_environment_variable("LOG_LEVEL", optional=True, default="INFO"))
 
