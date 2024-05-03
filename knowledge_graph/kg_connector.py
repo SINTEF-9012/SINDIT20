@@ -1,7 +1,7 @@
 from io import StringIO
 
 import pandas as pd
-from rdflib import Graph, URIRef
+from rdflib import RDF, Graph, URIRef
 
 from common.semantic_knowledge_graph.rdf_model import RDFModel
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
@@ -17,6 +17,7 @@ insert_data_query_file = "knowledge_graph/queries/insert_data.sparql"
 get_uris_by_class_uri_query_file = (
     "knowledge_graph/queries/get_uris_by_class_uri.sparql"
 )
+get_class_uri_by_uri_query_file = "knowledge_graph/queries/get_class_uri_by_uri.sparql"
 
 
 class SINDITKGConnector:
@@ -121,7 +122,12 @@ class SINDITKGConnector:
         query = query_template.replace("[node_uri]", node_uri)
         query_result = self.__kg_service.graph_update(query)
 
-        return query_result
+        if not query_result.ok:
+            raise Exception(
+                "Failed to delete the node. Reason: " + query_result.content
+            )
+
+        return query_result.ok
 
     def save_node(
         self,
@@ -138,14 +144,47 @@ class SINDITKGConnector:
         g = node.g()
         # get the list of subject in g
         subjects = set([s for s, _, _ in g])
-        # concat the subject as a string, each surrounded by < and >,
-        # separated by a space
-        subjects = " ".join([f"<{str(s)}>" for s in subjects])
+        # Check the type of the subjects in the exising graph,
+        # if different return error
+        with open(get_class_uri_by_uri_query_file, "r") as f:
+            query_template = f.read()
+
+        for s in subjects:
+            node_class_uri = g.value(s, RDF.type)
+            if node_class_uri is None:
+                raise Exception(f"Node {s} has no class")
+
+            query = query_template.replace("[node_uri]", str(s))
+            query_result = self.__kg_service.graph_query(query, "text/csv")
+            df = pd.read_csv(StringIO(query_result), sep=",")
+            if len(df) > 0:
+                class_uri = df["class"][0]
+                if class_uri != str(node_class_uri):
+                    raise Exception(
+                        f"Node {s} has a different class {node_class_uri} "
+                        f"than the one in the graph {class_uri}"
+                    )
+
+        subjects_str = " ".join([f"<{str(s)}>" for s in subjects])
+
+        # Load the old data in case of failure
+        with open(load_nodes_query_file, "r") as f:
+            query_template = f.read()
+        query = query_template.replace("[nodes_uri]", subjects_str)
+        query_result_old = self.__kg_service.graph_query(query, "application/x-trig")
+        # print(query_result_old)
+
+        # deleting old nodes and properties
         with open(delete_nodes_query_file, "r") as f:
             query_template = f.read()
 
-        query = query_template.replace("[nodes_uri]", subjects)
+        query = query_template.replace("[nodes_uri]", subjects_str)
         query_result = self.__kg_service.graph_update(query)
+        if not query_result.ok:
+            raise Exception(
+                "Failed to delete existing properties of"
+                "the node. Reason: " + query_result.content
+            )
 
         with open(insert_data_query_file, "r") as f:
             query_template = f.read()
@@ -167,4 +206,22 @@ class SINDITKGConnector:
         query_result = self.__kg_service.graph_update(query)
         # print(f"inserted: {query_result}")
 
-        return query_result
+        if not query_result.ok:
+            # If the insert failed, we restore the old data
+            g_old = Graph()
+            g_old.parse(data=query_result_old, format="trig")
+            graph_data = str(g_old.serialize(format="longturtle"))
+            prefixes = ""
+            data = ""
+            for line in graph_data.split("\n"):
+                if line.startswith("PREFIX") or line.startswith("prefix"):
+                    prefixes += line + "\n"
+                else:
+                    data += line + "\n"
+            query = query_template.replace("[prefixes]", prefixes)
+            query = query.replace("[data]", data)
+            self.__kg_service.graph_update(query)
+
+            raise Exception(f"Failed to save the node. Reason: {query_result.content}")
+
+        return query_result.ok

@@ -86,4 +86,4 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
             auth=(self.__username, self.__password),
         )
 
-        return response.ok
+        return response

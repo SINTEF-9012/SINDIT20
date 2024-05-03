@@ -1,0 +1,4 @@
+SELECT ?class
+WHERE {
+  <[node_uri]> rdf:type ?class .
+}

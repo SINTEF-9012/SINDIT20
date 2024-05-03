@@ -22,4 +22,4 @@ def test_graph_query():
 
 
 def test_graph_update():
-    assert kg_service.graph_update(update) is True
+    assert kg_service.graph_update(update).ok is True

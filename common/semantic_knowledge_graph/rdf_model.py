@@ -1,9 +1,10 @@
 from typing import Any, ClassVar, List, Union, get_type_hints
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from rdflib import RDF, RDFS, XSD, Graph, URIRef
 from rdflib.term import BNode, Literal, Node
+from typing_extensions import Annotated
 
 
 class PropertyNotSetException(Exception):
@@ -20,21 +21,62 @@ class MapTo:
         self.inverse = inverse
 
 
+class URIRefNode(BaseModel):
+    uri: Annotated[Union[URIRef, str], Field(validate_default=True)]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
+
+    @field_validator("uri", mode="before")
+    @classmethod
+    def uri_validator(cls, v):
+        if isinstance(v, str):
+            return URIRef(v)
+        return v
+
+    def __str__(self):
+        return f"uri: {self.uri}"
+
+
 class RDFModel(BaseModel):
     """RDF Model"""
 
-    class_uri: ClassVar[URIRef] = None
-    mapping: ClassVar[dict] = None
-    # g: Graph
-    # rdf: str
-    uri: Union[URIRef, BNode, str] = None
-    label: str | Literal = None
+    CLASS_URI: ClassVar[URIRef] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class_uri: Annotated[Union[URIRef, str], Field(validate_default=True)] = CLASS_URI
+
+    mapping: ClassVar[dict] = None
+
+    uri: Annotated[Union[URIRef, BNode], Field(validate_default=True)] = None
+    label: Literal | str = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
+
+    @field_validator("uri", mode="before")
+    @classmethod
+    def uri_validator(cls, v):
+        if v is None:
+            return BNode(str(uuid4()))
+        elif isinstance(v, str):
+            return URIRef(v)
+        return v
+
+    @field_validator("class_uri", mode="before")
+    @classmethod
+    def class_uri_validator(cls, v):
+        if v is None:
+            v = cls.CLASS_URI
+        elif isinstance(v, str):
+            v = URIRef(v)
+
+        # if v is not the same as cls.CLASS_URI, raise error
+        if v != cls.CLASS_URI:
+            raise ValueError(f"class_uri must be the same as {cls.__name__}.CLASS_URI")
+
+        return v
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if self.class_uri is None:
+        if self.CLASS_URI is None:
             raise PropertyNotSetException(
                 f"class_uri in {self.__class__.__name__} class is not defined."
             )
@@ -42,15 +84,6 @@ class RDFModel(BaseModel):
             raise PropertyNotSetException(
                 f"mapping in {self.__class__.__name__} class is not defined."
             )
-
-        # This gets set in self._rdf()
-        # self._g = Graph()
-
-        if self.uri is not None and isinstance(self.uri, str):
-            self.uri = URIRef(self.uri)
-
-        if not hasattr(self, "uri") or self.uri is None:
-            self.uri = BNode(str(uuid4()))
 
         if hasattr(self, "label"):
             self.mapping["label"] = RDFS.label
@@ -134,7 +167,9 @@ class RDFModel(BaseModel):
         super().__setattr__(name, new_val) """
 
     def _process_attr(self, value: Any) -> None:
-        if (
+        if isinstance(value, URIRefNode):
+            new_val = value.uri
+        elif (
             isinstance(value, URIRef)
             or isinstance(value, BNode)
             or isinstance(value, Literal)
@@ -171,6 +206,10 @@ class RDFModel(BaseModel):
         # Set/reset g
         self._g = Graph()
 
+        # if it is the basemodel, return empty graph
+        if self.class_uri == RDFModel.CLASS_URI:
+            return self._g.serialize(format=format)
+
         self._g.add((self.uri, RDF.type, self.class_uri))
         for key, rdf_property in self.mapping.items():
             value = getattr(self, key, None)
@@ -184,6 +223,7 @@ class RDFModel(BaseModel):
                     self._g += value.g()
                 elif isinstance(value, list) or isinstance(value, tuple):
                     for item in value:
+                        item = self._process_attr(item)
                         if isinstance(item, RDFModel):
                             self._add(self.uri, rdf_property, item.uri)
                             # if type(item.uri) == BNode:
@@ -214,6 +254,9 @@ class RDFModel(BaseModel):
         created_individuals: dict = {},
         uri_class_mapping: dict = {},
     ):
+        # if len(g) <= 0:
+        #    raise ValueError("Graph is empty.")
+
         # for rdf triple in g
         return_individuals = created_individuals
         if return_individuals is None or return_individuals == {}:
@@ -235,7 +278,13 @@ class RDFModel(BaseModel):
                 node_class = uri_class_mapping.get(class_uri)
 
         if node_class is None:
-            raise ValueError("Cannot determine node_class from class_uri or node_uri.")
+            raise ValueError(
+                "Cannot determine node_class from class_uri "
+                "or node_uri. "
+                "Either the class_uri is not defined in the model "
+                "or the node does not exist "
+                "in the knowledge graph"
+            )
 
         for ind in individuals:
             # for ind, _, _ in g.triples(None, RDF.type, class_uri):
@@ -337,6 +386,8 @@ class RDFModel(BaseModel):
                             "{new_node_class_uri}"
                         )
                 else:
+                    # Instead of setting value to URIRef, create a URIRefNode
+                    value = URIRefNode(uri=value)
                     RDFModel._set_obj_att(ind_obj, att_name, value)
 
         elif isinstance(value, list):
