@@ -3,6 +3,7 @@ from typing import Union
 from fastapi import HTTPException
 
 from api.api import app
+from initialize_objects import sindit_kg_connector
 from knowledge_graph.graph_model import (
     SINDITKG,
     AbstractAsset,
@@ -13,7 +14,6 @@ from knowledge_graph.graph_model import (
     StreamingProperty,
     TimeseriesProperty,
 )
-from run_sindit import sindit_kg_connector
 from util.log import logger
 
 

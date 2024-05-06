@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from api.api import app
-from run_sindit import secret_vault
+from initialize_objects import secret_vault
 from util.log import logger
 
 
