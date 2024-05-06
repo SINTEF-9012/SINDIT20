@@ -63,7 +63,8 @@ class RDFModel(BaseModel):
     @field_validator("class_uri", mode="before")
     @classmethod
     def class_uri_validator(cls, v):
-        if v is None:
+        # if v is none or empty, set it to cls.CLASS_URI
+        if v is None or v == "":
             v = cls.CLASS_URI
         elif isinstance(v, str):
             v = URIRef(v)

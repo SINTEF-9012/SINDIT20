@@ -2,14 +2,13 @@ import logging
 
 import uvicorn
 
-from api import kg_endpoints  # noqa: F401
 from common.semantic_knowledge_graph.GraphDBPersistenceService import (
     GraphDBPersistenceService,
 )
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
-from common.vault.vault import FsVault, Vault
+from common.vault.vault import FsVault, HashiCorpVault, Vault
 from knowledge_graph.kg_connector import SINDITKGConnector
 from util.environment_and_configuration import (
     get_environment_variable,
@@ -38,13 +37,17 @@ if not use_hashicorp_vault:
     secret_vault: Vault = FsVault(get_environment_variable("FSVAULT_PATH"))
 else:
     # setting up hashicorp vault
-    pass
+    hashicorp_url = get_environment_variable("HASHICORP_URL")
+    hashicorp_token = get_environment_variable("HASHICORP_TOKEN")
+    secret_vault: Vault = HashiCorpVault(hashicorp_url, hashicorp_token)
 
 
 if __name__ == "__main__":
     logger.log(logging.INFO, "Starting SINDIT")
 
-    # secret_vault:Vault = FsVault(get_environment_variable("VAULT_PATH"))
+    # import the endpoints after intializing vault and kg connector
+    # due to circular dependencies
+    from api import kg_endpoints, vault_endpoints  # noqa: F401
 
     # Run fast API
     logger.info("Running FastAPI...")
