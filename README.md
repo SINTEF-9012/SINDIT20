@@ -10,3 +10,48 @@
 SINTEF Digital Twin project
 
 The development of this project has just begun...s
+
+
+## GrahDB setup
+
+Run these scripts from the GraphDB folder:
+```bash
+bash graphdb_install.sh
+bash graphdb_preload.sh
+bash graphdb_start.sh
+```
+
+To test your graphbd connection run from your base folder (/sindit):
+```bash
+poetry run python run_test.py
+```
+
+Go to localhost:7200 to configure graphdb
+
+## API uvicorn server
+You need to run `run_sindit.py`
+
+
+### Run using vscode launcher
+
+```bash
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "/Users/gorans/projects/monorepo/projects/sindit",
+            "justMyCode": false,
+            "envFile": "/Users/gorans/projects/monorepo/projects/sindit/environment_and_configuration/dev_environment_backend.env",
+
+        }
+    ]
+}
+```
