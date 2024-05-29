@@ -30,6 +30,10 @@ pytest = "^7.4.3"
 coverage = "^7.3.2"
 coverage-badge = "^1.1.0"
 
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.4"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
