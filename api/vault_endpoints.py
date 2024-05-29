@@ -1,8 +1,8 @@
 from fastapi import HTTPException
-
-from api.api import app
 from initialize_objects import secret_vault
 from util.log import logger
+
+from api.api import app
 
 
 @app.post("/vault/secret", tags=["Vault"])

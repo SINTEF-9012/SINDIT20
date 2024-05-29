@@ -1,13 +1,13 @@
 import logging
 
 import uvicorn
-
-from api import kg_endpoints, vault_endpoints  # noqa: F401
 from util.environment_and_configuration import (
     get_environment_variable,
     get_environment_variable_int,
 )
 from util.log import logger
+
+from api import kg_endpoints, vault_endpoints  # noqa: F401
 
 logger.log(logging.INFO, "Starting SINDIT")
 

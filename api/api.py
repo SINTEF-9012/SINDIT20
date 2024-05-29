@@ -1,5 +1,4 @@
 import fastapi
-
 from util.environment_and_configuration import ConfigGroups, get_configuration
 
 description = """This is the API for the SINDIT project.

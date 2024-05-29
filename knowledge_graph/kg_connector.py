@@ -1,13 +1,12 @@
 from io import StringIO
 
 import pandas as pd
-from rdflib import RDF, Graph, URIRef
-
 from common.semantic_knowledge_graph.rdf_model import RDFModel
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
 from knowledge_graph.graph_model import URIClassMapping
+from rdflib import RDF, Graph, URIRef
 
 load_node_query_file = "knowledge_graph/queries/load_node.sparql"
 load_nodes_query_file = "knowledge_graph/queries/load_nodes.sparql"

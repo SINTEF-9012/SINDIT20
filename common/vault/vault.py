@@ -1,6 +1,5 @@
 import hvac
 from jproperties import Properties
-
 from util.log import logger
 
 

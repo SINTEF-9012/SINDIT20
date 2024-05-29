@@ -1,5 +1,3 @@
-from rdflib import XSD, Graph, URIRef
-
 from common.semantic_knowledge_graph.GraphDBPersistenceService import (
     GraphDBPersistenceService,
 )
@@ -16,6 +14,7 @@ from knowledge_graph.graph_model import (
     URIClassMapping,
 )
 from knowledge_graph.kg_connector import SINDITKGConnector
+from rdflib import XSD, Graph, URIRef
 
 if __name__ == "__main__":
     g = Graph()

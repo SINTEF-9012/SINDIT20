@@ -1,8 +1,6 @@
 from typing import Union
 
 from fastapi import HTTPException
-
-from api.api import app
 from initialize_objects import sindit_kg_connector
 from knowledge_graph.graph_model import (
     SINDITKG,
@@ -15,6 +13,8 @@ from knowledge_graph.graph_model import (
     TimeseriesProperty,
 )
 from util.log import logger
+
+from api.api import app
 
 
 @app.get(

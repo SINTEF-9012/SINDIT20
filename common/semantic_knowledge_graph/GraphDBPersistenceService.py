@@ -1,7 +1,6 @@
 import time
 
 import requests
-
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
