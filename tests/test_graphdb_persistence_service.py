@@ -1,5 +1,4 @@
 import pytest
-
 from common.semantic_knowledge_graph.GraphDBPersistenceService import (
     GraphDBPersistenceService,
 )
