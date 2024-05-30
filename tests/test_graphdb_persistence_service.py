@@ -18,19 +18,19 @@ def SetUp():
     return kg_service
 
 
-@pytest.mark.skip(reason="not working in gitlab ci/cd pipeline")
+@pytest.mark.gitlab_exempt(reason="not working in gitlab ci/cd pipeline")
 def test_is_connected():
     kg_service = SetUp()
     assert kg_service.is_connected()
 
 
-@pytest.mark.skip(reason="not working in gitlab ci/cd pipeline")
+@pytest.mark.gitlab_exempt(reason="not working in gitlab ci/cd pipeline")
 def test_graph_query():
     kg_service = SetUp()
     assert kg_service.graph_query(query, "application/sparql-results+json") is not None
 
 
-@pytest.mark.skip(reason="not working in gitlab ci/cd pipeline")
+@pytest.mark.gitlab_exempt(reason="not working in gitlab ci/cd pipeline")
 def test_graph_update():
     kg_service = SetUp()
     assert kg_service.graph_update(update).ok is True

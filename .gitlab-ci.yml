@@ -44,7 +44,7 @@ pytest:
   extends: .base-rules
   script:
     - pip install junit-xml
-    - poetry run pytest --junitxml=junit.xml
+    - poetry run pytest --junitxml=junit.xml -m "not slow and not gitlab_exempt"
   artifacts:
     when: always
     expire_in: 1 weeks
@@ -61,7 +61,7 @@ coverage:
   script:
     - pip install coverage
     - pip install coverage-badge
-    - poetry run coverage run -m pytest
+    - poetry run coverage run -m pytest -m "not slow and not gitlab_exempt"
     - coverage report
     - coverage xml -o coverage.xml
     - coverage-badge -o coverage.svg

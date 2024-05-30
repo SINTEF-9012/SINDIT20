@@ -42,3 +42,7 @@ minversion = "7.0"
 testpaths = [
     "tests",
 ]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gitlab_exempt: marks tests not working in GitLab CI/CD pipeline"
+]
