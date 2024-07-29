@@ -42,7 +42,7 @@ class MQTTConnector:
         self.timeout = timeout
         self.port = port
         self.broker_address = broker_address
-        self.client = mqtt.Client()
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.messages = {}  # Dict to store subscribed messages
@@ -62,7 +62,7 @@ class MQTTConnector:
         if self.thread is not None:
             self.thread.join()
 
-    def on_connect(self, client, userdata, flags, rc):
+    def on_connect(self, client, userdata, flags, rc, properties=None):
         print("Connected with result code " + str(rc))
 
     def on_message(self, client, userdata, msg):
