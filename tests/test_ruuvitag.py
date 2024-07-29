@@ -1,7 +1,6 @@
 import asyncio
 
 import pytest
-
 from ruuvitag.ruuvitag_datacollector import get_data_async
 from ruuvitag.ruuvitag_discoverer import discover_sensors
 
