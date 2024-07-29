@@ -14,7 +14,7 @@ authors = ["author <author@sintef.no>"]
 description = "SINTEF Digital Twin Framework"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.13"
 requests = "^2.31.0"
 httpx = "^0.26.0"
 mkdocs = "^1.5.3"
@@ -28,6 +28,7 @@ tqdm = "^4.66.4"
 pytest-mock = "^3.14.0"
 pytest-asyncio = "^0.23.8"
 ruuvitag-sensor = "^2.3.1"
+bleak = "^0.22.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.3"
