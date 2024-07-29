@@ -54,4 +54,5 @@ testpaths = [
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "gitlab_exempt: marks tests not working in GitLab CI/CD pipeline"
+    "ble: marks tests that require BLE device",
 ]
