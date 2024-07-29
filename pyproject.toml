@@ -24,6 +24,9 @@ rdflib = "7.0.0"
 jproperties = "2.1.1"
 hvac = "2.2.0"
 pandas ="2.2.2"
+tqdm = "^4.66.4"
+pytest-mock = "^3.14.0"
+pytest-asyncio = "^0.23.8"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.3"
