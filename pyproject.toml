@@ -12,6 +12,7 @@ name = "SINDIT"
 version = "0.0.1"
 authors = ["author <author@sintef.no>"]
 description = "SINTEF Digital Twin Framework"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"

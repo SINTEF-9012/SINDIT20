@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from ruuvitag.ruuvitag_datacollector import get_data_async
 from ruuvitag.ruuvitag_discoverer import discover_sensors
 
@@ -12,6 +13,8 @@ class Args:
     no_print_data = True
 
 
+@pytest.mark.gitlab_exempt
+@pytest.mark.ble
 @pytest.mark.asyncio
 async def test_discover_sensors(mocker):
     # Mock the RuuviTagSensor.get_data_async method
@@ -29,6 +32,8 @@ async def test_discover_sensors(mocker):
     await discover_sensors(args)
 
 
+@pytest.mark.gitlab_exempt
+@pytest.mark.ble
 @pytest.mark.asyncio
 async def test_ruuvitag_datacollector(mocker):
     # Mock asyncio.sleep to avoid the RuntimeWarning
