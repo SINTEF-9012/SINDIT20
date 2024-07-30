@@ -4,10 +4,6 @@ from connectors.connector_influxdb import InfluxDBConnector
 from connectors.connector_mqtt import MQTTConnector
 from tests.fake_mqtt_broker import FakeBroker
 
-# mock mqtt broker?
-# https://stackoverflow.com/questions/73985389/is-there-a-mock-mqtt-broker-for-unit-testing
-#
-
 
 class TestMQTTConnector:
     is_running_on_gitlab = False
