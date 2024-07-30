@@ -3,8 +3,6 @@ import os
 from connectors.connector_influxdb import InfluxDBConnector
 from connectors.connector_mqtt import MQTTConnector
 
-from tests.fake_mqtt_broker import FakeBroker
-
 
 class TestMQTTConnector:
     is_running_on_gitlab = False
@@ -15,8 +13,9 @@ class TestMQTTConnector:
         except KeyError:
             self.is_running_on_gitlab = False
         if self.is_running_on_gitlab == "true":
-            self.broker = FakeBroker()
-            self.broker.start()
+            # self.broker = FakeBroker()
+            # self.broker.start()
+            self.broker = None
         self.mqtt = MQTTConnector()
 
     def teardown_method(self):
