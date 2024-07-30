@@ -1,5 +1,8 @@
+import sys
+
 from connectors.connector_influxdb import InfluxDBConnector
 from connectors.connector_mqtt import MQTTConnector
+from tests.fake_mqtt_broker import FakeBroker
 
 # mock mqtt broker?
 # https://stackoverflow.com/questions/73985389/is-there-a-mock-mqtt-broker-for-unit-testing
@@ -7,7 +10,17 @@ from connectors.connector_mqtt import MQTTConnector
 
 class TestMQTTConnector:
     def setup_method(self):
+        if sys.platform != "darwin":
+            self.broker = FakeBroker("unix")
         self.mqtt = MQTTConnector()
+
+    def teardown_method(self):
+        if sys.platform != "darwin":
+            self.broker.stop()
+        self.mqtt.stop()
+
+    def test_system(self):
+        assert sys.platform == "darwin"
 
     def test_init(self):
         """Test default values of MQTTConnector."""
