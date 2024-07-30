@@ -15,7 +15,7 @@ class TestMQTTConnector:
         except KeyError:
             self.is_running_on_gitlab = False
         if self.is_running_on_gitlab == "true":
-            self.broker = FakeBroker()
+            self.broker = FakeBroker("tcp")
             self.broker.start()
         self.mqtt = MQTTConnector()
 
