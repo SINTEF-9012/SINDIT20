@@ -1,4 +1,4 @@
-import sys
+import os
 
 from connectors.connector_influxdb import InfluxDBConnector
 from connectors.connector_mqtt import MQTTConnector
@@ -10,18 +10,23 @@ from tests.fake_mqtt_broker import FakeBroker
 
 
 class TestMQTTConnector:
+    is_running_on_gitlab = False
+
     def setup_method(self):
-        if sys.platform != "darwin":
+        try:
+            self.is_running_on_gitlab = os.environ["IS_RUNNING_ON_GITLAB"]
+        except KeyError:
+            self.is_running_on_gitlab = False
+            print("not running on gitlab: {is_running_on_gitlab}")
+        if self.is_running_on_gitlab:
             self.broker = FakeBroker("unix")
+            self.broker.start()
         self.mqtt = MQTTConnector()
 
     def teardown_method(self):
-        if sys.platform != "darwin":
+        if self.is_running_on_gitlab:
             self.broker.stop()
         self.mqtt.stop()
-
-    def test_system(self):
-        assert sys.platform == "darwin"
 
     def test_init(self):
         """Test default values of MQTTConnector."""
