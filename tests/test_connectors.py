@@ -1,7 +1,7 @@
 import pytest
 
-from ..connectors.connector_influxdb import InfluxDBConnector
-from ..connectors.connector_mqtt import MQTTConnector
+from connectors.connector_influxdb import InfluxDBConnector
+from connectors.connector_mqtt import MQTTConnector
 
 
 @pytest.mark.gitlab_exempt(reason="not working in gitlab ci/cd pipeline")
