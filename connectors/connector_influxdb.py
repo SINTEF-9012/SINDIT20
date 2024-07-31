@@ -30,11 +30,11 @@ class InfluxDBConnector:
 
     def __init__(
         self,
-        bucket: str,
+        bucket: str = None,
         host: str = "localhost",
         port: int = 8086,
         org: str = None,
-        token=None,
+        token: str = None,
     ):
         self.host = host
         self.port = str(port)
@@ -60,7 +60,7 @@ class InfluxDBConnector:
         """Instantiate a connection to the InfluxDB server.
 
         Raises:
-            ValueError: If the token is not provided.
+            ValueError: If the token is not set.
 
         kwargs:
             Additional keyword arguments to pass to the InfluxDBClient.

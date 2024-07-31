@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 class MQTTConnector:
     """A class representing an MQTT connector.
 
-    Attributes:
+    Args:
         host (str): The address of the MQTT broker.
             Default is "localhost".
         port (int): The port number of the MQTT broker. Default is 1883.
@@ -16,6 +16,8 @@ class MQTTConnector:
             Default is 60 seconds.
         username (str): The username for connecting to the MQTT broker.
         password (str): The password for connecting to the MQTT broker.
+
+    Attributes:
         client (mqtt.Client): The MQTT client instance.
         messages (dict): A dictionary to store subscribed messages.
         thread (threading.Thread): The thread for running the MQTT client loop.
@@ -24,11 +26,7 @@ class MQTTConnector:
         start(): Start the MQTT client and connect to the broker.
             The connection is started in a separate thread.
         stop(): Stop the MQTT client gracefully.
-        on_connect(client, userdata, flags, rc):
-            Callback function for MQTT client on connect event.
-        on_message(client, userdata, msg):
-            Callback function for MQTT client on message event.
-        subscribe(topic=None): Subscribe to a topic.
+        subscribe(topic=None): Subscribe to a MQTT topic.
         get_messages(): Get the stored messages.
 
     """
