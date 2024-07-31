@@ -14,7 +14,7 @@ class InfluxDBConnector:
         host (str): The hostname or IP address of the InfluxDB server.
         port (int): The port number of the InfluxDB server.
         org (str): The organization name associated with the InfluxDB instance.
-        bucket (str): The name of the bucket in the InfluxDB database.
+        bucket (str): Default name of the bucket in the InfluxDB database.
         token (str, optional):
             The authentication token for accessing the InfluxDB instance.
             Defaults to None.
@@ -52,6 +52,15 @@ class InfluxDBConnector:
         """
         self.__token = token
 
+    def set_bucket(self, bucket):
+        """Set the name of the bucket in the InfluxDB database.
+
+        Args:
+            bucket (str): The name of the bucket.
+
+        """
+        self.bucket = bucket
+
     def disconnect(self):
         """Disconnect from the InfluxDB server."""
         self.client.close()
@@ -88,6 +97,22 @@ class InfluxDBConnector:
         else:
             raise ConnectionError("Failed to connect to InfluxDB")
 
+    def _check_if_bucket_name_is_set(self, bucket: str = None) -> bool:
+        """Check if bucket name is set.
+        Returns true if bucket name is set, otherwise raises ValueError.
+        """
+        bucket_is_set = False
+        if bucket is None:
+            if self.bucket is None:
+                raise ValueError("Bucket name is required.")
+            else:
+                bucket_is_set = True
+        else:
+            self.bucket = bucket
+            bucket_is_set = True
+
+        return bucket_is_set
+
     def query(self, query):
         """Execute a Flux query on the InfluxDB database.
 
@@ -98,14 +123,16 @@ class InfluxDBConnector:
             InfluxDB result: The query result.
 
         """
-        result = self.client.query_api().query(query)
-        return result.raw
+        # TODO: Evaluate if this is a security risk.
+        # If it is, then the client should not be exposed either.
+        return self.client.query_api().query(query)
 
     def query_field(
         self,
         field: str,
         start: str = "-1h",
         stop: str = "now()",
+        bucket: str = None,
         query_return_type: str = "flux",
     ):
         """Query the specified field from the InfluxDB database.
@@ -128,6 +155,7 @@ class InfluxDBConnector:
         Raises:
             ValueError: If an invalid query return type is specified.
         """
+        self._check_if_bucket_name_is_set(bucket)
         query = f"""
             from(bucket: "{self.bucket}")
             |> range(start: {start}, stop: {stop})
@@ -146,3 +174,64 @@ class InfluxDBConnector:
             raise ValueError(
                 ("Invalid query return type." 'Choose either "pandas" or "flux".')
             )
+
+    def get_buckets(self):
+        """Get list of buckets in the InfluxDB database.
+
+        Returns:
+            list: Buckets
+
+        """
+        return self.client.buckets_api().find_buckets().buckets
+
+    def get_bucket_names(self):
+        """Get list of bucket names in the InfluxDB database.
+
+        Returns:
+            list: Bucket names.
+
+        """
+        buckets = self.get_buckets()
+        return [bucket.name for bucket in buckets]
+
+    def extract_keys(self, result: list):
+        keys = []
+        for table in result:
+            for record in table.records:
+                keys.append(record["_value"])
+        return keys
+
+    def get_tags(self, bucket: str = None):
+        """Get list of tags in the specified bucket.
+
+        Args:
+            bucket (str): The name of the bucket.
+
+        Returns:
+            list: Tags
+
+        """
+        self._check_if_bucket_name_is_set(bucket)
+        tags_query = f"""
+            import "influxdata/influxdb/schema"
+            schema.tagKeys(bucket: "{self.bucket}")
+            """
+        result = self.client.query_api().query(tags_query)
+        return self.extract_keys(result)
+
+    def get_fields(self, bucket: str = None):
+        """Get list of fields in the specified bucket.
+
+        Args:
+            bucket (str): The name of the bucket.
+
+        Returns:
+            list: Fields
+        """
+        self._check_if_bucket_name_is_set(bucket)
+        fields_query = f"""
+        import "influxdata/influxdb/schema"
+        schema.fieldKeys(bucket: "{self.bucket}")
+        """
+        result = self.client.query_api().query(fields_query)
+        return self.extract_keys(result)
