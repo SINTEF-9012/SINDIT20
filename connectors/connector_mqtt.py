@@ -41,7 +41,7 @@ class MQTTConnector:
         password: str = None,
     ):
         self.host = host
-        self.port = port
+        self.port = int(port)
         self.topic = topic
         self.timeout = timeout
         self.__username = username
