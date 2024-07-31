@@ -25,12 +25,18 @@ for t in messages['sensor/temperature']['timestamp']:
 ```python
 import os
 from dotenv import load_dotenv
-env = load_dotenv()
-client = InfluxDBConnector(bucket='ruuvitag', token=os.environ['INFLUX_ALLACCESS'])
-client = client.connect()
+load_dotenv('path/to/.env')
+client = InfluxDBConnector(token=os.environ['INFLUX_ACCESS_TOKEN'])
+client.connect()
+buckets = client.get_bucket_names()
+bucket = 'ruuvitag'
+client.set_bucket(bucket=bucket)
+tags = client.get_tags()
+fields = client.get_fields()
 field = 'humidity'
 df = client.query_field(field=field, query_return_type='pandas')
 df.plot(x='_time', y=field, kind='line')
+client.disconnect()
 ```
 
 ![Image](../docs/img/humidity_output.png)
