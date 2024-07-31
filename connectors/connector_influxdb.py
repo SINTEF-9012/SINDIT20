@@ -235,3 +235,8 @@ class InfluxDBConnector:
         """
         result = self.client.query_api().query(fields_query)
         return self.extract_keys(result)
+
+    def get_data_async(self):
+        """Get the data asynchronously as a stream."""
+        # TODO: Implement this method?
+        pass
