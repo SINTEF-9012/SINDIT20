@@ -8,12 +8,14 @@ class MQTTConnector:
     """A class representing an MQTT connector.
 
     Attributes:
-        broker_address (str): The address of the MQTT broker.
+        host (str): The address of the MQTT broker.
             Default is "localhost".
         port (int): The port number of the MQTT broker. Default is 1883.
         topic (str): The topic to subscribe to. Default is "#".
         timeout (int): The timeout value for connecting to the MQTT broker.
             Default is 60 seconds.
+        username (str): The username for connecting to the MQTT broker.
+        password (str): The password for connecting to the MQTT broker.
         client (mqtt.Client): The MQTT client instance.
         messages (dict): A dictionary to store subscribed messages.
         thread (threading.Thread): The thread for running the MQTT client loop.
@@ -33,25 +35,32 @@ class MQTTConnector:
 
     def __init__(
         self,
-        broker_address: str = "localhost",
+        host: str = "localhost",
         port: int = 1883,
         topic: str = "#",
         timeout: int = 60,
+        username: str = None,
+        password: str = None,
     ):
+        self.host = host
+        self.port = port
         self.topic = topic
         self.timeout = timeout
-        self.port = port
-        self.broker_address = broker_address
+        self.__username = username
+        self.__password = password
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        self.client.on_connect = self.on_connect
-        self.client.on_message = self.on_message
+        self.client.on_connect = self._on_connect
+        self.client.on_message = self._on_message
         self.messages = {}  # Dict to store subscribed messages
         self.thread = None
 
     def start(self):
         """Start the MQTT client and connect to the broker
         in a separate thread."""
-        self.client.connect(self.broker_address, self.port, self.timeout)
+        if self.__username and self.__password:
+            # set user and pwd if provided
+            self.client.username_pw_set(self.__username, self.__password)
+        self.client.connect(self.host, self.port, self.timeout)
         self.thread = threading.Thread(target=self.client.loop_forever)
         self.thread.start()
 
@@ -62,10 +71,10 @@ class MQTTConnector:
         if self.thread is not None:
             self.thread.join()
 
-    def on_connect(self, client, userdata, flags, rc, properties=None):
+    def _on_connect(self, client, userdata, flags, rc, properties=None):
         print("Connected with result code " + str(rc))
 
-    def on_message(self, client, userdata, msg):
+    def _on_message(self, client, userdata, msg):
         topic = msg.topic
         payload = msg.payload.decode("utf-8")
         print(f"Received message on topic {topic}: {payload}")

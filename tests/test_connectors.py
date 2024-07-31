@@ -14,7 +14,7 @@ class TestMQTTConnector:
 
     def test_init(self):
         """Test default values of MQTTConnector."""
-        assert self.mqtt.broker_address == "localhost"
+        assert self.mqtt.host == "localhost"
         assert self.mqtt.port == 1883
         assert self.mqtt.topic == "#"
         assert self.mqtt.timeout == 60

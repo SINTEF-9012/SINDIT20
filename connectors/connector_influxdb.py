@@ -56,16 +56,28 @@ class InfluxDBConnector:
         """Disconnect from the InfluxDB server."""
         self.client.close()
 
-    def connect(self):
+    def connect(self, **kwargs):
         """Instantiate a connection to the InfluxDB server.
 
         Raises:
             ValueError: If the token is not provided.
 
+        kwargs:
+            Additional keyword arguments to pass to the InfluxDBClient.
+            timeout (int): The timeout value for the connection.
+            verify_ssl (bool):
+                Set this to false to skip verifying SSL certificate
+                when calling API from https server.
+            See more at:
+            https://github.com/influxdata/influxdb-client-python/blob/master/influxdb_client/client/influxdb_client.py
+
         """
         if self.__token is not None:
             client = InfluxDBClient(
-                url=f"http://{self.host}:{self.port}", token=self.__token, org=self.org
+                url=f"{self.host}:{self.port}",
+                token=self.__token,
+                org=self.org,
+                **kwargs,
             )
             self.client = client
         else:
