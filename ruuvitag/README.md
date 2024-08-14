@@ -23,6 +23,11 @@ To start an instance of Telegraf, provide a configuration file:
 telegraf --config telegraf.conf
 ```
 
+To run telegraf with multiple configuration files, specify config directory:
+```BASH
+telegraf --config-directory /path/to/telegraf.d
+```
+
 ## Mosquitto MQTT broker
 
 install the Mosquitto MQTT broker, and start the broker:
