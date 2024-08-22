@@ -89,7 +89,7 @@ class SINDITKGConnector:
 
         return ret
 
-    def load_nodes_by_class(self, class_uri, depth: int = 1) -> list:
+    def load_nodes_by_class(self, class_uri: str, depth: int = 1) -> list:
         with open(get_uris_by_class_uri_query_file, "r") as f:
             query_template = f.read()
 
@@ -101,7 +101,7 @@ class SINDITKGConnector:
         for uri in df["node"]:
             ret = self._load_node(
                 uri,
-                URIClassMapping[class_uri],
+                URIClassMapping.get(URIRef(class_uri)),
                 depth,
                 created_individuals=created_individuals,
             )
@@ -111,6 +111,12 @@ class SINDITKGConnector:
 
         # print(created_individuals)
         # print(nodes)
+        return nodes
+
+    def load_all_nodes(self) -> list:
+        nodes = []
+        for class_uri in URIClassMapping.keys():
+            nodes += self.load_nodes_by_class(class_uri, depth=1)
         return nodes
 
     def delete_node(self, node_uri: str) -> bool:

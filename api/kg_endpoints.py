@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 from fastapi import HTTPException
 from initialize_objects import sindit_kg_connector
@@ -43,6 +43,66 @@ async def get_node(
         return sindit_kg_connector.load_node_by_uri(node_uri, depth=depth)
     except Exception as e:
         logger.error(f"Error getting node by URI {node_uri}: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get(
+    "/kg/nodes_by_class",
+    tags=["Knowledge Graph"],
+    response_model_exclude_none=True,
+    response_model=List[
+        Union[
+            AbstractAsset,
+            SINDITKG,
+            Connection,
+            AbstractAssetProperty,
+            DatabaseProperty,
+            StreamingProperty,
+            TimeseriesProperty,
+            File,
+        ]
+    ],
+)
+async def get_nodes_by_class(
+    node_class: str,
+    depth: int = 1,
+):
+    """
+    Get a node from the knowledge graph by its class.
+    """
+    try:
+        return sindit_kg_connector.load_nodes_by_class(node_class, depth=depth)
+    except Exception as e:
+        logger.error(f"Error getting node by class {node_class}: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# get all nodes
+@app.get(
+    "/kg/nodes",
+    tags=["Knowledge Graph"],
+    response_model_exclude_none=True,
+    response_model=List[
+        Union[
+            AbstractAsset,
+            SINDITKG,
+            Connection,
+            AbstractAssetProperty,
+            DatabaseProperty,
+            StreamingProperty,
+            TimeseriesProperty,
+            File,
+        ]
+    ],
+)
+async def get_nodes():
+    """
+    Get all nodes from the knowledge graph.
+    """
+    try:
+        return sindit_kg_connector.load_all_nodes()
+    except Exception as e:
+        logger.error(f"Error getting all nodes: {e}")
         raise HTTPException(status_code=404, detail=str(e))
 
 
