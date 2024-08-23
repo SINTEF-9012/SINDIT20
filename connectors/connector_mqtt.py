@@ -2,9 +2,11 @@ import threading
 import time
 
 import paho.mqtt.client as mqtt
+from connectors.connector import Connector
+from util.log import logger
 
 
-class MQTTConnector:
+class MQTTConnector(Connector):
     """A class representing an MQTT connector.
 
     Args:
@@ -70,28 +72,33 @@ class MQTTConnector:
             self.thread.join()
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
-        print("Connected with result code " + str(rc))
+        logger.info("Connected with result code " + str(rc))
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic
         payload = msg.payload.decode("utf-8")
-        print(f"Received message on topic {topic}: {payload}")
-        if topic not in self.messages:
-            self.messages[topic] = {"timestamp": [], "payload": []}
+        logger.info(f"Received message on topic {topic}: {payload}")
+        #if topic not in self.messages:
+        #    self.messages[topic] = {"timestamp": [], "payload": []}
         # if payload is number, convert it to float
         try:
             payload = float(payload)
         except ValueError:
             pass
-        self.messages[topic]["payload"].append(payload)
-        self.messages[topic]["timestamp"].append(time.time())
+        #self.messages[topic]["payload"].append(payload)
+        #self.messages[topic]["timestamp"].append(time.time())
+
+        self.messages[topic] = {"timestamp": time.time(), "payload": payload}
+
+        # update the properties value
+        self.notify()
 
     def subscribe(self, topic=None):
         """Subscribe to a topic."""
         if topic is None:
             topic = self.topic
         self.client.subscribe(topic)
-        print(f"Subscribed to {topic}")
+        logger.info(f"Subscribed to {topic}")
 
     def get_messages(self):
         """Get the stored messages.

@@ -1,7 +1,8 @@
 from influxdb_client import InfluxDBClient
+from connectors.connector import Connector
+from util.log import logger
 
-
-class InfluxDBConnector:
+class InfluxDBConnector(Connector):
     """InfluxDB v2.0 connector class.
 
     This class provides methods to connect to and interact with an
