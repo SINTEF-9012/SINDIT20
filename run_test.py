@@ -73,12 +73,12 @@ if __name__ == "__main__":
     # g += fluxdb_connection.g
     # g += temperature.g
     # g += humidity.g
-    g += asset.g()
+    #g += asset.g()
 
-    print(g.serialize(format="longturtle"))
+    #print(g.serialize(format="longturtle"))
 
-    print(asset)
-    print(asset.model_dump_json(exclude_none=True, indent=4))
+    #print(asset)
+    #print(asset.model_dump_json(exclude_none=True, indent=4))
 
     # xyz_connection = Connection(
     #     #uri=URIRef("http://sindit.sintef.no/2.0#xyz-connection"),
@@ -106,14 +106,14 @@ if __name__ == "__main__":
     # print(xyz_connection)
     # print(xyz_connection.model_dump_json(exclude_none=True, indent=4))
 
-    ret = RDFModel.deserialize(
-        g=g,
-        node_class=AbstractAsset,
-        node_uri=URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
-        uri_class_mapping=URIClassMapping,
-    )
+    # ret = RDFModel.deserialize(
+    #     g=g,
+    #     node_class=AbstractAsset,
+    #     node_uri=URIRef("http://sindit.sintef.no/2.0#factory-sensor"),
+    #     uri_class_mapping=URIClassMapping,
+    # )
 
-    print(ret["http://sindit.sintef.no/2.0#factory-sensor"])
+    #print(ret["http://sindit.sintef.no/2.0#factory-sensor"])
 
     kg_service: SemanticKGPersistenceService = GraphDBPersistenceService(
         "localhost", "7200", "SINDIT", "sindit20", "sindit20"

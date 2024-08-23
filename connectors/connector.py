@@ -28,7 +28,7 @@ class Connector:
         """
         logger.debug(f"Notify all attached properties")
         for observer in self._observers:
-            observer.update(self, **kwargs)
+            observer.update_value(self, **kwargs)
 
 
 class Property(ABC):
@@ -36,7 +36,7 @@ class Property(ABC):
     uri =  None
     
     @abstractmethod
-    def update(self, connector: Connector, **kwargs) -> None:
+    def update_value(self, connector: Connector, **kwargs) -> None:
         """
         Receive update from connector
         """
