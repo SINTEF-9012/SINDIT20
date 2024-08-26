@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from initialize_objects import secret_vault
+from initialize_vault import secret_vault
 from util.log import logger
 
 from api.api import app

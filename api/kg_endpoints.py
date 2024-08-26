@@ -1,7 +1,8 @@
 from typing import Union, List
 
 from fastapi import HTTPException
-from initialize_objects import sindit_kg_connector
+from initialize_connectors import update_connection_node, update_propery_node
+from initialize_kg_connectors import sindit_kg_connector
 from knowledge_graph.graph_model import (
     SINDITKG,
     AbstractAsset,
@@ -153,6 +154,9 @@ async def save_connection(node: Connection) -> dict:
     """
     try:
         result = sindit_kg_connector.save_node(node)
+        if result:
+            update_connection_node(node)
+            
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -167,6 +171,10 @@ async def save_asset_property(node: AbstractAssetProperty) -> dict:
     """
     try:
         result = sindit_kg_connector.save_node(node)
+        
+        if result:
+            update_propery_node(node)
+            
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -195,6 +203,10 @@ async def save_streaming_property(node: StreamingProperty) -> dict:
     """
     try:
         result = sindit_kg_connector.save_node(node)
+        
+        if result:
+            update_propery_node(node)
+            
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")

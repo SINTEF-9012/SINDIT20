@@ -4,6 +4,7 @@ import time
 import paho.mqtt.client as mqtt
 from connectors.connector import Connector
 from util.log import logger
+from initialize_kg_connectors import sindit_kg_connector
 
 
 class MQTTConnector(Connector):
@@ -41,6 +42,7 @@ class MQTTConnector(Connector):
         timeout: int = 60,
         username: str = None,
         password: str = None,
+        uri: str = None,
     ):
         self.host = host
         self.port = int(port)
@@ -53,7 +55,12 @@ class MQTTConnector(Connector):
         self.client.on_message = self._on_message
         self.messages = {}  # Dict to store subscribed messages
         self.thread = None
-
+        
+        self.uri = f"mqtt://{host}:{port}/"
+        if uri is not None:
+            self.uri = uri
+            
+            
     def start(self):
         """Start the MQTT client and connect to the broker
         in a separate thread."""
@@ -72,12 +79,23 @@ class MQTTConnector(Connector):
             self.thread.join()
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
-        logger.info("Connected with result code " + str(rc))
+        logger.info(f"Connector {self.uri} connected to {self.host}:{self.port} with result code " + str(rc))
+      
+        
+         #Update the knowledge graph with the new value
+        node = None
+        try:
+            node = sindit_kg_connector.load_node_by_uri(self.uri)
+        except:
+            pass
+        if node is not None:
+            node.isConnected = True
+            sindit_kg_connector.save_node(node, update_value=True)
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic
         payload = msg.payload.decode("utf-8")
-        logger.info(f"Received message on topic {topic}: {payload}")
+        logger.debug(f"Received message on topic {topic}: {payload}")
         #if topic not in self.messages:
         #    self.messages[topic] = {"timestamp": [], "payload": []}
         # if payload is number, convert it to float
@@ -98,7 +116,7 @@ class MQTTConnector(Connector):
         if topic is None:
             topic = self.topic
         self.client.subscribe(topic)
-        logger.info(f"Subscribed to {topic}")
+        logger.debug(f"Subscribed to {topic}")
 
     def get_messages(self):
         """Get the stored messages.

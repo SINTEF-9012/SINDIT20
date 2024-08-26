@@ -1,12 +1,16 @@
 from io import StringIO
 
 import pandas as pd
-from common.semantic_knowledge_graph.rdf_model import RDFModel
+from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
-from knowledge_graph.graph_model import URIClassMapping
+from knowledge_graph.graph_model import SINDITKG, AbstractAsset, AbstractAssetProperty, Connection, StreamingProperty, URIClassMapping
 from rdflib import RDF, Graph, URIRef
+
+#from initialize_connectors import update_connection_node, update_propery_node
+
+
 
 load_node_query_file = "knowledge_graph/queries/load_node.sparql"
 load_nodes_query_file = "knowledge_graph/queries/load_nodes.sparql"
@@ -137,6 +141,7 @@ class SINDITKGConnector:
     def save_node(
         self,
         node: RDFModel,
+        update_value: bool = False,
     ) -> bool:
         """Save a node to the knowledge graph. Create a new node if it
         does not exist, update it otherwise.
@@ -228,5 +233,21 @@ class SINDITKGConnector:
             self.__kg_service.graph_update(query)
 
             raise Exception(f"Failed to save the node. Reason: {query_result.content}")
+        
+        #if query_result.ok and not update_value:
+            #update the attributies of the property and connection nodes
+            #warning: this only updates if the node is property or connection
+            
+            #if isinstance(node, AbstractAssetProperty):
+            #    update_propery_node(node)
+                
+            #elif isinstance(node, Connection):
+            #    update_connection_node(node)
+                        
+            
+                        
+                        
 
         return query_result.ok
+
+

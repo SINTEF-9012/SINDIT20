@@ -3,6 +3,7 @@ import json
 from connectors.connector import Connector, Property
 from connectors.connector_mqtt import MQTTConnector
 from util.log import logger
+from initialize_kg_connectors import sindit_kg_connector
 
 class MQTTProperty(Property):
     
@@ -16,9 +17,10 @@ class MQTTProperty(Property):
         
     
     def attach(self, connector: Connector) -> None:
+        self.connector = connector
         connector.attach(self)
         connector.subscribe(self.topic)
-        logger.debug(f"Attaching {self.uri} to {connector}")
+        logger.debug(f"Attaching property {self.uri} to connector {connector.uri}")
         
     
     def update_value(self, connector: Connector) -> None:
@@ -39,9 +41,21 @@ class MQTTProperty(Property):
                     if extracted_value is not None:
                         self.value = extracted_value
                         logger.debug(f"Property {self.uri} updated with value {self.value}")
+                        
+                        #Update the knowledge graph with the new value
+                        node = None
+                        try:
+                            node = sindit_kg_connector.load_node_by_uri(self.uri)
+                        except:
+                            pass
+                        if node is not None:
+                            node.propertyValue = str(self.value)
+                            node.propertyValueTimestamp = str(self.timestamp)
+                            sindit_kg_connector.save_node(node, update_value=True)
                     else:
                         logger.error(f"Property {self.uri} could not extract value from {value}, using path_or_code {self.path_or_code}")
-                #TODO: Update the knowledge graph with the new value
+                        
+                
                 
     def _extract_value_from_json(self, json_data, path_or_code):
         try:

@@ -54,6 +54,7 @@ class AbstractAssetProperty(RDFModel):
         "propertyDataType": GRAPH_MODEL.propertyDataType,
         "propertyValue": GRAPH_MODEL.propertyValue,
         "propertyName": GRAPH_MODEL.propertyName,
+        "propertyValueTimestamp": GRAPH_MODEL.propertyValueTimestamp,
     }
 
     propertyUnit: Union[URIRefNode, Literal, str] = None
@@ -62,6 +63,7 @@ class AbstractAssetProperty(RDFModel):
     propertyDataType: Literal | str = None
     propertyValue: Literal | str = None
     propertyName: Literal | str = None
+    propertyValueTimestamp: Literal | str = None
 
 
 class DatabaseProperty(AbstractAssetProperty):
@@ -82,11 +84,13 @@ class StreamingProperty(AbstractAssetProperty):
 
     streamingPropertyConnection: Union[URIRefNode, Connection] = None
     streamingTopic: Literal | str = None
+    streamingPath: Literal | str = None
 
     mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
         "streamingPropertyConnection": GRAPH_MODEL.streamingPropertyConnection,
         "streamingTopic": GRAPH_MODEL.streamingTopic,
+        "streamingPath": GRAPH_MODEL.streamingPath,
     }
 
 

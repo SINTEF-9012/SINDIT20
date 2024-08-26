@@ -6,28 +6,31 @@ from util.log import logger
 
 class Connector:
 
-    _observers: List[Property] = []
+    _observers: dict = {}
+    uri = None
 
     def attach(self, property: Property) -> None:
         """
         Attach a property to the connector.
         """
-        logger.debug(f"Attaching {property.uri} to {self}")
-        self._observers.append(property)
+        logger.info(f"Attaching property {property.uri} to connector {self.uri}")
+        if property.uri not in self._observers:
+            self._observers[property.uri] = property
 
     def detach(self, property: Property) -> None:
         """
         Detach a property from the connector.
         """
-        logger.debug(f"Detaching {property.uri} from {self}")
-        self._observers.remove(property)
+        logger.info(f"Detaching {property.uri} from {self}")
+        if property.uri in self._observers:
+            del self._observers[property.uri]
 
     def notify(self, **kwargs) -> None:
         """
         Notify all attached properties.
         """
         logger.debug(f"Notify all attached properties")
-        for observer in self._observers:
+        for observer in self._observers.values():
             observer.update_value(self, **kwargs)
 
 

@@ -4,11 +4,9 @@ from common.semantic_knowledge_graph.GraphDBPersistenceService import (
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
-from common.vault.vault import FsVault, HashiCorpVault, Vault
 from knowledge_graph.kg_connector import SINDITKGConnector
 from util.environment_and_configuration import (
     get_environment_variable,
-    get_environment_variable_bool,
 )
 from util.log import logger
 
@@ -25,6 +23,8 @@ kg_service: SemanticKGPersistenceService = GraphDBPersistenceService(
 )
 
 sindit_kg_connector = SINDITKGConnector(kg_service)
+""" connections = {}
+properties = {}
 
 
 use_hashicorp_vault = get_environment_variable_bool(
@@ -36,4 +36,4 @@ else:
     # setting up hashicorp vault
     hashicorp_url = get_environment_variable("HASHICORP_URL")
     hashicorp_token = get_environment_variable("HASHICORP_TOKEN")
-    secret_vault: Vault = HashiCorpVault(hashicorp_url, hashicorp_token)
+    secret_vault: Vault = HashiCorpVault(hashicorp_url, hashicorp_token) """
