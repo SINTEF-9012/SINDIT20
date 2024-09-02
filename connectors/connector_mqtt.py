@@ -53,6 +53,9 @@ class MQTTConnector(Connector):
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
+        self.client.on_disconnect = self._on_disconnect
+        
+       
         self.messages = {}  # Dict to store subscribed messages
         self.thread = None
         
@@ -82,7 +85,7 @@ class MQTTConnector(Connector):
         logger.info(f"Connector {self.uri} connected to {self.host}:{self.port} with result code " + str(rc))
       
         
-         #Update the knowledge graph with the new value
+        #Update the knowledge graph with the new value
         node = None
         try:
             node = sindit_kg_connector.load_node_by_uri(self.uri)
@@ -90,6 +93,25 @@ class MQTTConnector(Connector):
             pass
         if node is not None:
             node.isConnected = True
+            sindit_kg_connector.save_node(node, update_value=True)
+            
+        # Subscribe to the topic again after reconnection
+        for property in self._observers.values():
+            self.subscribe(property.topic)
+        
+
+            
+    def _on_disconnect(self, client, userdata, disconnect_flags, rc, properties):
+        logger.info(f"Connector {self.uri} disconnected from {self.host}:{self.port} with result code " + str(rc))
+        
+        #Update the knowledge graph with the new value
+        node = None
+        try:
+            node = sindit_kg_connector.load_node_by_uri(self.uri)
+        except:
+            pass
+        if node is not None:
+            node.isConnected = False
             sindit_kg_connector.save_node(node, update_value=True)
 
     def _on_message(self, client, userdata, msg):

@@ -3,6 +3,9 @@ from util.environment_and_configuration import (
     get_environment_variable,
     get_environment_variable_bool,
 )
+from util.log import logger
+
+logger.info("Initializing vault ...")
 
 use_hashicorp_vault = get_environment_variable_bool(
     "USE_HASHICORP_VAULT", optional=True, default="false"

@@ -10,6 +10,10 @@ tags_metadata = [
         "description": "Operations related to the knowledge graph",
     },
     {
+      "name": "Connection",
+      "description": "Operations related to the connections and properties",
+    },
+    {
         "name": "Vault",
         "description": "Operations related to the secret vault",
     },

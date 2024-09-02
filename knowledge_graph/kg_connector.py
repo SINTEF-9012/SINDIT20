@@ -105,7 +105,8 @@ class SINDITKGConnector:
         for uri in df["node"]:
             ret = self._load_node(
                 uri,
-                URIClassMapping.get(URIRef(class_uri)),
+                #URIClassMapping.get(URIRef(class_uri)),
+                None,
                 depth,
                 created_individuals=created_individuals,
             )
@@ -121,7 +122,14 @@ class SINDITKGConnector:
         nodes = []
         for class_uri in URIClassMapping.keys():
             nodes += self.load_nodes_by_class(class_uri, depth=1)
-        return nodes
+        
+        node_uris = []
+        return_nodes = []
+        for node in nodes:
+            if node.uri not in node_uris:
+                return_nodes.append(node)
+                node_uris.append(node.uri)
+        return return_nodes
 
     def delete_node(self, node_uri: str) -> bool:
         """Delete a node from the knowledge graph."""

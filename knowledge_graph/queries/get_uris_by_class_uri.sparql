@@ -1,4 +1,4 @@
 SELECT ?node
 WHERE {
-  ?node rdf:type <[class_uri]> .
+  ?node rdf:type/(<urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#extends>)* <[class_uri]> .
 }

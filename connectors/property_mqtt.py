@@ -8,9 +8,9 @@ from initialize_kg_connectors import sindit_kg_connector
 class MQTTProperty(Property):
     
     def __init__(self, uri, topic, path_or_code):
-        self.topic = topic
-        self.uri = uri
-        self.path_or_code = path_or_code
+        self.topic = str(topic)
+        self.uri = str(uri)
+        self.path_or_code = str(path_or_code)
         self.timestamp = None
         self.value = None
         
@@ -19,7 +19,7 @@ class MQTTProperty(Property):
     def attach(self, connector: Connector) -> None:
         self.connector = connector
         connector.attach(self)
-        connector.subscribe(self.topic)
+        connector.subscribe(str(self.topic))
         logger.debug(f"Attaching property {self.uri} to connector {connector.uri}")
         
     

@@ -1,8 +1,9 @@
 from typing import Union, List
 
 from fastapi import HTTPException
-from initialize_connectors import update_connection_node, update_propery_node
 from initialize_kg_connectors import sindit_kg_connector
+from connectors.setup_connectors import remove_connection_node, remove_property_node, update_connection_node, update_propery_node
+
 from knowledge_graph.graph_model import (
     SINDITKG,
     AbstractAsset,
@@ -113,7 +114,16 @@ async def delete_node(node_uri: str) -> dict:
     Delete a node from the knowledge graph by its URI.
     """
     try:
+        node = sindit_kg_connector.load_node_by_uri(node_uri)
+        
         result = sindit_kg_connector.delete_node(node_uri)
+        
+        if result and node is not None:
+            if isinstance(node, Connection):
+                remove_connection_node(node)
+            elif isinstance(node, AbstractAssetProperty):
+                remove_property_node(node)
+                
         return {"result": result}
     except Exception as e:
         logger.error(f"Error deleting node by URI {node_uri}: {e}")

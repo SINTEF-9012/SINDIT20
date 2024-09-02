@@ -16,6 +16,7 @@ class Connector:
         logger.info(f"Attaching property {property.uri} to connector {self.uri}")
         if property.uri not in self._observers:
             self._observers[property.uri] = property
+            property.connector = self
 
     def detach(self, property: Property) -> None:
         """
@@ -32,11 +33,26 @@ class Connector:
         logger.debug(f"Notify all attached properties")
         for observer in self._observers.values():
             observer.update_value(self, **kwargs)
+    
+    @abstractmethod        
+    def start(self) -> any:
+        """
+        Start the connector.
+        """
+        pass
+    
+    @abstractmethod
+    def stop(self) -> any:
+        """
+        Stop the connector.
+        """
+        pass
 
 
 class Property(ABC):
 
     uri =  None
+    connector = None
     
     @abstractmethod
     def update_value(self, connector: Connector, **kwargs) -> None:
