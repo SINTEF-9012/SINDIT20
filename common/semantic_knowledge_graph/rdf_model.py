@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from rdflib import RDF, RDFS, XSD, Graph, URIRef
 from rdflib.term import BNode, Literal, Node
 from typing_extensions import Annotated
+import json
 
 
 class PropertyNotSetException(Exception):
@@ -184,6 +185,8 @@ class RDFModel(BaseModel):
             new_val = Literal(value, datatype=XSD.float)
         elif isinstance(value, bool):
             new_val = Literal(value, datatype=XSD.boolean)
+        elif isinstance(value, dict):
+            new_val = Literal(json.dumps(value))
         else:
             new_val = value
 
@@ -209,6 +212,8 @@ class RDFModel(BaseModel):
                     new_val = float(value)
                 elif "bool" in str(value_type_hint):
                     new_val = bool(value)
+                elif "dict" in str(value_type_hint):
+                    new_val = json.loads(value)
         
         return new_val
 

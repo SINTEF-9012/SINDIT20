@@ -99,7 +99,16 @@ class TimeseriesProperty(DatabaseProperty):
 
     mapping: ClassVar[dict] = {
         **DatabaseProperty.mapping,
+        "timeseriesIdentifiers": GRAPH_MODEL.timeseriesIdentifiers,
+        "timeseriesRetrievalMethod": GRAPH_MODEL.timeseriesRetrievalMethod,
+        "timeseriesTags": GRAPH_MODEL.timeseriesTags,
+        
     }
+    
+    timeseriesIdentifiers : Literal | dict = None
+    timeseriesRetrievalMethod : Literal | str = None
+    timeseriesTags: Literal | dict = None
+    
 
 
 class File(DatabaseProperty):
