@@ -17,7 +17,7 @@ from knowledge_graph.kg_connector import SINDITKGConnector
 from rdflib import XSD, Graph, URIRef
 
 if __name__ == "__main__":
-    g = Graph()
+    """ g = Graph()
     g.namespace_manager.bind("sindit", GraphNamespace.SINDIT.value)
     g.namespace_manager.bind("sindit_kg", GraphNamespace.SINDIT_KG.value)
     g.namespace_manager.bind("samm_unit", GraphNamespace.SAMM_UNIT.value)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         label="Temperature Sensor",
         assetDescription="Sensor in the factory",
         assetProperties=[temperature, humidity],
-    )
+    ) """
 
     # g += fluxdb_connection.g
     # g += temperature.g
@@ -120,9 +120,11 @@ if __name__ == "__main__":
     )
 
     kg_connector = SINDITKGConnector(kg_service)
-    # node = kg_connector.load_node_by_uri(
-    #     "http://sindit.sintef.no/2.0#factory-sensor", AbstractAsset, depth=1
-    # )
+    node = kg_connector.load_node_by_uri(
+        "http://sindit.sintef.no/2.0#humidity", depth=1
+    )
+    
+    print(node)
     # node = kg_connector.load_node_by_uri(
     #     "http://sindit.sintef.no/2.0#factory-sensor", AbstractAsset, depth=2
     # )
@@ -138,7 +140,7 @@ if __name__ == "__main__":
     # print(node.model_dump_json(exclude_none=True, indent=4))
 
     # fluxdb_connection.port = 888888
-    kg_connector.save_node(asset)
+    #kg_connector.save_node(asset)
 
     # nodes = kg_connector.load_nodes_by_class(AbstractAsset.class_uri, depth=10)
     # for node in nodes:

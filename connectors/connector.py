@@ -35,14 +35,14 @@ class Connector:
             observer.update_value(self, **kwargs)
     
     @abstractmethod        
-    def start(self) -> any:
+    def start(self, **kwargs) -> any:
         """
         Start the connector.
         """
         pass
     
     @abstractmethod
-    def stop(self) -> any:
+    def stop(self, **kwargs) -> any:
         """
         Stop the connector.
         """

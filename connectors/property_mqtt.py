@@ -49,7 +49,22 @@ class MQTTProperty(Property):
                         except:
                             pass
                         if node is not None:
-                            node.propertyValue = str(self.value)
+                            data_type = node.propertyDataType
+                            node_value = str(self.value)
+                            
+                            #convert the value to the correct data type
+                            if data_type is not None:
+                                try:
+                                    if "float" or "double" in data_type:
+                                        node_value = float(self.value)
+                                    elif "int" or "integer" in data_type:
+                                        node_value = int(self.value)
+                                    elif "bool" or "boolean" in data_type:
+                                        node_value = bool(self.value)
+                                except:
+                                    pass
+                            
+                            node.propertyValue = node_value
                             node.propertyValueTimestamp = str(self.timestamp)
                             sindit_kg_connector.save_node(node, update_value=True)
                     else:

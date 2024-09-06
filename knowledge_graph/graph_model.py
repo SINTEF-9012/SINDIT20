@@ -60,7 +60,7 @@ class AbstractAssetProperty(RDFModel):
     propertyUnit: Union[URIRefNode, Literal, str] = None
     propertySemanticID: Literal | str = None
     propertyDescription: Literal | str = None
-    propertyDataType: Literal | str = None
+    propertyDataType: Union[URIRefNode, Literal, str] = None
     propertyValue: Literal | str = None
     propertyName: Literal | str = None
     propertyValueTimestamp: Literal | str = None

@@ -64,7 +64,7 @@ class MQTTConnector(Connector):
             self.uri = uri
             
             
-    def start(self):
+    def start(self, **kwargs):
         """Start the MQTT client and connect to the broker
         in a separate thread."""
         if self.__username and self.__password:
@@ -74,7 +74,7 @@ class MQTTConnector(Connector):
         self.thread = threading.Thread(target=self.client.loop_forever)
         self.thread.start()
 
-    def stop(self):
+    def stop(self, **kwargs):
         """Stop the MQTT client gracefully."""
         self.client.loop_stop()
         self.client.disconnect()

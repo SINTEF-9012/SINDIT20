@@ -188,6 +188,29 @@ class RDFModel(BaseModel):
             new_val = value
 
         return new_val
+    
+    def _reverse_attr(value: Any, value_type_hint: Any) -> None:
+        new_val = value
+        if isinstance(value, Literal):
+            if value.datatype == XSD.string:
+                new_val = str(value)
+            elif value.datatype == XSD.integer:
+                new_val = int(value)
+            elif value.datatype == XSD.float:
+                new_val = float(value)
+            elif value.datatype == XSD.boolean:
+                new_val = bool(value)
+            else:
+                if "str" in str(value_type_hint):
+                    new_val = str(value)
+                elif "int" in str(value_type_hint):
+                    new_val = int(value)
+                elif "float" in str(value_type_hint):
+                    new_val = float(value)
+                elif "bool" in str(value_type_hint):
+                    new_val = bool(value)
+        
+        return new_val
 
     def g(self) -> Graph:
         """Lazy load the rdflib.Graph object."""
@@ -316,6 +339,12 @@ class RDFModel(BaseModel):
 
     def _set_obj_att(ind_obj, att_name, att_value):
         att_type_hint = get_type_hints(ind_obj.__class__).get(att_name)
+        
+        try:
+            new_att_value = RDFModel._reverse_attr(att_value, att_type_hint)
+        except:
+            new_att_value = att_value
+            
         if att_type_hint is not None:
             # if the type hint is a list
             # if(str(att_type_hint).startswith('typing.List') ):
@@ -330,15 +359,15 @@ class RDFModel(BaseModel):
                 # if the existing value is not None
                 if existing_value is not None:
                     # append the new value to the existing value
-                    setattr(ind_obj, att_name, existing_value + [att_value])
+                    setattr(ind_obj, att_name, existing_value + [new_att_value])
                 # if the existing value is None
                 else:
                     # set the value as a list
-                    setattr(ind_obj, att_name, [att_value])
+                    setattr(ind_obj, att_name, [new_att_value])
             else:
-                setattr(ind_obj, att_name, att_value)
+                setattr(ind_obj, att_name, new_att_value)
         else:
-            setattr(ind_obj, att_name, att_value)
+            setattr(ind_obj, att_name, new_att_value)
 
     def _set_att_from_graph(
         ind_obj,
