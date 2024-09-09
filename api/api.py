@@ -10,6 +10,10 @@ tags_metadata = [
         "description": "Operations related to the knowledge graph",
     },
     {
+        "name": "Workspace",
+        "description": "Operations related to the workspace",
+    },
+    {
       "name": "Connection",
       "description": "Operations related to the connections and properties",
     },
@@ -17,6 +21,10 @@ tags_metadata = [
         "name": "Vault",
         "description": "Operations related to the secret vault",
     },
+    {
+        "name": "Metamodel",
+        "description": "Operations related to the metamodel (e.g., units, semantics)",
+    }
 ]
 
 api_version = get_configuration(ConfigGroups.API, "api_version")

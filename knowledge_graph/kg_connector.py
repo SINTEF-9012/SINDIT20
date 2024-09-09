@@ -5,8 +5,9 @@ from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
-from knowledge_graph.graph_model import SINDITKG, AbstractAsset, AbstractAssetProperty, Connection, StreamingProperty, URIClassMapping
+from knowledge_graph.graph_model import KG_NS, SINDITKG, AbstractAsset, AbstractAssetProperty, Connection, StreamingProperty, URIClassMapping
 from rdflib import RDF, Graph, URIRef
+from rdflib.term import _is_valid_uri
 
 #from initialize_connectors import update_connection_node, update_propery_node
 
@@ -23,9 +24,27 @@ get_uris_by_class_uri_query_file = (
 get_class_uri_by_uri_query_file = "knowledge_graph/queries/get_class_uri_by_uri.sparql"
 
 
+
 class SINDITKGConnector:
     def __init__(self, kg_service: SemanticKGPersistenceService):
         self.__kg_service = kg_service
+        self.__graph_uri = KG_NS.DefaultGraph
+        
+    def get_graph_uri(self):
+        return str(self.__graph_uri)
+    
+    def set_graph_uri(self, uri: str):
+        try:
+            #check if uri is valid, otherwise concat it with the default graph uri
+            if not uri.startswith("http"):
+                uri = str(KG_NS) + uri
+            if not _is_valid_uri(uri):
+                raise Exception(f"Invalid uri: {uri}")
+            self.__graph_uri = URIRef(uri)
+            return str(self.__graph_uri)
+        except Exception as e:
+            raise Exception(f"Failed to set the graph uri. Reason: {e}")
+        
 
     def load_node_by_uri(
         self,
@@ -50,6 +69,9 @@ class SINDITKGConnector:
         # read the sparql query from the file
         with open(load_node_query_file, "r") as f:
             query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace("[graph_uri]", str(self.__graph_uri))
+            
 
         loop = depth
         full_graph = Graph()
@@ -96,6 +118,8 @@ class SINDITKGConnector:
     def load_nodes_by_class(self, class_uri: str, depth: int = 1) -> list:
         with open(get_uris_by_class_uri_query_file, "r") as f:
             query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace("[graph_uri]", str(self.__graph_uri))
 
         query = query_template.replace("[class_uri]", class_uri)
         query_result = self.__kg_service.graph_query(query, "text/csv")
@@ -135,6 +159,8 @@ class SINDITKGConnector:
         """Delete a node from the knowledge graph."""
         with open(delete_node_query_file, "r") as f:
             query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace("[graph_uri]", str(self.__graph_uri))
 
         query = query_template.replace("[node_uri]", node_uri)
         query_result = self.__kg_service.graph_update(query)
@@ -166,6 +192,8 @@ class SINDITKGConnector:
         # if different return error
         with open(get_class_uri_by_uri_query_file, "r") as f:
             query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace("[graph_uri]", str(self.__graph_uri))
 
         for s in subjects:
             node_class_uri = g.value(s, RDF.type)
@@ -188,6 +216,10 @@ class SINDITKGConnector:
         # Load the old data in case of failure
         with open(load_nodes_query_file, "r") as f:
             query_template = f.read()
+            
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace("[graph_uri]", str(self.__graph_uri))
+                
         query = query_template.replace("[nodes_uri]", subjects_str)
         query_result_old = self.__kg_service.graph_query(query, "application/x-trig")
         # print(query_result_old)
@@ -195,6 +227,11 @@ class SINDITKGConnector:
         # deleting old nodes and properties
         with open(delete_nodes_query_file, "r") as f:
             query_template = f.read()
+            
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace("[graph_uri]", str(self.__graph_uri))
+                
+            
 
         query = query_template.replace("[nodes_uri]", subjects_str)
         query_result = self.__kg_service.graph_update(query)
@@ -206,6 +243,8 @@ class SINDITKGConnector:
 
         with open(insert_data_query_file, "r") as f:
             query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace("[graph_uri]", str(self.__graph_uri))
 
         graph_data = str(g.serialize(format="longturtle"))
         # extract the line starting with PREFIX or prefix,

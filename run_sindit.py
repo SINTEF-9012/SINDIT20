@@ -7,12 +7,12 @@ from util.environment_and_configuration import (
 )
 from util.log import logger
 
-from api import kg_endpoints, vault_endpoints, connection_endpoints  # noqa: F401
+from api import kg_endpoints, vault_endpoints, connection_endpoints, workspace_endpoints  # noqa: F401
 
 from connectors.setup_connectors import initialize_connections_and_properties
 
-logger.info("Starting connections and properties...")
-initialize_connections_and_properties()
+#logger.info("Starting connections and properties...")
+#initialize_connections_and_properties()
 
 logger.info("Starting SINDIT")
 

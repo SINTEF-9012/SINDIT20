@@ -1,4 +1,7 @@
 SELECT ?class
 WHERE {
-  <[node_uri]> rdf:type ?class .
+  GRAPH <[graph_uri]> {
+    <[node_uri]> rdf:type ?class .
+  }
 }
+

@@ -18,6 +18,7 @@ class GraphNamespace(Enum):
 
 
 GRAPH_MODEL = GraphNamespace.SINDIT.value
+KG_NS = GraphNamespace.SINDIT_KG.value
 
 
 class Connection(RDFModel):
