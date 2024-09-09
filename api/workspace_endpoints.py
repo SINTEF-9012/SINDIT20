@@ -12,7 +12,7 @@ from api.api import app
 )
 async def get_workspace():
     """
-    Get the current workspace.
+    Get the name (uri) of the current workspace.
     """
     try:
         return {"workspace_uri": sindit_kg_connector.get_graph_uri()} 
@@ -25,11 +25,11 @@ async def get_workspace():
     "/ws/set",
     tags=["Workspace"],
 )
-async def set_workspace(
+async def switch_workspace(
     workspace_uri: str,
 ):
     """
-    Set the current workspace.
+    Switch to a new workspace.
     """
     try:
         graph_uri = sindit_kg_connector.set_graph_uri(workspace_uri)
