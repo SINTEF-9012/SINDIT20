@@ -22,7 +22,7 @@ async def get_workspace():
     
     
 @app.post(
-    "/ws/set",
+    "/ws/switch",
     tags=["Workspace"],
 )
 async def switch_workspace(
