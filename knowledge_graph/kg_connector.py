@@ -8,6 +8,7 @@ from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
 from knowledge_graph.graph_model import KG_NS, SINDITKG, AbstractAsset, AbstractAssetProperty, Connection, StreamingProperty, URIClassMapping
 from rdflib import RDF, Graph, URIRef
 from rdflib.term import _is_valid_uri
+from util.log import logger
 
 #from initialize_connectors import update_connection_node, update_propery_node
 
@@ -22,6 +23,7 @@ get_uris_by_class_uri_query_file = (
     "knowledge_graph/queries/get_uris_by_class_uri.sparql"
 )
 get_class_uri_by_uri_query_file = "knowledge_graph/queries/get_class_uri_by_uri.sparql"
+list_named_graphs_query_file = "knowledge_graph/queries/list_named_graphs.sparql"
 
 
 
@@ -44,6 +46,18 @@ class SINDITKGConnector:
             return str(self.__graph_uri)
         except Exception as e:
             raise Exception(f"Failed to set the graph uri. Reason: {e}")
+        
+    
+    def get_graph_uris(self):
+        with open(list_named_graphs_query_file, "r") as f:
+            try:
+                query = f.read()
+                query_result = self.__kg_service.graph_query(query, "text/csv")
+                df = pd.read_csv(StringIO(query_result), sep=",")
+                return df["g"].to_list()
+            except Exception as e:
+                logger.error(f"Failed to get the list of named graphs. Reason: {e}")
+                return []
         
 
     def load_node_by_uri(
