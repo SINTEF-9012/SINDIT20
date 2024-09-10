@@ -24,6 +24,8 @@ get_uris_by_class_uri_query_file = (
 )
 get_class_uri_by_uri_query_file = "knowledge_graph/queries/get_class_uri_by_uri.sparql"
 list_named_graphs_query_file = "knowledge_graph/queries/list_named_graphs.sparql"
+search_unit_query_file = "knowledge_graph/queries/find_unit.sparql"
+get_all_units_query_file = "knowledge_graph/queries/get_all_units.sparql"
 
 
 
@@ -56,9 +58,50 @@ class SINDITKGConnector:
                 df = pd.read_csv(StringIO(query_result), sep=",")
                 return df["g"].to_list()
             except Exception as e:
-                logger.error(f"Failed to get the list of named graphs. Reason: {e}")
+                raise Exception(f"Failed to get the graph uris. Reason: {e}")
+            
+    def search_unit(self, search_term: str):
+        with open(search_unit_query_file, "r") as f:
+            try:
+                query_template = f.read()
+                query = query_template.replace("[search_term]", search_term)
+                query_result = self.__kg_service.graph_query(query, "text/csv")
+                df = pd.read_csv(StringIO(query_result), sep=",")
+                
+                if not df.empty:
+                    #rename the columns unit to uri
+                    df.rename(columns={"unit": "uri"}, inplace=True)
+                    #convert the dataframe to a list of dictionaries, ignore nan values
+                    #replace nan with None
+                    df_dict = df.apply(lambda x: x.dropna().to_dict(), axis=1).tolist()
+
+                    return df_dict
+                
                 return []
-        
+
+            except Exception as e:
+                raise Exception(f"Failed to search for the unit. Reason: {e}")
+                
+    def get_all_units(self):
+        with open(get_all_units_query_file, "r") as f:
+            try:
+                query = f.read()
+                query_result = self.__kg_service.graph_query(query, "text/csv")
+                df = pd.read_csv(StringIO(query_result), sep=",")
+                
+                if not df.empty:
+                    #rename the columns unit to uri
+                    df.rename(columns={"unit": "uri"}, inplace=True)
+                    #convert the dataframe to a list of dictionaries, ignore nan values
+                    #replace nan with None
+                    df_dict = df.apply(lambda x: x.dropna().to_dict(), axis=1).tolist()
+
+                    return df_dict
+                
+                return []
+
+            except Exception as e:
+                raise Exception(f"Failed to get all units. Reason {e}")
 
     def load_node_by_uri(
         self,
