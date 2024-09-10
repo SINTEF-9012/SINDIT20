@@ -41,9 +41,6 @@ async def get_workspace():
         raise HTTPException(status_code=404, detail=str(e))
 
 
-
-
-
 @app.get(
     "/ws/list",
     tags=["Workspace"],
@@ -115,7 +112,8 @@ async def switch_workspace(
         graph_uri = sindit_kg_connector.set_graph_uri(workspace_uri)
         return {"workspace_uri": graph_uri}
 
-        # TODO: switching to a new workspace should also stop/clean up all connections and properties
+        # TODO: switching to a new workspace should also
+        # stop/clean up all connections and properties
 
     except Exception as e:
         logger.error(f"Error setting workspace: {e}")

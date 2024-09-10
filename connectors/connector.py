@@ -1,11 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List
 from util.log import logger
 
 
 class Connector:
-
     _observers: dict = {}
     uri = None
 
@@ -30,17 +28,17 @@ class Connector:
         """
         Notify all attached properties.
         """
-        logger.debug(f"Notify all attached properties")
+        logger.debug("Notify all attached properties")
         for observer in self._observers.values():
             observer.update_value(self, **kwargs)
-    
-    @abstractmethod        
+
+    @abstractmethod
     def start(self, **kwargs) -> any:
         """
         Start the connector.
         """
         pass
-    
+
     @abstractmethod
     def stop(self, **kwargs) -> any:
         """
@@ -50,10 +48,9 @@ class Connector:
 
 
 class Property(ABC):
-
-    uri =  None
+    uri = None
     connector = None
-    
+
     @abstractmethod
     def update_value(self, connector: Connector, **kwargs) -> None:
         """

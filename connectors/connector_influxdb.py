@@ -2,6 +2,7 @@ from influxdb_client import InfluxDBClient
 from connectors.connector import Connector
 from util.log import logger
 
+
 class InfluxDBConnector(Connector):
     """InfluxDB v2.0 connector class.
 
@@ -44,12 +45,11 @@ class InfluxDBConnector(Connector):
         self.bucket = bucket
         self.__token = token
         self.client = None
-        
+
         self.uri = f"http://{host}:{port}/"
         if uri is not None:
             self.uri = uri
 
-    
     def set_token(self, token):
         """Set the authentication token for the InfluxDB connection.
 
@@ -164,29 +164,33 @@ class InfluxDBConnector(Connector):
                 The query result based on the specified return type.
 
         Raises:
-            ValueError: If both `field` and `measurement` are `None` or if an invalid query return type is specified.
+            ValueError: If both `field` and `measurement` are `None` or if
+            an invalid query return type is specified.
         """
         # Ensure either field or measurement is provided, but not both as None
         if field is None and measurement is None:
-            raise ValueError("Either `field` or `measurement` must be specified, but not both as None.")
-        
+            raise ValueError(
+                "Either `field` or `measurement` must be specified, "
+                "but not both as None."
+            )
+
         self._check_if_bucket_name_is_set(bucket)
-        
+
         query = f"""
             from(bucket: "{self.bucket}")
             |> range(start: {start}, stop: {stop})
             """
-        
+
         if measurement:
             query += f'|> filter(fn: (r) => r._measurement == "{measurement}")\n'
-        
+
         if field:
             query += f'|> filter(fn: (r) => r._field == "{field}")\n'
 
         if tags:
             for key, value in tags.items():
                 query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
-            
+
         if query_return_type == "pandas":
             query += (
                 '|> pivot(rowKey:["_time"], '
@@ -200,7 +204,6 @@ class InfluxDBConnector(Connector):
             raise ValueError(
                 "Invalid query return type. Choose either 'pandas' or 'flux'."
             )
-
 
     def get_buckets(self):
         """Get list of buckets in the InfluxDB database.

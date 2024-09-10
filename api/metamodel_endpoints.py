@@ -5,6 +5,7 @@ from util.log import logger
 
 from api.api import app
 
+
 @app.post(
     "/metamodel/search_unit",
     tags=["Metamodel"],
@@ -18,11 +19,12 @@ async def search_unit(search_term: str):
     except Exception as e:
         logger.error(f"Error searching for unit: {e}")
         raise HTTPException(status_code=404, detail=str(e))
-    
+
+
 @app.get(
     "/metamodel/get_all_units",
     tags=["Metamodel"],
-)    
+)
 async def get_all_units():
     """
     Get all units in the meta-model.

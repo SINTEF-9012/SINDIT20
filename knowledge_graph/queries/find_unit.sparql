@@ -5,10 +5,10 @@ WHERE {
     OPTIONAL {?unit samm:symbol ?symbol} .
     OPTIONAL {?unit samm:commonCode ?code} .
     OPTIONAL {?unit samm:preferredName ?prefName} .
-    
+
     {
         ?unit ?predicate ?literal .
-  		
+
     }
     UNION
     {

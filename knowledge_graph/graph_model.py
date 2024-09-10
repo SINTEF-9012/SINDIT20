@@ -103,13 +103,11 @@ class TimeseriesProperty(DatabaseProperty):
         "timeseriesIdentifiers": GRAPH_MODEL.timeseriesIdentifiers,
         "timeseriesRetrievalMethod": GRAPH_MODEL.timeseriesRetrievalMethod,
         "timeseriesTags": GRAPH_MODEL.timeseriesTags,
-        
     }
-    
-    timeseriesIdentifiers : Literal | dict = None
-    timeseriesRetrievalMethod : Literal | str = None
+
+    timeseriesIdentifiers: Literal | dict = None
+    timeseriesRetrievalMethod: Literal | str = None
     timeseriesTags: Literal | dict = None
-    
 
 
 class File(DatabaseProperty):

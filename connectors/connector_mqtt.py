@@ -54,16 +54,14 @@ class MQTTConnector(Connector):
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
         self.client.on_disconnect = self._on_disconnect
-        
-       
+
         self.messages = {}  # Dict to store subscribed messages
         self.thread = None
-        
+
         self.uri = f"mqtt://{host}:{port}/"
         if uri is not None:
             self.uri = uri
-            
-            
+
     def start(self, **kwargs):
         """Start the MQTT client and connect to the broker
         in a separate thread."""
@@ -82,33 +80,48 @@ class MQTTConnector(Connector):
             self.thread.join()
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
-        logger.info(f"Connector {self.uri} connected to {self.host}:{self.port} with result code " + str(rc))
-      
-        
-        #Update the knowledge graph with the new value
+        logger.info(
+            "Connector "
+            + self.uri
+            + " connected to "
+            + self.host
+            + ":"
+            + str(self.port)
+            + " with result code "
+            + str(rc)
+        )
+
+        # Update the knowledge graph with the new value
         node = None
         try:
             node = sindit_kg_connector.load_node_by_uri(self.uri)
-        except:
+        except Exception:
             pass
         if node is not None:
             node.isConnected = True
             sindit_kg_connector.save_node(node, update_value=True)
-            
+
         # Subscribe to the topic again after reconnection
         for property in self._observers.values():
             self.subscribe(property.topic)
-        
 
-            
     def _on_disconnect(self, client, userdata, disconnect_flags, rc, properties):
-        logger.info(f"Connector {self.uri} disconnected from {self.host}:{self.port} with result code " + str(rc))
-        
-        #Update the knowledge graph with the new value
+        logger.info(
+            "Connector "
+            + self.uri
+            + " disconnected from "
+            + self.host
+            + ":"
+            + str(self.port)
+            + " with result code "
+            + str(rc)
+        )
+
+        # Update the knowledge graph with the new value
         node = None
         try:
             node = sindit_kg_connector.load_node_by_uri(self.uri)
-        except:
+        except Exception:
             pass
         if node is not None:
             node.isConnected = False
@@ -118,15 +131,15 @@ class MQTTConnector(Connector):
         topic = msg.topic
         payload = msg.payload.decode("utf-8")
         logger.debug(f"Received message on topic {topic}: {payload}")
-        #if topic not in self.messages:
+        # if topic not in self.messages:
         #    self.messages[topic] = {"timestamp": [], "payload": []}
         # if payload is number, convert it to float
         try:
             payload = float(payload)
         except ValueError:
             pass
-        #self.messages[topic]["payload"].append(payload)
-        #self.messages[topic]["timestamp"].append(time.time())
+        # self.messages[topic]["payload"].append(payload)
+        # self.messages[topic]["timestamp"].append(time.time())
 
         self.messages[topic] = {"timestamp": time.time(), "payload": payload}
 

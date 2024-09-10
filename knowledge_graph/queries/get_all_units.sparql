@@ -5,6 +5,6 @@ WHERE {
     OPTIONAL {?unit samm:symbol ?symbol} .
     OPTIONAL {?unit samm:commonCode ?code} .
     OPTIONAL {?unit samm:preferredName ?prefName} .
-    
+
 }
 order by (?unit)

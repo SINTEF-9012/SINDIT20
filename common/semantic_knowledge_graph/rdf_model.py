@@ -191,7 +191,7 @@ class RDFModel(BaseModel):
             new_val = value
 
         return new_val
-    
+
     def _reverse_attr(value: Any, value_type_hint: Any) -> None:
         new_val = value
         if isinstance(value, Literal):
@@ -214,7 +214,7 @@ class RDFModel(BaseModel):
                     new_val = bool(value)
                 elif "dict" in str(value_type_hint):
                     new_val = json.loads(value)
-        
+
         return new_val
 
     def g(self) -> Graph:
@@ -344,12 +344,12 @@ class RDFModel(BaseModel):
 
     def _set_obj_att(ind_obj, att_name, att_value):
         att_type_hint = get_type_hints(ind_obj.__class__).get(att_name)
-        
+
         try:
             new_att_value = RDFModel._reverse_attr(att_value, att_type_hint)
-        except:
+        except Exception:
             new_att_value = att_value
-            
+
         if att_type_hint is not None:
             # if the type hint is a list
             # if(str(att_type_hint).startswith('typing.List') ):
