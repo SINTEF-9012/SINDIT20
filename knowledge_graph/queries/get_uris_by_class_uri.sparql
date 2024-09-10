@@ -1,7 +1,16 @@
+# SELECT ?node
+# WHERE {
+#   GRAPH <[graph_uri]> {
+#     ?node rdf:type/(<urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#extends>)* <[class_uri]> .
+#   }
+# }
+
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#>
 SELECT ?node
 WHERE {
   GRAPH <[graph_uri]> {
-    ?node rdf:type/(<urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#extends>)* <[class_uri]> .
+    ?node rdf:type ?nodeType .
   }
+  ?nodeType (<urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#extends>)* <[class_uri]> .
 }
-
