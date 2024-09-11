@@ -6,8 +6,6 @@ from connectors.connector import Connector
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 
-# from initialize_kg_connectors import sindit_kg_connector
-
 
 class MQTTConnector(Connector):
     """A class representing an MQTT connector.
@@ -136,15 +134,11 @@ class MQTTConnector(Connector):
         topic = msg.topic
         payload = msg.payload.decode("utf-8")
         logger.debug(f"Received message on topic {topic}: {payload}")
-        # if topic not in self.messages:
-        #    self.messages[topic] = {"timestamp": [], "payload": []}
         # if payload is number, convert it to float
         try:
             payload = float(payload)
         except ValueError:
             pass
-        # self.messages[topic]["payload"].append(payload)
-        # self.messages[topic]["timestamp"].append(time.time())
 
         self.messages[topic] = {"timestamp": time.time(), "payload": payload}
 

@@ -37,31 +37,30 @@ def update_propery_node(node: AbstractAssetProperty):
                 ):
                     connection = update_connection_node(connection_node)
                     if connection is not None:
-                        property = MQTTProperty(
+                        new_property = MQTTProperty(
                             uri=node_uri,
                             topic=node.streamingTopic,
                             path_or_code=node.streamingPath,
                             kg_connector=sindit_kg_connector,
                         )
-                        property.attach(connection)
-                        properties[node_uri] = property
+                        new_property.attach(connection)
+                        properties[node_uri] = new_property
 
                         return properties[node_uri]
     else:
         # Warning: connection has to be created before the property.
         # Otherwise, the property will not be attached to the connection
         property = properties[node_uri]
-        if isinstance(property, MQTTProperty):
-            if (
-                property.topic != node.streamingTopic
-                or property.path_or_code != node.streamingPath
-            ):
-                property.topic = str(node.streamingTopic)
-                property.path_or_code = str(node.streamingPath)
-                # property.attach(connection)
-                properties[node_uri] = property
+        if isinstance(property, MQTTProperty) and (
+            property.topic != node.streamingTopic or
+            property.path_or_code != node.streamingPath
+        ):
+            property.topic = str(node.streamingTopic)
+            property.path_or_code = str(node.streamingPath)
+            # property.attach(connection)
+            properties[node_uri] = property
 
-                return properties[node_uri]
+            return properties[node_uri]
 
     return None
 
@@ -69,11 +68,11 @@ def update_propery_node(node: AbstractAssetProperty):
 def remove_property_node(node: AbstractAssetProperty):
     node_uri = str(node.uri)
     if node_uri in properties:
-        property = properties[node_uri]
+        remove_property = properties[node_uri]
 
-        connection = property.connector
+        connection = remove_property.connector
         if connection is not None:
-            connection.detach(property)
+            connection.detach(remove_property)
         del properties[node_uri]
         return True
     return False

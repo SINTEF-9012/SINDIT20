@@ -23,17 +23,3 @@ kg_service: SemanticKGPersistenceService = GraphDBPersistenceService(
 )
 
 sindit_kg_connector = SINDITKGConnector(kg_service)
-""" connections = {}
-properties = {}
-
-
-use_hashicorp_vault = get_environment_variable_bool(
-    "USE_HASHICORP_VAULT", optional=True, default="false"
-)
-if not use_hashicorp_vault:
-    secret_vault: Vault = FsVault(get_environment_variable("FSVAULT_PATH"))
-else:
-    # setting up hashicorp vault
-    hashicorp_url = get_environment_variable("HASHICORP_URL")
-    hashicorp_token = get_environment_variable("HASHICORP_TOKEN")
-    secret_vault: Vault = HashiCorpVault(hashicorp_url, hashicorp_token) """

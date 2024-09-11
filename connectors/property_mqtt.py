@@ -4,8 +4,6 @@ from connectors.connector_mqtt import MQTTConnector
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 
-# from initialize_kg_connectors import sindit_kg_connector
-
 
 class MQTTProperty(Property):
     def __init__(
@@ -25,8 +23,8 @@ class MQTTProperty(Property):
         logger.debug(f"Attaching property {self.uri} to connector {connector.uri}")
 
     def update_value(self, connector: Connector) -> None:
-        mqttConnector: MQTTConnector = connector
-        messages = mqttConnector.get_messages()
+        mqtt_connector: MQTTConnector = connector
+        messages = mqtt_connector.get_messages()
         if self.topic in messages:
             timestamp = messages[self.topic]["timestamp"]
             value = messages[self.topic]["payload"]
@@ -60,11 +58,14 @@ class MQTTProperty(Property):
                             # convert the value to the correct data type
                             if data_type is not None:
                                 try:
-                                    if "float" or "double" in data_type:
+                                    if ("float" in data_type) or \
+                                       ("double" in data_type):
                                         node_value = float(self.value)
-                                    elif "int" or "integer" in data_type:
+                                    elif ("int" in data_type or
+                                          "integer" in data_type):
                                         node_value = int(self.value)
-                                    elif "bool" or "boolean" in data_type:
+                                    elif ("bool" in data_type) or \
+                                         ("boolean" in data_type):
                                         node_value = bool(self.value)
                                 except Exception:
                                     pass
