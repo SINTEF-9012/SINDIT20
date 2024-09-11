@@ -125,15 +125,21 @@ class RDFModel(BaseModel):
         else:
             return f'<{self.uri}>' """
 
-    def __str__(self):
+    """def __str__(self):
+        visited = set()
+        visited.add(self.uri)
+        
         ret_str = f"uri: {self.uri}\n"
         for key, rdf_property in self.mapping.items():
             value = getattr(self, key, None)
             if value is not None:
                 # if value is an object of RDFModel, add newline before value
                 if isinstance(value, RDFModel):
-                    ret_str += f"{key}:\n"
-                    ret_str += f"{value}\n"
+                    if value.uri not in visited:
+                        visited.add(value.uri)
+                        ret_str += f"{key}:\n"
+                        ret_str += f"{value}\n"
+                        
                 elif isinstance(value, list) or isinstance(value, tuple):
                     ret_str += f"{key}:\n"
                     for item in value:
@@ -146,7 +152,51 @@ class RDFModel(BaseModel):
 
         # indent the string
         ret_str = "\n".join(["\t" + line for line in ret_str.split("\n")])
-        return f"<{self.__class__.__name__}:\n{ret_str}\n>"
+        return f"<{self.__class__.__name__}:\n{ret_str}\n>" """
+        
+    def __str__(self):
+        def _str_helper(obj, visited):
+            """Helper function to handle recursion and track visited objects."""
+            ret_str = f"uri: {obj.uri}\n"
+            
+            for key, rdf_property in obj.mapping.items():
+                value = getattr(obj, key, None)
+                if value is not None:
+                    # If value is an object of RDFModel
+                    if isinstance(value, RDFModel):
+                        if value.uri not in visited:
+                            visited.add(value.uri)
+                            ret_str += f"{key}:\n{_str_helper(value, visited)}\n"
+                        else:
+                            ret_str += f"{key}: <circular reference to {value.uri}>\n"
+                    elif isinstance(value, list) or isinstance(value, tuple):
+                        ret_str += f"{key}:\n"
+                        for item in value:
+                            if isinstance(item, RDFModel):
+                                if item.uri not in visited:
+                                    visited.add(item.uri)
+                                    ret_str += f"{_str_helper(item, visited)}\n"
+                                else:
+                                    ret_str += f"\t<circular reference to {item.uri}>\n"
+                            else:
+                                ret_str += f"\t{item}\n"
+                    else:
+                        ret_str += f"{key}: {value}\n"
+            
+            ret_str = "\n".join(["\t" + line for line in ret_str.split("\n")])
+            return f"<{self.__class__.__name__}:\n{ret_str}\n>"
+
+        # Initial set of visited URIs
+        visited = set()
+        visited.add(self.uri)
+
+        # Call the helper function to build the string representation
+        ret_str = _str_helper(self, visited)
+
+        # Return the formatted result
+        #ret_str = "\n".join(["\t" + line for line in ret_str.split("\n")])
+        #return f"<{self.__class__.__name__}:\n{ret_str}\n>"
+        return ret_str
 
     """ def __setattr__(self, name: str, value: Any) -> None:
         if (
@@ -222,16 +272,25 @@ class RDFModel(BaseModel):
         self.rdf()
         return self._g
 
-    def _add(self, s: Node, p: Node, o: Node):
+    """ def _add(self, s: Node, p: Node, o: Node):
         if isinstance(p, URIRef):
             self._g.add((s, p, o))
         elif isinstance(p, MapTo):
             self._g.add((s, p.value, o))
             self._g.add((o, p.inverse, s))
         else:
+            raise TypeError(f"Unexpected type {type(p)} for value {p}") """
+            
+    def _add(self, s: Node, p: Node, o: Node, g: Graph):
+        if isinstance(p, URIRef):
+            g.add((s, p, o))
+        elif isinstance(p, MapTo):
+            g.add((s, p.value, o))
+            g.add((o, p.inverse, s))
+        else:
             raise TypeError(f"Unexpected type {type(p)} for value {p}")
 
-    def rdf(self, format: str = "turtle") -> str:
+    """ def rdf(self, format: str = "turtle") -> str:
         # Set/reset g
         self._g = Graph()
 
@@ -268,12 +327,56 @@ class RDFModel(BaseModel):
                     self._add(self.uri, rdf_property, value)
                 else:
                     raise TypeError(f"Unexpected type {type(value)} for value {value}")
+        return self._g.serialize(format=format) """
+
+    def rdf(self, format: str = "turtle") -> str:
+        # Initialize the graph
+        self._g = Graph()
+        
+        # Track visited URIs to prevent infinite recursion
+        visited = set()
+
+        def _add_to_graph(obj: RDFModel, g: Graph, visited: set):
+            if obj.uri in visited:
+                return  # Skip if already processed (circular reference)
+            
+            visited.add(obj.uri)  # Mark the object as visited
+            
+            g.add((obj.uri, RDF.type, obj.class_uri))
+
+            for key, rdf_property in obj.mapping.items():
+                value = getattr(obj, key, None)
+                value = obj._process_attr(value)
+
+                if value is not None:
+                    if isinstance(value, RDFModel):
+                        obj._add(obj.uri, rdf_property, value.uri, g)
+                        
+                        _add_to_graph(value, g, visited)  # Recursively add nested RDFModel
+                    elif isinstance(value, list) or isinstance(value, tuple):
+                        for item in value:
+                            item = obj._process_attr(item)
+                            if isinstance(item, RDFModel):
+                                obj._add(obj.uri, rdf_property, item.uri, g)
+                                
+                                _add_to_graph(item, g, visited)  # Recursively add nested RDFModel
+                            elif isinstance(item, URIRef):
+                                obj._add(obj.uri, rdf_property, item, g)
+                            else:
+                                raise TypeError(f"Unexpected type {type(item)} for value {item}")
+                    elif isinstance(value, Literal) or isinstance(value, URIRef):
+                        obj._add(obj.uri, rdf_property, value, g)
+                    else:
+                        raise TypeError(f"Unexpected type {type(value)} for value {value}")
+            
+            
+
+        # Add this object and its related objects to the graph
+        _add_to_graph(self, self._g, visited)
+
+        # Return the serialized graph
         return self._g.serialize(format=format)
 
-    # @computed_field
-    # @property
-    # def rdf(self) -> str:
-    #     return self._compute_rdf()
 
     def deserialize(
         g: Graph,
