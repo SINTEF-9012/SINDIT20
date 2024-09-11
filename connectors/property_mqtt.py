@@ -58,14 +58,15 @@ class MQTTProperty(Property):
                             # convert the value to the correct data type
                             if data_type is not None:
                                 try:
-                                    if ("float" in data_type) or \
-                                       ("double" in data_type):
+                                    if ("float" in data_type) or (
+                                        "double" in data_type
+                                    ):
                                         node_value = float(self.value)
-                                    elif ("int" in data_type or
-                                          "integer" in data_type):
+                                    elif "int" in data_type or "integer" in data_type:
                                         node_value = int(self.value)
-                                    elif ("bool" in data_type) or \
-                                         ("boolean" in data_type):
+                                    elif ("bool" in data_type) or (
+                                        "boolean" in data_type
+                                    ):
                                         node_value = bool(self.value)
                                 except Exception:
                                     pass

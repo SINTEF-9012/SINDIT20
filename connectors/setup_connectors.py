@@ -52,8 +52,8 @@ def update_propery_node(node: AbstractAssetProperty):
         # Otherwise, the property will not be attached to the connection
         property = properties[node_uri]
         if isinstance(property, MQTTProperty) and (
-            property.topic != node.streamingTopic or
-            property.path_or_code != node.streamingPath
+            property.topic != node.streamingTopic
+            or property.path_or_code != node.streamingPath
         ):
             property.topic = str(node.streamingTopic)
             property.path_or_code = str(node.streamingPath)
