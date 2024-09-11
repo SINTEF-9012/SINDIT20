@@ -4,7 +4,9 @@ import time
 import paho.mqtt.client as mqtt
 from connectors.connector import Connector
 from util.log import logger
-from initialize_kg_connectors import sindit_kg_connector
+from knowledge_graph.kg_connector import SINDITKGConnector
+
+# from initialize_kg_connectors import sindit_kg_connector
 
 
 class MQTTConnector(Connector):
@@ -43,6 +45,7 @@ class MQTTConnector(Connector):
         username: str = None,
         password: str = None,
         uri: str = None,
+        kg_connector: SINDITKGConnector = None,
     ):
         self.host = host
         self.port = int(port)
@@ -61,6 +64,8 @@ class MQTTConnector(Connector):
         self.uri = f"mqtt://{host}:{port}/"
         if uri is not None:
             self.uri = uri
+
+        self.kg_connector = kg_connector
 
     def start(self, **kwargs):
         """Start the MQTT client and connect to the broker
@@ -94,12 +99,12 @@ class MQTTConnector(Connector):
         # Update the knowledge graph with the new value
         node = None
         try:
-            node = sindit_kg_connector.load_node_by_uri(self.uri)
+            node = self.kg_connector.load_node_by_uri(self.uri)
         except Exception:
             pass
         if node is not None:
             node.isConnected = True
-            sindit_kg_connector.save_node(node, update_value=True)
+            self.kg_connector.save_node(node, update_value=True)
 
         # Subscribe to the topic again after reconnection
         for property in self._observers.values():
@@ -120,12 +125,12 @@ class MQTTConnector(Connector):
         # Update the knowledge graph with the new value
         node = None
         try:
-            node = sindit_kg_connector.load_node_by_uri(self.uri)
+            node = self.kg_connector.load_node_by_uri(self.uri)
         except Exception:
             pass
         if node is not None:
             node.isConnected = False
-            sindit_kg_connector.save_node(node, update_value=True)
+            self.kg_connector.save_node(node, update_value=True)
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic

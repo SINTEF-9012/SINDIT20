@@ -41,6 +41,7 @@ def update_propery_node(node: AbstractAssetProperty):
                             uri=node_uri,
                             topic=node.streamingTopic,
                             path_or_code=node.streamingPath,
+                            kg_connector=sindit_kg_connector,
                         )
                         property.attach(connection)
                         properties[node_uri] = property
@@ -109,6 +110,7 @@ def update_connection_node(node: Connection):
                     username=node.username,
                     password=password,
                     uri=node_uri,
+                    kg_connector=sindit_kg_connector,
                 )
                 connections[node_uri] = connection
                 connection.start()
@@ -126,6 +128,7 @@ def update_connection_node(node: Connection):
                         username=node.username,
                         password=password,
                         uri=node_uri,
+                        kg_connector=sindit_kg_connector,
                     )
                     connections[node_uri] = connection
 

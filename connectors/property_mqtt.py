@@ -2,16 +2,21 @@ import json
 from connectors.connector import Connector, Property
 from connectors.connector_mqtt import MQTTConnector
 from util.log import logger
-from initialize_kg_connectors import sindit_kg_connector
+from knowledge_graph.kg_connector import SINDITKGConnector
+
+# from initialize_kg_connectors import sindit_kg_connector
 
 
 class MQTTProperty(Property):
-    def __init__(self, uri, topic, path_or_code):
+    def __init__(
+        self, uri, topic, path_or_code, kg_connector: SINDITKGConnector = None
+    ):
         self.topic = str(topic)
         self.uri = str(uri)
         self.path_or_code = str(path_or_code)
         self.timestamp = None
         self.value = None
+        self.kg_connector = kg_connector
 
     def attach(self, connector: Connector) -> None:
         self.connector = connector
@@ -45,7 +50,7 @@ class MQTTProperty(Property):
                         # Update the knowledge graph with the new value
                         node = None
                         try:
-                            node = sindit_kg_connector.load_node_by_uri(self.uri)
+                            node = self.kg_connector.load_node_by_uri(self.uri)
                         except Exception:
                             pass
                         if node is not None:
@@ -66,7 +71,7 @@ class MQTTProperty(Property):
 
                             node.propertyValue = node_value
                             node.propertyValueTimestamp = str(self.timestamp)
-                            sindit_kg_connector.save_node(node, update_value=True)
+                            self.kg_connector.save_node(node, update_value=True)
                     else:
                         logger.error(
                             "Property "

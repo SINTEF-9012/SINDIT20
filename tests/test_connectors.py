@@ -1,5 +1,6 @@
 import pytest
 
+
 from connectors.connector_influxdb import InfluxDBConnector
 from connectors.connector_mqtt import MQTTConnector
 
