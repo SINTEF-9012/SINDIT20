@@ -1,15 +1,19 @@
-import uvicorn
-from util.environment_and_configuration import (
+from dotenv import load_dotenv
+
+load_dotenv("./environment_and_configuration/dev_environment_backend.env")
+
+import uvicorn  # noqa: E402
+from util.environment_and_configuration import (  # noqa: E402
     get_environment_variable,
     get_environment_variable_int,
-)
-from util.log import logger
+)  # noqa: E402
+from util.log import logger  # noqa: E402
 
-from api import kg_endpoints  # noqa: F401
-from api import vault_endpoints  # noqa: F401
-from api import connection_endpoints  # noqa: F401
-from api import workspace_endpoints  # noqa: F401
-from api import metamodel_endpoints  # noqa: F401
+from api import kg_endpoints  # noqa: F401, E402
+from api import vault_endpoints  # noqa: F401, E402
+from api import connection_endpoints  # noqa: F401, E402
+from api import workspace_endpoints  # noqa: F401, E402
+from api import metamodel_endpoints  # noqa: F401, E402
 
 
 # from connectors.setup_connectors import initialize_connections_and_properties
