@@ -1,0 +1,20 @@
+PREFIX samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#>
+SELECT distinct ?unit ?symbol  ?prefName ?code
+WHERE {
+  ?unit a samm:Unit .
+    OPTIONAL {?unit samm:symbol ?symbol} .
+    OPTIONAL {?unit samm:commonCode ?code} .
+    OPTIONAL {?unit samm:preferredName ?prefName} .
+
+    {
+        ?unit ?predicate ?literal .
+
+    }
+    UNION
+    {
+        ?unit samm:quantityKind ?kind .
+        ?kind ?predicate ?literal .
+	}
+  FILTER (isLiteral(?literal) && CONTAINS(LCASE(STR(?literal)), "[search_term]"))
+}
+order by (?unit)

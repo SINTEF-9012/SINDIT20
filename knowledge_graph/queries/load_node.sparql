@@ -1,10 +1,11 @@
 CONSTRUCT {
   ?s ?p ?o .
 }
-where {
-
-    Bind(<[node_uri]> as ?s) .
+WHERE {
+  BIND(<[node_uri]> AS ?s) .
+  GRAPH <[graph_uri]> {
     ?s ?p ?o .
+  }
 }
 
 

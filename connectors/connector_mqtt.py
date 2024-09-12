@@ -2,9 +2,12 @@ import threading
 import time
 
 import paho.mqtt.client as mqtt
+from connectors.connector import Connector
+from util.log import logger
+from knowledge_graph.kg_connector import SINDITKGConnector
 
 
-class MQTTConnector:
+class MQTTConnector(Connector):
     """A class representing an MQTT connector.
 
     Args:
@@ -39,6 +42,8 @@ class MQTTConnector:
         timeout: int = 60,
         username: str = None,
         password: str = None,
+        uri: str = None,
+        kg_connector: SINDITKGConnector = None,
     ):
         self.host = host
         self.port = int(port)
@@ -49,10 +54,18 @@ class MQTTConnector:
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
+        self.client.on_disconnect = self._on_disconnect
+
         self.messages = {}  # Dict to store subscribed messages
         self.thread = None
 
-    def start(self):
+        self.uri = f"mqtt://{host}:{port}/"
+        if uri is not None:
+            self.uri = uri
+
+        self.kg_connector = kg_connector
+
+    def start(self, **kwargs):
         """Start the MQTT client and connect to the broker
         in a separate thread."""
         if self.__username and self.__password:
@@ -62,7 +75,7 @@ class MQTTConnector:
         self.thread = threading.Thread(target=self.client.loop_forever)
         self.thread.start()
 
-    def stop(self):
+    def stop(self, **kwargs):
         """Stop the MQTT client gracefully."""
         self.client.loop_stop()
         self.client.disconnect()
@@ -70,28 +83,74 @@ class MQTTConnector:
             self.thread.join()
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
-        print("Connected with result code " + str(rc))
+        logger.info(
+            "Connector "
+            + self.uri
+            + " connected to "
+            + self.host
+            + ":"
+            + str(self.port)
+            + " with result code "
+            + str(rc)
+        )
+
+        # Update the knowledge graph with the new value
+        node = None
+        try:
+            node = self.kg_connector.load_node_by_uri(self.uri)
+        except Exception:
+            pass
+        if node is not None:
+            node.isConnected = True
+            self.kg_connector.save_node(node, update_value=True)
+
+        # Subscribe to the topic again after reconnection
+        for property in self._observers.values():
+            self.subscribe(property.topic)
+
+    def _on_disconnect(self, client, userdata, disconnect_flags, rc, properties):
+        logger.info(
+            "Connector "
+            + self.uri
+            + " disconnected from "
+            + self.host
+            + ":"
+            + str(self.port)
+            + " with result code "
+            + str(rc)
+        )
+
+        # Update the knowledge graph with the new value
+        node = None
+        try:
+            node = self.kg_connector.load_node_by_uri(self.uri)
+        except Exception:
+            pass
+        if node is not None:
+            node.isConnected = False
+            self.kg_connector.save_node(node, update_value=True)
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic
         payload = msg.payload.decode("utf-8")
-        print(f"Received message on topic {topic}: {payload}")
-        if topic not in self.messages:
-            self.messages[topic] = {"timestamp": [], "payload": []}
+        logger.debug(f"Received message on topic {topic}: {payload}")
         # if payload is number, convert it to float
         try:
             payload = float(payload)
         except ValueError:
             pass
-        self.messages[topic]["payload"].append(payload)
-        self.messages[topic]["timestamp"].append(time.time())
+
+        self.messages[topic] = {"timestamp": time.time(), "payload": payload}
+
+        # update the properties value
+        self.notify()
 
     def subscribe(self, topic=None):
         """Subscribe to a topic."""
         if topic is None:
             topic = self.topic
         self.client.subscribe(topic)
-        print(f"Subscribed to {topic}")
+        logger.debug(f"Subscribed to {topic}")
 
     def get_messages(self):
         """Get the stored messages.

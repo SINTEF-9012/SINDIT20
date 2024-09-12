@@ -1,7 +1,9 @@
 from influxdb_client import InfluxDBClient
+from connectors.connector import Connector
+from util.log import logger
 
 
-class InfluxDBConnector:
+class InfluxDBConnector(Connector):
     """InfluxDB v2.0 connector class.
 
     This class provides methods to connect to and interact with an
@@ -30,11 +32,12 @@ class InfluxDBConnector:
 
     def __init__(
         self,
-        bucket: str = None,
         host: str = "localhost",
         port: int = 8086,
         org: str = None,
+        bucket: str = None,
         token: str = None,
+        uri: str = None,
     ):
         self.host = host
         self.port = str(port)
@@ -42,6 +45,10 @@ class InfluxDBConnector:
         self.bucket = bucket
         self.__token = token
         self.client = None
+
+        self.uri = f"http://{host}:{port}/"
+        if uri is not None:
+            self.uri = uri
 
     def set_token(self, token):
         """Set the authentication token for the InfluxDB connection.
@@ -61,11 +68,11 @@ class InfluxDBConnector:
         """
         self.bucket = bucket
 
-    def disconnect(self):
+    def stop(self, **kwargs):
         """Disconnect from the InfluxDB server."""
         self.client.close()
 
-    def connect(self, **kwargs):
+    def start(self, **kwargs):
         """Instantiate a connection to the InfluxDB server.
 
         Raises:
@@ -93,7 +100,7 @@ class InfluxDBConnector:
             raise ValueError("Token is required to connect to InfluxDB")
 
         if self.client.ping():
-            print("Successfully connected to InfluxDB")
+            logger.info("Successfully connected to InfluxDB")
         else:
             raise ConnectionError("Failed to connect to InfluxDB")
 
@@ -125,20 +132,24 @@ class InfluxDBConnector:
         """
         # TODO: Evaluate if this is a security risk.
         # If it is, then the client should not be exposed either.
-        return self.client.query_api().query(query)
+        return self.client.query_api().query_data_frame(query)
 
     def query_field(
         self,
-        field: str,
+        field: str = None,
+        measurement: str = None,
         start: str = "-1h",
         stop: str = "now()",
         bucket: str = None,
+        org: str = None,
+        tags: dict = None,
         query_return_type: str = "flux",
     ):
-        """Query the specified field from the InfluxDB database.
+        """Query the specified field or measurement from the InfluxDB database.
 
         Args:
-            field (str): The name of the field to query.
+            field (str, optional): The name of the field to query.
+            measurement (str, optional): The name of the measurement to query from.
             start (str, optional): The start time of the query range.
                 Defaults to "-1h".
             stop (str, optional): The stop time of the query range.
@@ -153,26 +164,45 @@ class InfluxDBConnector:
                 The query result based on the specified return type.
 
         Raises:
-            ValueError: If an invalid query return type is specified.
+            ValueError: If both `field` and `measurement` are `None` or if
+            an invalid query return type is specified.
         """
+        # Ensure either field or measurement is provided, but not both as None
+        if field is None and measurement is None:
+            raise ValueError(
+                "Either `field` or `measurement` must be specified, "
+                "but not both as None."
+            )
+
         self._check_if_bucket_name_is_set(bucket)
+
         query = f"""
             from(bucket: "{self.bucket}")
             |> range(start: {start}, stop: {stop})
-            |> filter(fn: (r) => r._field == "{field}")
             """
+
+        if measurement:
+            query += f'|> filter(fn: (r) => r._measurement == "{measurement}")\n'
+
+        if field:
+            query += f'|> filter(fn: (r) => r._field == "{field}")\n'
+
+        if tags:
+            for key, value in tags.items():
+                query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
+
         if query_return_type == "pandas":
             query += (
                 '|> pivot(rowKey:["_time"], '
                 'columnKey: ["_field"], '
                 'valueColumn: "_value") '
             )
-            return self.client.query_api().query_data_frame(query)
+            return self.client.query_api().query_data_frame(query, org=org)
         elif query_return_type == "flux":
-            return self.client.query_api().query(query)
+            return self.client.query_api().query(query, org=org)
         else:
             raise ValueError(
-                ("Invalid query return type." 'Choose either "pandas" or "flux".')
+                "Invalid query return type. Choose either 'pandas' or 'flux'."
             )
 
     def get_buckets(self):

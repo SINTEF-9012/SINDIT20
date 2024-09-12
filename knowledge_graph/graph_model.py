@@ -18,6 +18,7 @@ class GraphNamespace(Enum):
 
 
 GRAPH_MODEL = GraphNamespace.SINDIT.value
+KG_NS = GraphNamespace.SINDIT_KG.value
 
 
 class Connection(RDFModel):
@@ -54,14 +55,16 @@ class AbstractAssetProperty(RDFModel):
         "propertyDataType": GRAPH_MODEL.propertyDataType,
         "propertyValue": GRAPH_MODEL.propertyValue,
         "propertyName": GRAPH_MODEL.propertyName,
+        "propertyValueTimestamp": GRAPH_MODEL.propertyValueTimestamp,
     }
 
     propertyUnit: Union[URIRefNode, Literal, str] = None
     propertySemanticID: Literal | str = None
     propertyDescription: Literal | str = None
-    propertyDataType: Literal | str = None
+    propertyDataType: Union[URIRefNode, Literal, str] = None
     propertyValue: Literal | str = None
     propertyName: Literal | str = None
+    propertyValueTimestamp: Literal | str = None
 
 
 class DatabaseProperty(AbstractAssetProperty):
@@ -82,11 +85,13 @@ class StreamingProperty(AbstractAssetProperty):
 
     streamingPropertyConnection: Union[URIRefNode, Connection] = None
     streamingTopic: Literal | str = None
+    streamingPath: Literal | str = None
 
     mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
         "streamingPropertyConnection": GRAPH_MODEL.streamingPropertyConnection,
         "streamingTopic": GRAPH_MODEL.streamingTopic,
+        "streamingPath": GRAPH_MODEL.streamingPath,
     }
 
 
@@ -95,7 +100,14 @@ class TimeseriesProperty(DatabaseProperty):
 
     mapping: ClassVar[dict] = {
         **DatabaseProperty.mapping,
+        "timeseriesIdentifiers": GRAPH_MODEL.timeseriesIdentifiers,
+        "timeseriesRetrievalMethod": GRAPH_MODEL.timeseriesRetrievalMethod,
+        "timeseriesTags": GRAPH_MODEL.timeseriesTags,
     }
+
+    timeseriesIdentifiers: Literal | dict = None
+    timeseriesRetrievalMethod: Literal | str = None
+    timeseriesTags: Literal | dict = None
 
 
 class File(DatabaseProperty):

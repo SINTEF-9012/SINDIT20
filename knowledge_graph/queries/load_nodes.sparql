@@ -3,5 +3,7 @@ CONSTRUCT {
 }
 WHERE {
   VALUES ?s { [nodes_uri] }
-  ?s ?p ?o .
+  GRAPH <[graph_uri]> {
+    ?s ?p ?o .
+  }
 }

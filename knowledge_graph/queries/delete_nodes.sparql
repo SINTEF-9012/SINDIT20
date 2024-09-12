@@ -1,8 +1,11 @@
 DELETE {
-  ?s ?p ?o .
+  GRAPH <[graph_uri]> {
+    ?s ?p ?o .
+  }
 }
 WHERE {
-
-      VALUES ?s { [nodes_uri] }
-      ?s ?p ?o .
+  VALUES ?s { [nodes_uri] }
+  GRAPH <[graph_uri]> {
+    ?s ?p ?o .
+  }
 }

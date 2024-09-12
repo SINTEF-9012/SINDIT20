@@ -1,5 +1,3 @@
-import logging
-
 import uvicorn
 from util.environment_and_configuration import (
     get_environment_variable,
@@ -7,9 +5,19 @@ from util.environment_and_configuration import (
 )
 from util.log import logger
 
-from api import kg_endpoints, vault_endpoints  # noqa: F401
+from api import kg_endpoints  # noqa: F401
+from api import vault_endpoints  # noqa: F401
+from api import connection_endpoints  # noqa: F401
+from api import workspace_endpoints  # noqa: F401
+from api import metamodel_endpoints  # noqa: F401
 
-logger.log(logging.INFO, "Starting SINDIT")
+
+# from connectors.setup_connectors import initialize_connections_and_properties
+
+# logger.info("Starting connections and properties...")
+# initialize_connections_and_properties()
+
+logger.info("Starting SINDIT")
 
 # Run fast API
 logger.info("Running FastAPI...")

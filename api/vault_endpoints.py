@@ -1,11 +1,28 @@
 from fastapi import HTTPException
-from initialize_objects import secret_vault
+from initialize_vault import secret_vault
 from util.log import logger
 
 from api.api import app
 
 
-@app.post("/vault/secret", tags=["Vault"])
+@app.post(
+    "/vault/secret",
+    tags=["Vault"],
+    responses={
+        200: {
+            "description": "Successful response",
+            "content": {"application/json": {"example": {"result": "true"}}},
+        },
+        400: {
+            "description": "Bad request",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Failed to store secret: error message"}
+                }
+            },
+        },
+    },
+)
 async def store_secret(secret_path: str, secret_value: str) -> dict:
     """
     Store a secret in the vault.

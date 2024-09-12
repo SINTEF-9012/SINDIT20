@@ -1,5 +1,7 @@
 [prefixes]
 
 INSERT DATA {
-  [data]
+  GRAPH <[graph_uri]> {
+    [data]
+  }
 }
