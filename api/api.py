@@ -1,5 +1,7 @@
 import fastapi
 from util.environment_and_configuration import ConfigGroups, get_configuration
+from fastapi.middleware.cors import CORSMiddleware
+
 
 description = """This is the API for the SINDIT project.
 It provides access to the knowledge graph and the data stored in it."""
@@ -27,6 +29,7 @@ tags_metadata = [
     },
 ]
 
+
 api_version = get_configuration(ConfigGroups.API, "api_version")
 app = fastapi.FastAPI(
     title="SINDIT API",
@@ -34,4 +37,16 @@ app = fastapi.FastAPI(
     version=api_version,
     openapi_tags=tags_metadata,
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
+)
+
+origins = [
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE", "PUT"],
+    allow_headers=["*"],
 )
