@@ -6,6 +6,7 @@ from util.log import logger
 class Connector:
     _observers: dict = {}
     uri = None
+    kg_connector = None
 
     def attach(self, property: Property) -> None:
         """
@@ -46,10 +47,24 @@ class Connector:
         """
         pass
 
+    def update_connection_status(self, is_connected: bool) -> None:
+        """
+        Update the connection status of the connector in the knowledge graph.
+        """
+        node = None
+        try:
+            node = self.kg_connector.load_node_by_uri(self.uri)
+        except Exception:
+            pass
+        if node is not None:
+            node.isConnected = is_connected
+            self.kg_connector.save_node(node, update_value=True)
+
 
 class Property(ABC):
     uri = None
     connector = None
+    kg_connector = None
 
     @abstractmethod
     def update_value(self, connector: Connector, **kwargs) -> None:

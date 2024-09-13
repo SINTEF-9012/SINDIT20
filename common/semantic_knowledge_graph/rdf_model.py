@@ -1,4 +1,5 @@
-from typing import Any, ClassVar, List, Union, get_type_hints
+from datetime import datetime
+from typing import Any, ClassVar, List, Union, get_args, get_type_hints
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -237,9 +238,33 @@ class RDFModel(BaseModel):
             new_val = Literal(value, datatype=XSD.boolean)
         elif isinstance(value, dict):
             new_val = Literal(json.dumps(value))
+        elif isinstance(value, datetime):
+            new_val = Literal(value.isoformat(), datatype=XSD.dateTimeStamp)
         else:
             new_val = value
 
+        return new_val
+
+    def reverse_to_type(value: Any, value_type_hint: Any) -> Any:
+        # Convert the value to the correct data type
+        # TODO: Should check for other xsd types
+        new_val = value
+        try:
+            if "str" in str(value_type_hint):
+                new_val = str(value)
+            elif "int" in str(value_type_hint):
+                new_val = int(value)
+            elif "float" in str(value_type_hint):
+                new_val = float(value)
+            elif "bool" in str(value_type_hint):
+                new_val = bool(value)
+            elif "dict" in str(value_type_hint):
+                new_val = json.loads(value)
+            elif "datetime" in str(value_type_hint):
+                new_val = datetime.fromisoformat(value)
+            # Add more type conversions if needed
+        except Exception:
+            new_val = value
         return new_val
 
     def _reverse_attr(value: Any, value_type_hint: Any) -> None:
@@ -253,17 +278,42 @@ class RDFModel(BaseModel):
                 new_val = float(value)
             elif value.datatype == XSD.boolean:
                 new_val = bool(value)
+            elif value.datatype == XSD.dateTimeStamp or value.datatype == XSD.dateTime:
+                new_val = datetime.fromisoformat(value)
             else:
-                if "str" in str(value_type_hint):
-                    new_val = str(value)
-                elif "int" in str(value_type_hint):
-                    new_val = int(value)
-                elif "float" in str(value_type_hint):
-                    new_val = float(value)
-                elif "bool" in str(value_type_hint):
-                    new_val = bool(value)
-                elif "dict" in str(value_type_hint):
-                    new_val = json.loads(value)
+                # If the type hint is a Union or | type,
+                # we process each option in reverse order
+                if hasattr(value_type_hint, "__args__"):
+                    # Get all the types from the Union or | type
+                    type_options = get_args(value_type_hint)
+
+                    # Process the types in reverse order
+                    for type_option in type_options:
+                        try:
+                            if type_option == str:
+                                new_val = str(value)
+                                break
+                            elif type_option == int:
+                                new_val = int(value)
+                                break
+                            elif type_option == float:
+                                new_val = float(value)
+                                break
+                            elif type_option == bool:
+                                new_val = bool(value)
+                                break
+                            elif type_option == dict:
+                                new_val = json.loads(value)
+                                break
+                            elif type_option == datetime:
+                                new_val = datetime.fromisoformat(value)
+                                break
+                            # Add more type conversions if needed
+                        except Exception:
+                            continue
+
+                else:
+                    new_val = RDFModel.reverse_to_type(value, value_type_hint)
 
         return new_val
 

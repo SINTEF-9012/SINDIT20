@@ -1,5 +1,6 @@
+from datetime import datetime
 from enum import Enum
-from typing import ClassVar, List, Union
+from typing import Any, ClassVar, List, Union
 
 from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from rdflib import Literal, Namespace, URIRef
@@ -62,9 +63,9 @@ class AbstractAssetProperty(RDFModel):
     propertySemanticID: Literal | str = None
     propertyDescription: Literal | str = None
     propertyDataType: Union[URIRefNode, Literal, str] = None
-    propertyValue: Literal | str = None
+    propertyValue: Literal | Any = None
     propertyName: Literal | str = None
-    propertyValueTimestamp: Literal | str = None
+    propertyValueTimestamp: Literal | datetime | float | int | str = None
 
 
 class DatabaseProperty(AbstractAssetProperty):

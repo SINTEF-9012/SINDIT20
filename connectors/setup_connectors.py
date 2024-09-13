@@ -93,6 +93,7 @@ def remove_connection_node(node: Connection):
 
 def update_connection_node(node: Connection):
     # Only update the connection if it is of type MQTT
+    # TODO: Add support for other types of connections
     if str(node.type).lower() == "mqtt":
         try:
             password = secret_vault.get_secret(node.passwordPath)

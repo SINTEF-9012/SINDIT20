@@ -1,5 +1,6 @@
 from influxdb_client import InfluxDBClient
 from connectors.connector import Connector
+from projects.sindit.knowledge_graph.kg_connector import SINDITKGConnector
 from util.log import logger
 
 
@@ -38,6 +39,7 @@ class InfluxDBConnector(Connector):
         bucket: str = None,
         token: str = None,
         uri: str = None,
+        kg_connector: SINDITKGConnector = None,
     ):
         self.host = host
         self.port = str(port)
@@ -49,6 +51,8 @@ class InfluxDBConnector(Connector):
         self.uri = f"http://{host}:{port}/"
         if uri is not None:
             self.uri = uri
+
+        self.kg_connector = kg_connector
 
     def set_token(self, token):
         """Set the authentication token for the InfluxDB connection.
@@ -71,6 +75,8 @@ class InfluxDBConnector(Connector):
     def stop(self, **kwargs):
         """Disconnect from the InfluxDB server."""
         self.client.close()
+        self.update_connection_status(False)
+        logger.info(f"Connector {self.uri} disconnected from InfluxDB")
 
     def start(self, **kwargs):
         """Instantiate a connection to the InfluxDB server.
@@ -100,8 +106,13 @@ class InfluxDBConnector(Connector):
             raise ValueError("Token is required to connect to InfluxDB")
 
         if self.client.ping():
-            logger.info("Successfully connected to InfluxDB")
+            logger.info(
+                f"Connector {self.uri} successfully connected to "
+                f"InfluxDB {self.host}:{self.port}"
+            )
+            self.update_connection_status(True)
         else:
+            self.update_connection_status(False)
             raise ConnectionError("Failed to connect to InfluxDB")
 
     def _check_if_bucket_name_is_set(self, bucket: str = None) -> bool:
@@ -136,14 +147,15 @@ class InfluxDBConnector(Connector):
 
     def query_field(
         self,
-        field: str = None,
+        field: str | list = None,
         measurement: str = None,
         start: str = "-1h",
         stop: str = "now()",
         bucket: str = None,
         org: str = None,
         tags: dict = None,
-        query_return_type: str = "flux",
+        latest: bool = False,
+        query_return_type: str = "pandas",
     ):
         """Query the specified field or measurement from the InfluxDB database.
 
@@ -187,9 +199,20 @@ class InfluxDBConnector(Connector):
         if field:
             query += f'|> filter(fn: (r) => r._field == "{field}")\n'
 
+        # tags value could be a list or a single value
         if tags:
             for key, value in tags.items():
-                query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
+                if isinstance(value, list):
+                    query += f'    |> filter(fn: (r) => r.{key} == "{value[0]}"'
+                    for i in range(1, len(value)):
+                        query += f' or r.{key} == "{value[i]}"'
+                    query += ")\n"
+                else:
+                    query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
+                # query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
+
+        if latest:
+            query += "|> last()"
 
         if query_return_type == "pandas":
             query += (

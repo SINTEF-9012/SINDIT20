@@ -1,5 +1,6 @@
+from datetime import datetime
 import threading
-import time
+
 
 import paho.mqtt.client as mqtt
 from connectors.connector import Connector
@@ -81,6 +82,7 @@ class MQTTConnector(Connector):
         self.client.disconnect()
         if self.thread is not None:
             self.thread.join()
+        logger.info("Connector " + self.uri + " stopped")
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
         logger.info(
@@ -95,14 +97,7 @@ class MQTTConnector(Connector):
         )
 
         # Update the knowledge graph with the new value
-        node = None
-        try:
-            node = self.kg_connector.load_node_by_uri(self.uri)
-        except Exception:
-            pass
-        if node is not None:
-            node.isConnected = True
-            self.kg_connector.save_node(node, update_value=True)
+        self.update_connection_status(True)
 
         # Subscribe to the topic again after reconnection
         for property in self._observers.values():
@@ -121,14 +116,7 @@ class MQTTConnector(Connector):
         )
 
         # Update the knowledge graph with the new value
-        node = None
-        try:
-            node = self.kg_connector.load_node_by_uri(self.uri)
-        except Exception:
-            pass
-        if node is not None:
-            node.isConnected = False
-            self.kg_connector.save_node(node, update_value=True)
+        self.update_connection_status(False)
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic
@@ -140,7 +128,10 @@ class MQTTConnector(Connector):
         except ValueError:
             pass
 
-        self.messages[topic] = {"timestamp": time.time(), "payload": payload}
+        # Get the current UTC time in ISO 8601 format with the 'Z' timezone for UTC
+        local_timestamp = datetime.now()
+
+        self.messages[topic] = {"timestamp": local_timestamp, "payload": payload}
 
         # update the properties value
         self.notify()
