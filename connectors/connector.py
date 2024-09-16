@@ -35,9 +35,10 @@ class Connector:
         """
         Notify all attached properties.
         """
-        logger.debug("Notify all attached properties")
-        for observer in self._observers.values():
-            observer.update_value(self, **kwargs)
+        logger.debug(f"Node {self.uri} notifies all attached properties")
+        if self._observers is not None:
+            for observer in self._observers.values():
+                observer.update_value(self, **kwargs)
 
     @abstractmethod
     def start(self, **kwargs) -> any:
