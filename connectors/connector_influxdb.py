@@ -1,6 +1,6 @@
 from influxdb_client import InfluxDBClient
 from connectors.connector import Connector
-from projects.sindit.knowledge_graph.kg_connector import SINDITKGConnector
+from knowledge_graph.kg_connector import SINDITKGConnector
 from util.log import logger
 
 
@@ -31,6 +31,8 @@ class InfluxDBConnector(Connector):
 
     """
 
+    id: str = "influxdb"
+
     def __init__(
         self,
         host: str = "localhost",
@@ -42,13 +44,17 @@ class InfluxDBConnector(Connector):
         kg_connector: SINDITKGConnector = None,
     ):
         self.host = host
+        # if host not start with http:// or https://, add http://
+        if not host.startswith("http://") and not host.startswith("https://"):
+            self.host = "http://" + host
+
         self.port = str(port)
         self.org = org
         self.bucket = bucket
         self.__token = token
         self.client = None
 
-        self.uri = f"http://{host}:{port}/"
+        self.uri = f"influxdb://{host}:{port}/"
         if uri is not None:
             self.uri = uri
 
@@ -161,7 +167,8 @@ class InfluxDBConnector(Connector):
 
         Args:
             field (str, optional): The name of the field to query.
-            measurement (str, optional): The name of the measurement to query from.
+            measurement (str, optional): The name of the measurement to
+                query from.
             start (str, optional): The start time of the query range.
                 Defaults to "-1h".
             stop (str, optional): The stop time of the query range.

@@ -35,6 +35,8 @@ class MQTTConnector(Connector):
 
     """
 
+    id: str = "mqtt"
+
     def __init__(
         self,
         host: str = "localhost",
@@ -100,8 +102,9 @@ class MQTTConnector(Connector):
         self.update_connection_status(True)
 
         # Subscribe to the topic again after reconnection
-        for property in self._observers.values():
-            self.subscribe(property.topic)
+        if self._observers is not None:
+            for property in self._observers.values():
+                self.subscribe(property.topic)
 
     def _on_disconnect(self, client, userdata, disconnect_flags, rc, properties):
         logger.info(
@@ -128,7 +131,8 @@ class MQTTConnector(Connector):
         except ValueError:
             pass
 
-        # Get the current UTC time in ISO 8601 format with the 'Z' timezone for UTC
+        # Get the current UTC time in ISO 8601 format
+        # with the 'Z' timezone for UTC
         local_timestamp = datetime.now()
 
         self.messages[topic] = {"timestamp": local_timestamp, "payload": payload}

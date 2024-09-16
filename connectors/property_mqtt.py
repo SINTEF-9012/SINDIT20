@@ -18,10 +18,10 @@ class MQTTProperty(Property):
         self.kg_connector = kg_connector
 
     def attach(self, connector: Connector) -> None:
-        self.connector = connector
-        connector.attach(self)
+        # self.connector = connector
+        # connector.attach(self)
         connector.subscribe(str(self.topic))
-        logger.debug(f"Attaching property {self.uri} to connector {connector.uri}")
+        # logger.debug(f"Attaching property {self.uri} to connector {connector.uri}")
 
     def update_value(self, connector: Connector, **kwargs) -> None:
         mqtt_connector: MQTTConnector = connector

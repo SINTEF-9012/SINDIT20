@@ -1,21 +1,27 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from util.log import logger
+from knowledge_graph.kg_connector import SINDITKGConnector
 
 
 class Connector:
-    _observers: dict = {}
-    uri = None
-    kg_connector = None
+    id: str = None
+    _observers: dict = None
+    uri: str = None
+    kg_connector: SINDITKGConnector = None
 
     def attach(self, property: Property) -> None:
         """
         Attach a property to the connector.
         """
+        if self._observers is None:
+            self._observers = {}
+
         logger.info(f"Attaching property {property.uri} to connector {self.uri}")
         if property.uri not in self._observers:
             self._observers[property.uri] = property
             property.connector = self
+            property.attach(self)
 
     def detach(self, property: Property) -> None:
         """
@@ -62,13 +68,19 @@ class Connector:
 
 
 class Property(ABC):
-    uri = None
-    connector = None
-    kg_connector = None
+    connector: Connector = None
+    uri: str = None
+    kg_connector: SINDITKGConnector = None
 
     @abstractmethod
     def update_value(self, connector: Connector, **kwargs) -> None:
         """
         Receive update from connector
+        """
+        pass
+
+    def attach(self, connector: Connector) -> None:
+        """
+        Attach a property to the connector.
         """
         pass
