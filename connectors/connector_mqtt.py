@@ -1,4 +1,3 @@
-from datetime import datetime
 import threading
 
 
@@ -6,6 +5,9 @@ import paho.mqtt.client as mqtt
 from connectors.connector import Connector
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
+from util.datetime_util import (
+    get_current_local_time,
+)
 
 
 class MQTTConnector(Connector):
@@ -131,9 +133,7 @@ class MQTTConnector(Connector):
         except ValueError:
             pass
 
-        # Get the current UTC time in ISO 8601 format
-        # with the 'Z' timezone for UTC
-        local_timestamp = datetime.now()
+        local_timestamp = get_current_local_time()
 
         self.messages[topic] = {"timestamp": local_timestamp, "payload": payload}
 

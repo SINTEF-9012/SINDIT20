@@ -45,7 +45,7 @@ class InfluxDBConnector(Connector):
         token: str = None,
         uri: str = None,
         kg_connector: SINDITKGConnector = None,
-        update_interval: int = 5,  # update every 5 seconds
+        update_interval: int = 10,  # update every 10 seconds
     ):
         self.host = host
         # if host not start with http:// or https://, add http://

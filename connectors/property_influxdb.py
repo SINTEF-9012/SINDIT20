@@ -4,6 +4,11 @@ from connectors.connector import Connector, Property
 from connectors.connector_influxdb import InfluxDBConnector
 from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from datetime import datetime
+from util.datetime_util import (
+    convert_to_local_time,
+    convert_string_to_local_time,
+    get_current_local_time,
+)
 
 
 class InfluxDBProperty(Property):
@@ -47,15 +52,22 @@ class InfluxDBProperty(Property):
             if df is None or df.empty:
                 logger.debug(f"No data found for property {self.uri}")
             else:
-                # set the timestamp (_time)
-                self.timestamp = df["_time"].values[0]
-                # convert timestamp to datetime
-                if not isinstance(self.timestamp, datetime):
-                    try:
-                        self.timestamp = datetime.fromisoformat(str(self.timestamp))
-                    except Exception as e:
-                        logger.error(f"Error converting timestamp to datetime: {e}")
-                        pass
+                if "_time" in df.columns:
+                    self.timestamp = df["_time"].iloc[0]
+                    self.timestamp = self.timestamp.to_pydatetime()
+                else:
+                    self.timestamp = get_current_local_time()
+
+                try:
+                    if isinstance(self.timestamp, datetime):
+                        self.timestamp = convert_to_local_time(self.timestamp)
+                    else:
+                        self.timestamp = convert_string_to_local_time(
+                            str(self.timestamp)
+                        )
+                except Exception as e:
+                    self.timestamp = get_current_local_time()
+                    logger.error(f"Error converting timestamp to datetime: {e}")
 
                 self.value = None
                 if self.field is not None:
