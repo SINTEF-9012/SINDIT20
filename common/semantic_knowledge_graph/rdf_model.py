@@ -40,7 +40,14 @@ class URIRefNode(BaseModel):
 
 
 class RDFModel(BaseModel):
-    """RDF Model"""
+    """RDF Model
+    Limitations:
+    - Type List can only be used for a list of objects except a list
+      (e.g., list of lists)
+      - List cannot be used in a Union type either (e.g., Union[List[str], List[int]])
+    - List cannot used in a Union type either (e.g., Union[List[str], List[int]])
+    - Dict will be treated as a string in the RDF graph
+    """
 
     CLASS_URI: ClassVar[URIRef] = None
 
