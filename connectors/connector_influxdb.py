@@ -38,7 +38,7 @@ class InfluxDBConnector(Connector):
 
     def __init__(
         self,
-        host: str = "localhost",
+        host: str = "http://localhost",
         port: int = 8086,
         org: str = None,
         bucket: str = None,
