@@ -35,3 +35,18 @@ async def get_all_units():
     except Exception as e:
         logger.error(f"Error getting all units: {e}")
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get(
+    "/metamodel/get_data_type",
+    tags=["Metamodel"],
+)
+async def get_all_data_type():
+    """
+    Get all data types in the meta-model.
+    """
+    try:
+        return sindit_kg_connector.get_all_data_types()
+    except Exception as e:
+        logger.error(f"Error getting all data types: {e}")
+        raise HTTPException(status_code=404, detail=str(e))

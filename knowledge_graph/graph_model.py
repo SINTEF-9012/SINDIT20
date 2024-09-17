@@ -1,5 +1,6 @@
+from datetime import datetime
 from enum import Enum
-from typing import ClassVar, List, Union
+from typing import Any, ClassVar, List, Union
 
 from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from rdflib import Literal, Namespace, URIRef
@@ -56,26 +57,29 @@ class AbstractAssetProperty(RDFModel):
         "propertyValue": GRAPH_MODEL.propertyValue,
         "propertyName": GRAPH_MODEL.propertyName,
         "propertyValueTimestamp": GRAPH_MODEL.propertyValueTimestamp,
+        "propertyConnection": GRAPH_MODEL.propertyConnection,
     }
 
     propertyUnit: Union[URIRefNode, Literal, str] = None
     propertySemanticID: Literal | str = None
     propertyDescription: Literal | str = None
     propertyDataType: Union[URIRefNode, Literal, str] = None
-    propertyValue: Literal | str = None
+    propertyValue: Literal | Any = None
     propertyName: Literal | str = None
-    propertyValueTimestamp: Literal | str = None
+    propertyValueTimestamp: Literal | datetime | float | int | str = None
+
+    propertyConnection: Union[URIRefNode, Connection] = None
 
 
 class DatabaseProperty(AbstractAssetProperty):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.DatabaseProperty
 
-    databasePropertyConnection: Union[URIRefNode, Connection] = None
+    # databasePropertyConnection: Union[URIRefNode, Connection] = None
     query: Literal | str = None
 
     mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
-        "databasePropertyConnection": GRAPH_MODEL.databasePropertyConnection,
+        # "databasePropertyConnection": GRAPH_MODEL.databasePropertyConnection,
         "query": GRAPH_MODEL.query,
     }
 
@@ -83,13 +87,13 @@ class DatabaseProperty(AbstractAssetProperty):
 class StreamingProperty(AbstractAssetProperty):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.StreamingProperty
 
-    streamingPropertyConnection: Union[URIRefNode, Connection] = None
+    # streamingPropertyConnection: Union[URIRefNode, Connection] = None
     streamingTopic: Literal | str = None
     streamingPath: Literal | str = None
 
     mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
-        "streamingPropertyConnection": GRAPH_MODEL.streamingPropertyConnection,
+        # "streamingPropertyConnection": GRAPH_MODEL.streamingPropertyConnection,
         "streamingTopic": GRAPH_MODEL.streamingTopic,
         "streamingPath": GRAPH_MODEL.streamingPath,
     }

@@ -37,7 +37,7 @@ class TestInfluxDBConnector:
 
     def test_init(self):
         """Test default values of InfluxDBConnector."""
-        assert self.influx.host == "localhost"
+        assert self.influx.host == "http://localhost"
         assert self.influx.port == str(8086)
         assert self.influx.org is None
 

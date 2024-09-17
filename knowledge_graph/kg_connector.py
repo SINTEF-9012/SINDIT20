@@ -9,7 +9,7 @@ from knowledge_graph.graph_model import (
     KG_NS,
     URIClassMapping,
 )
-from rdflib import RDF, Graph, URIRef
+from rdflib import RDF, XSD, Graph, URIRef
 from rdflib.term import _is_valid_uri
 
 # from initialize_connectors import update_connection_node, update_propery_node
@@ -101,6 +101,17 @@ class SINDITKGConnector:
 
             except Exception as e:
                 raise Exception(f"Failed to get all units. Reason {e}")
+
+    def get_all_data_types(self):
+        list_data_types = []
+        list_data_types.append({"uri": XSD.string, "label": "string"})
+        list_data_types.append({"uri": XSD.integer, "label": "integer"})
+        list_data_types.append({"uri": XSD.float, "label": "float"})
+        list_data_types.append({"uri": XSD.boolean, "label": "boolean"})
+        list_data_types.append(
+            {"uri": XSD.dateTimeStamp, "label": "dateTime | dateTimeStamp"}
+        )
+        return list_data_types
 
     def load_node_by_uri(
         self,
