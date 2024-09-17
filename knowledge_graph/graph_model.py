@@ -64,7 +64,7 @@ class AbstractAssetProperty(RDFModel):
     propertySemanticID: Literal | str = None
     propertyDescription: Literal | str = None
     propertyDataType: Union[URIRefNode, Literal, str] = None
-    propertyValue: Literal | Any = None
+    propertyValue: Literal | dict | Any = None
     propertyName: Literal | str = None
     propertyValueTimestamp: Literal | datetime | float | int | str = None
 
