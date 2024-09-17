@@ -1,4 +1,3 @@
-from datetime import datetime
 import threading
 import time
 
@@ -91,13 +90,13 @@ class InfluxDBConnector(Connector):
         """Disconnect from the InfluxDB server."""
         self.client.close()
         self.update_connection_status(False)
-        
+
         # Stop the update thread
         if self.thread is not None:
             self._stop_event.set()
             self.thread.join()
             self.thread = None
-            
+
         logger.info(f"Connector {self.uri} disconnected from InfluxDB")
 
     def start(self, **kwargs):
@@ -133,7 +132,7 @@ class InfluxDBConnector(Connector):
                 f"InfluxDB {self.host}:{self.port}"
             )
             self.update_connection_status(True)
-            
+
             # Start the update thread
             self.thread = threading.Thread(target=self.update_property)
             self.thread.daemon = True

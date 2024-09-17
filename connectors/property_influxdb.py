@@ -9,15 +9,14 @@ from datetime import datetime
 class InfluxDBProperty(Property):
     def __init__(
         self,
-        uri, 
+        uri,
         field: str | list = None,
         measurement: str = None,
         org: str = None,
         bucket: str = None,
         tags: dict = None,
-        kg_connector: SINDITKGConnector = None
+        kg_connector: SINDITKGConnector = None,
     ):
-
         self.uri = str(uri)
         self.timestamp = None
         self.value = None
@@ -45,10 +44,12 @@ class InfluxDBProperty(Property):
                 start=0,
                 stop="now()",
             )
-            if df is not None and not df.empty:
-                #set the timestamp (_time) 
+            if df is None or df.empty:
+                logger.debug(f"No data found for property {self.uri}")
+            else:
+                # set the timestamp (_time)
                 self.timestamp = df["_time"].values[0]
-                #convert timestamp to datetime
+                # convert timestamp to datetime
                 if not isinstance(self.timestamp, datetime):
                     try:
                         self.timestamp = datetime.fromisoformat(str(self.timestamp))
@@ -59,11 +60,11 @@ class InfluxDBProperty(Property):
                 self.value = None
                 if self.field is not None:
                     if isinstance(self.field, list):
-                        #set value to a dictionary of field values
+                        # set value to a dictionary of field values
                         self.value = {}
                         for field in self.field:
                             self.value[field] = df[field].values[0]
-                            
+
                     elif isinstance(self.field, str):
                         self.value = df[self.field].values[0]
                 elif "_value" in df.columns:
@@ -89,13 +90,9 @@ class InfluxDBProperty(Property):
                     if isinstance(self.value, dict):
                         node_value = {}
                         for key, value in self.value.items():
-                            node_value[key] = RDFModel.reverse_to_type(
-                                value, data_type
-                            )
+                            node_value[key] = RDFModel.reverse_to_type(value, data_type)
                     else:
-                        node_value = RDFModel.reverse_to_type(
-                            self.value, data_type
-                        )
+                        node_value = RDFModel.reverse_to_type(self.value, data_type)
 
                     self.value = node_value
 
@@ -107,7 +104,6 @@ class InfluxDBProperty(Property):
                     f"Property {self.uri} updated with value {self.value}, "
                     f"timestamp {self.timestamp}"
                 )
-
 
     def attach(self, connector: Connector) -> None:
         """

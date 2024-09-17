@@ -24,7 +24,7 @@ async def refresh_connections_and_properties():
     """
     Refresh connections and properties.
     """
-    initialize_connections_and_properties()
+    initialize_connections_and_properties(replace=False)
     logger.info("Connections and properties refreshed")
 
     return {"message": "Connections and properties refreshed"}
