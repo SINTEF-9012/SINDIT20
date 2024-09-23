@@ -4,7 +4,7 @@ from dateutil import parser
 
 def convert_string_to_local_time(timestamp: str) -> datetime:
     """
-    Convert a UTC timestamp to the system's local timezone.
+    Convert a timestamp to the system's local timezone.
     """
     utc_time = parser.isoparse(timestamp)
     local_timezone = datetime.now().astimezone().tzinfo
@@ -14,7 +14,7 @@ def convert_string_to_local_time(timestamp: str) -> datetime:
 
 def convert_to_local_time(timestamp: datetime) -> datetime:
     """
-    Convert a UTC timestamp to the system's local timezone.
+    Convert a timestamp to the system's local timezone.
     """
     local_timezone = datetime.now().astimezone().tzinfo
     local_time = timestamp.astimezone(local_timezone)
