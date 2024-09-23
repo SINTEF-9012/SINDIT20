@@ -200,7 +200,15 @@ def update_connection_node(node: Connection, replace: bool = True) -> Connector:
         # If the connection already exists and replace is False,
         # return the connection
         if node_uri in connections and not replace:
-            return connections[node_uri]
+            connector: Connector = connections[node_uri]
+            if connector is not None and not connector.is_connected:
+                try:
+                    connector.stop()
+                except Exception:
+                    pass
+    
+                connector.start()
+            return connector
 
         connector = create_connector(node)
         if connector is not None:
