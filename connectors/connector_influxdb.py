@@ -1,5 +1,9 @@
+import threading
+import time
+
 from influxdb_client import InfluxDBClient
 from connectors.connector import Connector
+from knowledge_graph.kg_connector import SINDITKGConnector
 from util.log import logger
 
 
@@ -30,25 +34,39 @@ class InfluxDBConnector(Connector):
 
     """
 
+    id: str = "influxdb"
+
     def __init__(
         self,
-        host: str = "localhost",
+        host: str = "http://localhost",
         port: int = 8086,
         org: str = None,
         bucket: str = None,
         token: str = None,
         uri: str = None,
+        kg_connector: SINDITKGConnector = None,
+        update_interval: int = 10,  # update every 10 seconds
     ):
         self.host = host
+        # if host not start with http:// or https://, add http://
+        if not host.startswith("http://") and not host.startswith("https://"):
+            self.host = "http://" + host
+
         self.port = str(port)
         self.org = org
         self.bucket = bucket
         self.__token = token
         self.client = None
 
-        self.uri = f"http://{host}:{port}/"
+        self.uri = f"influxdb://{host}:{port}/"
         if uri is not None:
             self.uri = uri
+
+        self.kg_connector = kg_connector
+
+        self.thread = None
+        self._stop_event = threading.Event()
+        self.update_interval = update_interval
 
     def set_token(self, token):
         """Set the authentication token for the InfluxDB connection.
@@ -71,6 +89,15 @@ class InfluxDBConnector(Connector):
     def stop(self, **kwargs):
         """Disconnect from the InfluxDB server."""
         self.client.close()
+        self.update_connection_status(False)
+
+        # Stop the update thread
+        if self.thread is not None:
+            self._stop_event.set()
+            self.thread.join()
+            self.thread = None
+
+        logger.info(f"Connector {self.uri} disconnected from InfluxDB")
 
     def start(self, **kwargs):
         """Instantiate a connection to the InfluxDB server.
@@ -100,8 +127,19 @@ class InfluxDBConnector(Connector):
             raise ValueError("Token is required to connect to InfluxDB")
 
         if self.client.ping():
-            logger.info("Successfully connected to InfluxDB")
+            logger.info(
+                f"Connector {self.uri} successfully connected to "
+                f"InfluxDB {self.host}:{self.port}"
+            )
+            self.update_connection_status(True)
+
+            # Start the update thread
+            self.thread = threading.Thread(target=self.update_property)
+            self.thread.daemon = True
+            self._stop_event.clear()
+            self.thread.start()
         else:
+            self.update_connection_status(False)
             raise ConnectionError("Failed to connect to InfluxDB")
 
     def _check_if_bucket_name_is_set(self, bucket: str = None) -> bool:
@@ -136,20 +174,22 @@ class InfluxDBConnector(Connector):
 
     def query_field(
         self,
-        field: str = None,
+        field: str | list = None,
         measurement: str = None,
         start: str = "-1h",
         stop: str = "now()",
         bucket: str = None,
         org: str = None,
         tags: dict = None,
-        query_return_type: str = "flux",
+        latest: bool = False,
+        query_return_type: str = "pandas",
     ):
         """Query the specified field or measurement from the InfluxDB database.
 
         Args:
             field (str, optional): The name of the field to query.
-            measurement (str, optional): The name of the measurement to query from.
+            measurement (str, optional): The name of the measurement to
+                query from.
             start (str, optional): The start time of the query range.
                 Defaults to "-1h".
             stop (str, optional): The stop time of the query range.
@@ -185,11 +225,28 @@ class InfluxDBConnector(Connector):
             query += f'|> filter(fn: (r) => r._measurement == "{measurement}")\n'
 
         if field:
-            query += f'|> filter(fn: (r) => r._field == "{field}")\n'
+            if isinstance(field, list):
+                query += f'    |> filter(fn: (r) => r._field == "{field[0]}"'
+                for i in range(1, len(field)):
+                    query += f' or r._field == "{field[i]}"'
+                query += ")\n"
+            elif isinstance(field, str):
+                query += f'    |> filter(fn: (r) => r._field == "{field}")\n'
 
+        # tags value could be a list or a single value
         if tags:
             for key, value in tags.items():
-                query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
+                if isinstance(value, list):
+                    query += f'    |> filter(fn: (r) => r.{key} == "{value[0]}"'
+                    for i in range(1, len(value)):
+                        query += f' or r.{key} == "{value[i]}"'
+                    query += ")\n"
+                else:
+                    query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
+                # query += f'    |> filter(fn: (r) => r.{key} == "{value}")\n'
+
+        if latest:
+            query += "|> last()"
 
         if query_return_type == "pandas":
             query += (
@@ -270,3 +327,12 @@ class InfluxDBConnector(Connector):
         """Get the data asynchronously as a stream."""
         # TODO: Implement this method?
         pass
+
+    def update_property(self):
+        while not self._stop_event.is_set():
+            try:
+                logger.debug(f"InfluxDB node {self.uri} updating property")
+                self.notify()
+            except Exception as e:
+                logger.error(f"Error updating property: {e}")
+            time.sleep(self.update_interval)

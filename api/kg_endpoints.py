@@ -204,6 +204,10 @@ async def save_database_property(node: DatabaseProperty) -> dict:
     """
     try:
         result = sindit_kg_connector.save_node(node)
+
+        if result:
+            update_propery_node(node)
+
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -236,6 +240,10 @@ async def save_timeseries_property(node: TimeseriesProperty) -> dict:
     """
     try:
         result = sindit_kg_connector.save_node(node)
+
+        if result:
+            update_propery_node(node)
+
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -250,6 +258,10 @@ async def save_file(node: File) -> dict:
     """
     try:
         result = sindit_kg_connector.save_node(node)
+
+        if result:
+            update_propery_node(node)
+
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")

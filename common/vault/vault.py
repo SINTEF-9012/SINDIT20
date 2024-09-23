@@ -49,7 +49,8 @@ class FsVault(Vault):
         logger.info(f"Loaded vault from {vaultPath}")
 
     def resolveSecret(self, secretPath) -> str:
-        return self.configs.get(secretPath)
+        secret = self.configs.get(secretPath)
+        return secret.data if secret else None
 
     def storeSecret(self, secretPath, secretValue) -> bool:
         self.configs[secretPath] = secretValue

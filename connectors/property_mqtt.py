@@ -1,6 +1,7 @@
 import json
 from connectors.connector import Connector, Property
 from connectors.connector_mqtt import MQTTConnector
+from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 
@@ -17,12 +18,12 @@ class MQTTProperty(Property):
         self.kg_connector = kg_connector
 
     def attach(self, connector: Connector) -> None:
-        self.connector = connector
-        connector.attach(self)
+        # self.connector = connector
+        # connector.attach(self)
         connector.subscribe(str(self.topic))
-        logger.debug(f"Attaching property {self.uri} to connector {connector.uri}")
+        # logger.debug(f"Attaching property {self.uri} to connector {connector.uri}")
 
-    def update_value(self, connector: Connector) -> None:
+    def update_value(self, connector: Connector, **kwargs) -> None:
         mqtt_connector: MQTTConnector = connector
         messages = mqtt_connector.get_messages()
         if self.topic in messages:
@@ -53,26 +54,19 @@ class MQTTProperty(Property):
                             pass
                         if node is not None:
                             data_type = node.propertyDataType
-                            node_value = str(self.value)
+                            node_value = self.value
 
-                            # convert the value to the correct data type
+                            if isinstance(data_type, URIRefNode):
+                                data_type = data_type.uri
                             if data_type is not None:
-                                try:
-                                    if ("float" in data_type) or (
-                                        "double" in data_type
-                                    ):
-                                        node_value = float(self.value)
-                                    elif "int" in data_type or "integer" in data_type:
-                                        node_value = int(self.value)
-                                    elif ("bool" in data_type) or (
-                                        "boolean" in data_type
-                                    ):
-                                        node_value = bool(self.value)
-                                except Exception:
-                                    pass
+                                data_type = str(data_type)
+
+                                node_value = RDFModel.reverse_to_type(
+                                    node_value, data_type
+                                )
 
                             node.propertyValue = node_value
-                            node.propertyValueTimestamp = str(self.timestamp)
+                            node.propertyValueTimestamp = self.timestamp
                             self.kg_connector.save_node(node, update_value=True)
                     else:
                         logger.error(

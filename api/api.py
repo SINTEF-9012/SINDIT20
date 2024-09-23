@@ -39,6 +39,7 @@ app = fastapi.FastAPI(
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
 )
 
+# TODO: This should not be hardcoded
 origins = [
     "http://localhost:5173",
     "http://0.0.0.0:9017",

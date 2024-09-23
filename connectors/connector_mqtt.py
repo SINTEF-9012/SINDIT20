@@ -1,10 +1,13 @@
 import threading
-import time
+
 
 import paho.mqtt.client as mqtt
 from connectors.connector import Connector
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
+from util.datetime_util import (
+    get_current_local_time,
+)
 
 
 class MQTTConnector(Connector):
@@ -33,6 +36,8 @@ class MQTTConnector(Connector):
         get_messages(): Get the stored messages.
 
     """
+
+    id: str = "mqtt"
 
     def __init__(
         self,
@@ -81,6 +86,7 @@ class MQTTConnector(Connector):
         self.client.disconnect()
         if self.thread is not None:
             self.thread.join()
+        logger.info("Connector " + self.uri + " stopped")
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
         logger.info(
@@ -95,18 +101,12 @@ class MQTTConnector(Connector):
         )
 
         # Update the knowledge graph with the new value
-        node = None
-        try:
-            node = self.kg_connector.load_node_by_uri(self.uri)
-        except Exception:
-            pass
-        if node is not None:
-            node.isConnected = True
-            self.kg_connector.save_node(node, update_value=True)
+        self.update_connection_status(True)
 
         # Subscribe to the topic again after reconnection
-        for property in self._observers.values():
-            self.subscribe(property.topic)
+        if self._observers is not None:
+            for property in self._observers.values():
+                self.subscribe(property.topic)
 
     def _on_disconnect(self, client, userdata, disconnect_flags, rc, properties):
         logger.info(
@@ -121,14 +121,7 @@ class MQTTConnector(Connector):
         )
 
         # Update the knowledge graph with the new value
-        node = None
-        try:
-            node = self.kg_connector.load_node_by_uri(self.uri)
-        except Exception:
-            pass
-        if node is not None:
-            node.isConnected = False
-            self.kg_connector.save_node(node, update_value=True)
+        self.update_connection_status(False)
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic
@@ -140,7 +133,9 @@ class MQTTConnector(Connector):
         except ValueError:
             pass
 
-        self.messages[topic] = {"timestamp": time.time(), "payload": payload}
+        local_timestamp = get_current_local_time()
+
+        self.messages[topic] = {"timestamp": local_timestamp, "payload": payload}
 
         # update the properties value
         self.notify()

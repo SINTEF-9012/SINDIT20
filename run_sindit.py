@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 
+# TODO: This should be removed in production
 load_dotenv("./environment_and_configuration/dev_environment_backend.env")
 
 import uvicorn  # noqa: E402
