@@ -46,7 +46,8 @@ class RDFModel(BaseModel):
       (e.g., list of lists)
     - List cannot be used in a Union type either (e.g., Union[List[str], List[int]])
     - Dict will be treated as a string in the RDF graph
-    - Limited support for data types (int, float, str, bool, dict, datetime, list, union)
+    - Limited support for data types (int, float, str, bool, dict, datetime,
+      list, union)
     """
 
     CLASS_URI: ClassVar[URIRef] = None
