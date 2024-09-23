@@ -9,6 +9,7 @@ class Connector:
     _observers: dict = None
     uri: str = None
     kg_connector: SINDITKGConnector = None
+    is_connected: bool = False
 
     def attach(self, property: Property) -> None:
         """
@@ -65,6 +66,7 @@ class Connector:
             pass
         if node is not None:
             node.isConnected = is_connected
+            self.is_connected = is_connected
             self.kg_connector.save_node(node, update_value=True)
 
 
