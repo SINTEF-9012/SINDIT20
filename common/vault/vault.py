@@ -34,6 +34,13 @@ class Vault:
 
         pass
 
+    def listSecretPaths(self):
+        """
+        List all secret paths in the vault
+        :return: A list of secret paths
+        """
+        pass
+
 
 class FsVault(Vault):
     """
@@ -64,6 +71,9 @@ class FsVault(Vault):
             self.configs.store(f, encoding="utf-8")
         return True
 
+    def listSecretPaths(self):
+        return [key for key in self.configs.keys()]
+
 
 # Warning: This implementation is not tested.
 class HashiCorpVault(Vault):
@@ -91,3 +101,10 @@ class HashiCorpVault(Vault):
     def deleteSecret(self, secretPath) -> bool:
         self.client.secrets.kv.v2.delete_metadata_and_all_versions(path=secretPath)
         return True
+
+    def listSecretPaths(self):
+        try:
+            response = self.client.secrets.kv.v2.list_secrets(path="")
+            return response["data"]["keys"]
+        except hvac.exceptions.InvalidPath:
+            return []
