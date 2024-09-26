@@ -206,7 +206,7 @@ def update_connection_node(node: Connection, replace: bool = True) -> Connector:
                     connector.stop()
                 except Exception:
                     pass
-    
+
                 connector.start()
             return connector
 
