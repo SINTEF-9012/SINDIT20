@@ -34,13 +34,16 @@ async def store_secret(secret_path: str, secret_value: str) -> dict:
         logger.error(f"Error storing secret {secret_path}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @app.get(
     "/vault/path",
     tags=["Vault"],
     responses={
         200: {
             "description": "Successful response",
-            "content": {"application/json": {"example": {"secret_paths": ["path1", "path2"]}}},
+            "content": {
+                "application/json": {"example": {"secret_paths": ["path1", "path2"]}}
+            },
         },
         400: {
             "description": "Bad request",
