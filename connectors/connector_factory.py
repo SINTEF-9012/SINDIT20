@@ -11,7 +11,7 @@ class ObjectFactory:
     def create(self, key, **kwargs):
         builder = self._builders.get(key)
         if not builder:
-            raise ValueError(key)
+            raise ValueError(f"Connector or Property factory has no builder for {key}")
         return builder.build(**kwargs)
 
 
