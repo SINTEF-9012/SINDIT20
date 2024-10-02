@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 
@@ -89,3 +90,41 @@ class Property(ABC):
         Attach a property to the connector.
         """
         pass
+
+    def update_property_value_to_kg(self, uri, value, timestamp):
+        if self.kg_connector is not None:
+            # Update the knowledge graph with the new value
+            node = None
+            try:
+                node = self.kg_connector.load_node_by_uri(uri)
+            except Exception:
+                pass
+
+            if node is not None:
+                data_type = node.propertyDataType
+                node_value = None
+
+                if isinstance(data_type, URIRefNode):
+                    data_type = data_type.uri
+
+                if data_type is not None:
+                    data_type = str(data_type)
+
+                if isinstance(value, dict):
+                    node_value = {}
+                    for key, value in value.items():
+                        node_value[key] = RDFModel.reverse_to_type(value, data_type)
+                else:
+                    node_value = RDFModel.reverse_to_type(value, data_type)
+
+                value = node_value
+
+                node.propertyValue = value
+                node.propertyValueTimestamp = timestamp
+                self.kg_connector.save_node(node, update_value=True)
+
+            logger.debug(
+                f"Property {uri} updated with value {value}, " f"timestamp {timestamp}"
+            )
+
+            self.value = value

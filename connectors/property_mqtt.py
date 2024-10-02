@@ -1,9 +1,9 @@
 import json
 from connectors.connector import Connector, Property
 from connectors.connector_mqtt import MQTTConnector
-from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from knowledge_graph.graph_model import StreamingProperty
-from util.log import logger
+
+# from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 from connectors.connector_factory import ObjectBuilder
 from connectors.connector_factory import property_factory
@@ -45,12 +45,12 @@ class MQTTProperty(Property):
                     )
                     if extracted_value is not None:
                         self.value = extracted_value
-                        logger.debug(
+                        """ logger.debug(
                             f"Property {self.uri} updated with value {self.value}"
-                        )
+                        ) """
 
                         # Update the knowledge graph with the new value
-                        node = None
+                        """ node = None
                         try:
                             node = self.kg_connector.load_node_by_uri(self.uri)
                         except Exception:
@@ -79,6 +79,9 @@ class MQTTProperty(Property):
                             + str(value)
                             + ", using path_or_code "
                             + str(self.path_or_code)
+                        ) """
+                        self.update_property_value_to_kg(
+                            self.uri, self.value, self.timestamp
                         )
 
     def _extract_value_from_json(self, json_data, path_or_code):

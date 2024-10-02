@@ -11,6 +11,12 @@ from util.log import logger
 
 from connectors.connector_factory import connector_factory, property_factory
 
+# TODO: This is a workaround to avoid circular imports
+import connectors.connector_mqtt  # noqa: F401, E402
+import connectors.connector_influxdb  # noqa: F401, E402
+import connectors.property_mqtt  # noqa: F401, E402
+import connectors.property_influxdb  # noqa: F401, E402
+
 connections = {}
 properties = {}
 

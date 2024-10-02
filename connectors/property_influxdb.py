@@ -3,7 +3,6 @@ from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 from connectors.connector import Connector, Property
 from connectors.connector_influxdb import InfluxDBConnector
-from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from datetime import datetime
 from util.datetime_util import (
     convert_to_local_time,
@@ -86,7 +85,7 @@ class InfluxDBProperty(Property):
                     self.value = df["_value"].values[0]
 
                 # Update the knowledge graph with the new value
-                node = None
+                """ node = None
                 try:
                     node = self.kg_connector.load_node_by_uri(self.uri)
                 except Exception:
@@ -118,7 +117,8 @@ class InfluxDBProperty(Property):
                 logger.debug(
                     f"Property {self.uri} updated with value {self.value}, "
                     f"timestamp {self.timestamp}"
-                )
+                ) """
+                self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
 
     def attach(self, connector: Connector) -> None:
         """
