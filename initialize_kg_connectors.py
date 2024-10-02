@@ -10,8 +10,6 @@ from util.environment_and_configuration import (
 )
 from util.log import logger
 
-logger.setLevel(get_environment_variable("LOG_LEVEL", optional=True, default="INFO"))
-
 logger.info("Initializing kg connector from environment variables...")
 
 kg_service: SemanticKGPersistenceService = GraphDBPersistenceService(

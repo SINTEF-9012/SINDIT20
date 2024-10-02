@@ -8,7 +8,10 @@ from util.environment_and_configuration import (  # noqa: E402
     get_environment_variable,
     get_environment_variable_int,
 )  # noqa: E402
+
 from util.log import logger  # noqa: E402
+
+logger.setLevel(get_environment_variable("LOG_LEVEL", optional=True, default="INFO"))
 
 from api import kg_endpoints  # noqa: F401, E402
 from api import vault_endpoints  # noqa: F401, E402

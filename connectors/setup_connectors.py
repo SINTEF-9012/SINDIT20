@@ -1,21 +1,15 @@
 from knowledge_graph.graph_model import (
     AbstractAssetProperty,
     Connection,
-    StreamingProperty,
-    TimeseriesProperty,
 )
 from common.semantic_knowledge_graph.rdf_model import URIRefNode
-
-
 from initialize_kg_connectors import sindit_kg_connector
 from initialize_vault import secret_vault
-from connectors.connector_mqtt import MQTTConnector
-from connectors.property_mqtt import MQTTProperty
-from connectors.connector_influxdb import InfluxDBConnector
 from connectors.connector import Connector
 from connectors.connector import Property
-from connectors.property_influxdb import InfluxDBProperty
 from util.log import logger
+
+from connectors.connector_factory import connector_factory, property_factory
 
 connections = {}
 properties = {}
@@ -109,7 +103,7 @@ def create_property(node: AbstractAssetProperty) -> Property:
                 else:
                     connection = connections[connection_uri]
                 if connection is not None:
-                    if isinstance(node, StreamingProperty):
+                    """if isinstance(node, StreamingProperty):
                         # Create an MQTT property
                         if connection_node.type.lower() == MQTTConnector.id.lower():
                             new_property = MQTTProperty(
@@ -146,7 +140,15 @@ def create_property(node: AbstractAssetProperty) -> Property:
                                     tags=tags,
                                     kg_connector=sindit_kg_connector,
                                 )
-                                connection.attach(new_property)
+                                connection.attach(new_property)"""
+                    new_property = property_factory.create(
+                        key=str(connection_node.type).lower(),
+                        uri=node_uri,
+                        kg_connector=sindit_kg_connector,
+                        node=node,
+                    )
+                    if new_property is not None:
+                        connection.attach(new_property)
 
     return new_property
 
@@ -172,7 +174,18 @@ def create_connector(node: Connection) -> Connector:
             # logger.debug(f"Error getting token for {node_uri}: {e}")
             pass
 
-        if str(node.type).lower() == MQTTConnector.id.lower():
+        connector = connector_factory.create(
+            key=str(node.type).lower(),
+            host=node.host,
+            port=node.port,
+            username=node.username,
+            password=password,
+            uri=node_uri,
+            kg_connector=sindit_kg_connector,
+            token=token,
+        )
+
+        """ if str(node.type).lower() == MQTTConnector.id.lower():
             connector = MQTTConnector(
                 host=node.host,
                 port=node.port,
@@ -188,7 +201,7 @@ def create_connector(node: Connection) -> Connector:
                 token=token,
                 uri=node_uri,
                 kg_connector=sindit_kg_connector,
-            )
+            ) """
 
     return connector
 

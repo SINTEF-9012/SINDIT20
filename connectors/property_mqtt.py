@@ -2,8 +2,11 @@ import json
 from connectors.connector import Connector, Property
 from connectors.connector_mqtt import MQTTConnector
 from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
+from knowledge_graph.graph_model import StreamingProperty
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
+from connectors.connector_factory import ObjectBuilder
+from connectors.connector_factory import property_factory
 
 
 class MQTTProperty(Property):
@@ -106,3 +109,22 @@ class MQTTProperty(Property):
         except (KeyError, IndexError, TypeError, NameError):
             # Return None or handle error if path is invalid
             return None
+
+
+class MQTTPropertyBuilder(ObjectBuilder):
+    def build(self, uri, kg_connector, node, **kwargs) -> MQTTProperty:
+        if isinstance(node, StreamingProperty):
+            topic = node.streamingTopic
+            path_or_code = node.streamingPath
+
+            new_property = MQTTProperty(
+                uri=uri,
+                topic=topic,
+                path_or_code=path_or_code,
+                kg_connector=kg_connector,
+            )
+
+            return new_property
+
+
+property_factory.register_builder(MQTTConnector.id, MQTTPropertyBuilder())

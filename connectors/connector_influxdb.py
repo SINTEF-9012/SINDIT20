@@ -6,6 +6,9 @@ from connectors.connector import Connector
 from knowledge_graph.kg_connector import SINDITKGConnector
 from util.log import logger
 
+from connectors.connector_factory import ObjectBuilder
+from connectors.connector_factory import connector_factory
+
 
 class InfluxDBConnector(Connector):
     """InfluxDB v2.0 connector class.
@@ -45,7 +48,7 @@ class InfluxDBConnector(Connector):
         token: str = None,
         uri: str = None,
         kg_connector: SINDITKGConnector = None,
-        update_interval: int = 10,  # update every 10 seconds
+        update_interval: int = 30,  # update every 30 seconds
     ):
         self.host = host
         # if host not start with http:// or https://, add http://
@@ -336,3 +339,18 @@ class InfluxDBConnector(Connector):
             except Exception as e:
                 logger.error(f"Error updating property: {e}")
             time.sleep(self.update_interval)
+
+
+class InfluxDBConnectorBuilder(ObjectBuilder):
+    def build(self, host, port, token, uri, kg_connector, **kwargs):
+        connector = InfluxDBConnector(
+            host=host,
+            port=port,
+            token=token,
+            uri=uri,
+            kg_connector=kg_connector,
+        )
+        return connector
+
+
+connector_factory.register_builder(InfluxDBConnector.id, InfluxDBConnectorBuilder())
