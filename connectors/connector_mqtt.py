@@ -3,11 +3,13 @@ import threading
 
 import paho.mqtt.client as mqtt
 from connectors.connector import Connector
+from connectors.connector_factory import ObjectBuilder
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 from util.datetime_util import (
     get_current_local_time,
 )
+from connectors.connector_factory import connector_factory
 
 
 class MQTTConnector(Connector):
@@ -154,3 +156,23 @@ class MQTTConnector(Connector):
             dict: A dictionary containing the subscribed messages.
         """
         return self.messages
+
+
+class MQTTConnectorBuilder(ObjectBuilder):
+    """A class for building an MQTT connector instance."""
+
+    def build(
+        self, host, port, username, password, uri, kg_connector, **kwargs
+    ) -> MQTTConnector:
+        connector = MQTTConnector(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            uri=uri,
+            kg_connector=kg_connector,
+        )
+        return connector
+
+
+connector_factory.register_builder(MQTTConnector.id, MQTTConnectorBuilder())

@@ -29,7 +29,8 @@ class Connector:
         Detach a property from the connector.
         """
         logger.info(f"Detaching {property.uri} from {self}")
-        if property.uri in self._observers:
+
+        if self._observers is not None and property.uri in self._observers:
             del self._observers[property.uri]
 
     def notify(self, **kwargs) -> None:
@@ -82,6 +83,7 @@ class Property(ABC):
         """
         pass
 
+    @abstractmethod
     def attach(self, connector: Connector) -> None:
         """
         Attach a property to the connector.

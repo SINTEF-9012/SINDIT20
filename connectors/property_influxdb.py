@@ -1,3 +1,4 @@
+from knowledge_graph.graph_model import TimeseriesProperty
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 from connectors.connector import Connector, Property
@@ -9,6 +10,8 @@ from util.datetime_util import (
     convert_string_to_local_time,
     get_current_local_time,
 )
+from connectors.connector_factory import ObjectBuilder
+from connectors.connector_factory import property_factory
 
 
 class InfluxDBProperty(Property):
@@ -122,3 +125,34 @@ class InfluxDBProperty(Property):
         Attach a property to the connector.
         """
         pass
+
+
+class InfluxDBPropertyBuilder(ObjectBuilder):
+    def build(self, uri, kg_connector, node, **kwargs) -> InfluxDBProperty:
+        if isinstance(node, TimeseriesProperty):
+            tags = node.timeseriesTags
+            identifiers = node.timeseriesIdentifiers
+            if identifiers is not None and isinstance(identifiers, dict):
+                if "measurement" in identifiers:
+                    measurement = identifiers["measurement"]
+                if "field" in identifiers:
+                    field = identifiers["field"]
+                if "org" in identifiers:
+                    org = identifiers["org"]
+                if "bucket" in identifiers:
+                    bucket = identifiers["bucket"]
+
+                new_property = InfluxDBProperty(
+                    uri=uri,
+                    field=field,
+                    measurement=measurement,
+                    org=org,
+                    bucket=bucket,
+                    tags=tags,
+                    kg_connector=kg_connector,
+                )
+
+                return new_property
+
+
+property_factory.register_builder(InfluxDBConnector.id, InfluxDBPropertyBuilder())
