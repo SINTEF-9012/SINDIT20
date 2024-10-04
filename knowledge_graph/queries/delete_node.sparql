@@ -17,7 +17,7 @@ DELETE {
 }
 WHERE {
   GRAPH <[graph_uri]> {
-    { 
+    {
       BIND(<[node_uri]> AS ?s) .
       ?s ?p ?o .
     }
@@ -28,4 +28,3 @@ WHERE {
     }
   }
 }
-

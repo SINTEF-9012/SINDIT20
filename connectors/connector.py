@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import threading
 from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
@@ -8,22 +9,33 @@ from knowledge_graph.kg_connector import SINDITKGConnector
 class Connector:
     id: str = None
     _observers: dict = None
+    observers_lock = None
     uri: str = None
     kg_connector: SINDITKGConnector = None
     is_connected: bool = False
+
+    def __init__(self):
+        self._observers = {}
+        self.observers_lock = threading.Lock()
 
     def attach(self, property: Property) -> None:
         """
         Attach a property to the connector.
         """
-        if self._observers is None:
+        """ if self._observers is None:
             self._observers = {}
+        if self.observers_lock is None:
+            self.observers_lock = threading.Lock() """
 
         logger.info(f"Attaching property {property.uri} to connector {self.uri}")
+        self.observers_lock.acquire()
+
         if property.uri not in self._observers:
             self._observers[property.uri] = property
             property.connector = self
             property.attach(self)
+
+        self.observers_lock.release()
 
     def detach(self, property: Property) -> None:
         """
@@ -31,17 +43,21 @@ class Connector:
         """
         logger.info(f"Detaching {property.uri} from {self}")
 
+        self.observers_lock.acquire()
         if self._observers is not None and property.uri in self._observers:
             del self._observers[property.uri]
+        self.observers_lock.release()
 
     def notify(self, **kwargs) -> None:
         """
         Notify all attached properties.
         """
         logger.debug(f"Node {self.uri} notifies all attached properties")
+        self.observers_lock.acquire()
         if self._observers is not None:
             for observer in self._observers.values():
                 observer.update_value(self, **kwargs)
+        self.observers_lock.release()
 
     @abstractmethod
     def start(self, **kwargs) -> any:

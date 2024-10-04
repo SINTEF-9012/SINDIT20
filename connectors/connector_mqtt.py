@@ -52,6 +52,8 @@ class MQTTConnector(Connector):
         uri: str = None,
         kg_connector: SINDITKGConnector = None,
     ):
+        super().__init__()
+
         self.host = host
         self.port = int(port)
         self.topic = topic
@@ -106,9 +108,11 @@ class MQTTConnector(Connector):
         self.update_connection_status(True)
 
         # Subscribe to the topic again after reconnection
+        self.observers_lock.acquire()
         if self._observers is not None:
             for property in self._observers.values():
                 self.subscribe(property.topic)
+        self.observers_lock.release()
 
     def _on_disconnect(self, client, userdata, disconnect_flags, rc, properties):
         logger.info(
