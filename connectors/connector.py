@@ -85,7 +85,7 @@ class Connector:
         if node is not None:
             node.isConnected = is_connected
             self.is_connected = is_connected
-            self.kg_connector.save_node(node, update_value=True)
+            self.kg_connector.save_node(node)
 
 
 class Property(ABC):
@@ -137,7 +137,7 @@ class Property(ABC):
 
                 node.propertyValue = value
                 node.propertyValueTimestamp = timestamp
-                self.kg_connector.save_node(node, update_value=True)
+                self.kg_connector.save_node(node)
 
             logger.debug(
                 f"Property {uri} updated with value {value}, " f"timestamp {timestamp}"

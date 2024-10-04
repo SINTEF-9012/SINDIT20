@@ -247,7 +247,7 @@ class SINDITKGConnector:
     def save_node(
         self,
         node: RDFModel,
-        update_value: bool = False,
+        overwrite: bool = True,  # otherwise, keep both old and new data
     ) -> bool:
         """Save a node to the knowledge graph. Create a new node if it
         does not exist, update it otherwise.
@@ -298,7 +298,9 @@ class SINDITKGConnector:
 
         query = query_template.replace("[nodes_uri]", subjects_str)
         query_result_old = self.__kg_service.graph_query(query, "application/x-trig")
-        # print(query_result_old)
+
+        g_old = Graph()
+        g_old.parse(data=query_result_old, format="trig")
 
         # deleting old nodes and properties
         with open(delete_nodes_query_file, "r") as f:
@@ -317,6 +319,57 @@ class SINDITKGConnector:
                 "the node. Reason: " + query_result.content
             )
 
+        # To make sure the the data will be restored in case of failure,
+        # we use try/except block
+        try:
+            with open(insert_data_query_file, "r") as f:
+                query_template = f.read()
+                if "[graph_uri]" in query_template:
+                    query_template = query_template.replace(
+                        "[graph_uri]", str(self.__graph_uri)
+                    )
+
+            graph_data = str(g.serialize(format="longturtle"))
+            # extract the line starting with PREFIX or prefix,
+            # and the data without the prefixes
+            prefixes = ""
+            data = ""
+            for line in graph_data.split("\n"):
+                if line.startswith("PREFIX") or line.startswith("prefix"):
+                    prefixes += line + "\n"
+                else:
+                    data += line + "\n"
+
+            query = query_template.replace("[prefixes]", prefixes)
+
+            query = query.replace("[data]", data)
+            query_result = self.__kg_service.graph_update(query)
+
+            if not query_result.ok:
+                # If the insert failed, we restore the old data
+                """g_old = Graph()
+                g_old.parse(data=query_result_old, format="trig")
+                graph_data = str(g_old.serialize(format="longturtle"))
+                prefixes = ""
+                data = ""
+                for line in graph_data.split("\n"):
+                    if line.startswith("PREFIX") or line.startswith("prefix"):
+                        prefixes += line + "\n"
+                    else:
+                        data += line + "\n"
+                query = query_template.replace("[prefixes]", prefixes)
+                query = query.replace("[data]", data)
+                self.__kg_service.graph_update(query)"""
+
+                raise Exception(f"{query_result.content}")
+
+        except Exception as e:
+            self._restore_graph(g_old)
+            raise Exception(f"Failed to save the node. Reason: {e}")
+
+        return query_result.ok
+
+    def _restore_graph(self, graph: Graph):
         with open(insert_data_query_file, "r") as f:
             query_template = f.read()
             if "[graph_uri]" in query_template:
@@ -324,7 +377,8 @@ class SINDITKGConnector:
                     "[graph_uri]", str(self.__graph_uri)
                 )
 
-        graph_data = str(g.serialize(format="longturtle"))
+        graph_data = str(graph.serialize(format="longturtle"))
+
         # extract the line starting with PREFIX or prefix,
         # and the data without the prefixes
         prefixes = ""
@@ -334,39 +388,6 @@ class SINDITKGConnector:
                 prefixes += line + "\n"
             else:
                 data += line + "\n"
-
         query = query_template.replace("[prefixes]", prefixes)
-
         query = query.replace("[data]", data)
-        query_result = self.__kg_service.graph_update(query)
-        # print(f"inserted: {query_result}")
-
-        if not query_result.ok:
-            # If the insert failed, we restore the old data
-            g_old = Graph()
-            g_old.parse(data=query_result_old, format="trig")
-            graph_data = str(g_old.serialize(format="longturtle"))
-            prefixes = ""
-            data = ""
-            for line in graph_data.split("\n"):
-                if line.startswith("PREFIX") or line.startswith("prefix"):
-                    prefixes += line + "\n"
-                else:
-                    data += line + "\n"
-            query = query_template.replace("[prefixes]", prefixes)
-            query = query.replace("[data]", data)
-            self.__kg_service.graph_update(query)
-
-            raise Exception(f"Failed to save the node. Reason: {query_result.content}")
-
-        # if query_result.ok and not update_value:
-        # update the attributies of the property and connection nodes
-        # warning: this only updates if the node is property or connection
-
-        # if isinstance(node, AbstractAssetProperty):
-        #    update_propery_node(node)
-
-        # elif isinstance(node, Connection):
-        #    update_connection_node(node)
-
-        return query_result.ok
+        self.__kg_service.graph_update(query)
