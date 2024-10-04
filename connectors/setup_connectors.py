@@ -257,7 +257,7 @@ def update_connection_node(node: Connection, replace: bool = True) -> Connector:
         # Change the isConnected property to False
         if node is not None:
             node.isConnected = False
-            sindit_kg_connector.save_node(node, update_value=True)
+            sindit_kg_connector.save_node(node)
 
     return None
 
