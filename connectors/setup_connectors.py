@@ -73,8 +73,11 @@ def remove_connection_node(node: Connection):
     node_uri = str(node.uri)
     if node_uri in connections:
         connection: Connector = connections[node_uri]
+
+        connection.observers_lock.acquire()
         for property in connection._observers.values():
             property.connector = None
+        connection.observers_lock.release()
 
         connection.stop()
         del connections[node_uri]
@@ -84,9 +87,11 @@ def remove_connection_node(node: Connection):
 
 def replace_connector(new_connector: Connector, old_connector: Connector):
     if new_connector is not None and old_connector is not None:
+        old_connector.observers_lock.acquire()
         if old_connector._observers is not None:
             for property in old_connector._observers.values():
                 new_connector.attach(property)
+        old_connector.observers_lock.release()
 
 
 # TODO: Add support for other types of properties here

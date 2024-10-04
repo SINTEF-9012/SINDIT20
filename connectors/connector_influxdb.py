@@ -50,6 +50,8 @@ class InfluxDBConnector(Connector):
         kg_connector: SINDITKGConnector = None,
         update_interval: int = 30,  # update every 30 seconds
     ):
+        super().__init__()
+
         self.host = host
         # if host not start with http:// or https://, add http://
         if not host.startswith("http://") and not host.startswith("https://"):
