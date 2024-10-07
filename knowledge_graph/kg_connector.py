@@ -282,7 +282,7 @@ class SINDITKGConnector:
 
         if "uri" not in node_dict:
             raise Exception("Node uri is required")
-        
+
         # Remove class_uri from the node_dict
         if "class_uri" in node_dict:
             del node_dict["class_uri"]
