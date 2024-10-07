@@ -311,38 +311,6 @@ class SINDITKGConnector:
 
         subjects_str = " ".join([f"<{str(s)}>" for s in subjects])
 
-        # Load the old data in case of failure
-        """ with open(load_nodes_query_file, "r") as f:
-            query_template = f.read()
-
-            if "[graph_uri]" in query_template:
-                query_template = query_template.replace(
-                    "[graph_uri]", str(self.__graph_uri)
-                )
-
-        query = query_template.replace("[nodes_uri]", subjects_str)
-        query_result_old = self.__kg_service.graph_query(query, "application/x-trig")
-
-        g_old = Graph()
-        g_old.parse(data=query_result_old, format="trig") """
-
-        # deleting old nodes and properties
-        """ with open(delete_nodes_query_file, "r") as f:
-            query_template = f.read()
-
-            if "[graph_uri]" in query_template:
-                query_template = query_template.replace(
-                    "[graph_uri]", str(self.__graph_uri)
-                )
-
-        query = query_template.replace("[nodes_uri]", subjects_str)
-        query_result = self.__kg_service.graph_update(query)
-        if not query_result.ok:
-            raise Exception(
-                "Failed to delete existing properties of"
-                "the node. Reason: " + query_result.content
-            ) """
-
         # To make sure the the data will be restored in case of failure,
         # we use try/except block
         try:
@@ -373,21 +341,6 @@ class SINDITKGConnector:
             query_result = self.__kg_service.graph_update(query)
 
             if not query_result.ok:
-                # If the insert failed, we restore the old data
-                """g_old = Graph()
-                g_old.parse(data=query_result_old, format="trig")
-                graph_data = str(g_old.serialize(format="longturtle"))
-                prefixes = ""
-                data = ""
-                for line in graph_data.split("\n"):
-                    if line.startswith("PREFIX") or line.startswith("prefix"):
-                        prefixes += line + "\n"
-                    else:
-                        data += line + "\n"
-                query = query_template.replace("[prefixes]", prefixes)
-                query = query.replace("[data]", data)
-                self.__kg_service.graph_update(query)"""
-
                 raise Exception(f"{query_result.content}")
 
         except Exception as e:
