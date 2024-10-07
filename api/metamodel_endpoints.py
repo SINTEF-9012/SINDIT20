@@ -21,6 +21,21 @@ async def search_unit(search_term: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@app.post(
+    "/metamodel/unit",
+    tags=["Metamodel"],
+)
+async def get_unit_by_uri(uri: str):
+    """
+    Get a unit in the meta-model based on its URI.
+    """
+    try:
+        return sindit_kg_connector.get_unit_by_uri(uri)
+    except Exception as e:
+        logger.error(f"Error getting unit by URI: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @app.get(
     "/metamodel/get_all_units",
     tags=["Metamodel"],

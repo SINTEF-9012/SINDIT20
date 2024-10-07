@@ -27,6 +27,7 @@ get_class_uri_by_uri_query_file = "knowledge_graph/queries/get_class_uri_by_uri.
 list_named_graphs_query_file = "knowledge_graph/queries/list_named_graphs.sparql"
 search_unit_query_file = "knowledge_graph/queries/find_unit.sparql"
 get_all_units_query_file = "knowledge_graph/queries/get_all_units.sparql"
+search_unit_by_uri_query_file = "knowledge_graph/queries/find_unit_by_uri.sparql"
 
 
 class SINDITKGConnector:
@@ -64,6 +65,28 @@ class SINDITKGConnector:
             try:
                 query_template = f.read()
                 query = query_template.replace("[search_term]", search_term)
+                query_result = self.__kg_service.graph_query(query, "text/csv")
+                df = pd.read_csv(StringIO(query_result), sep=",")
+
+                if not df.empty:
+                    # rename the columns unit to uri
+                    df.rename(columns={"unit": "uri"}, inplace=True)
+                    # convert the dataframe to a list of dictionaries, ignore nan values
+                    # replace nan with None
+                    df_dict = df.apply(lambda x: x.dropna().to_dict(), axis=1).tolist()
+
+                    return df_dict
+
+                return []
+
+            except Exception as e:
+                raise Exception(f"Failed to search for the unit. Reason: {e}")
+
+    def get_unit_by_uri(self, uri: str):
+        with open(search_unit_by_uri_query_file, "r") as f:
+            try:
+                query_template = f.read()
+                query = query_template.replace("[unit_uri]", uri)
                 query_result = self.__kg_service.graph_query(query, "text/csv")
                 df = pd.read_csv(StringIO(query_result), sep=",")
 
