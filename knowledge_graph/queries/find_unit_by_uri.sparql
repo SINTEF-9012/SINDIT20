@@ -2,9 +2,9 @@ PREFIX samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#>
 SELECT distinct ?unit ?symbol ?prefName ?code
 WHERE {
   BIND(<[unit_uri]> AS ?unit)  # Bind the specific unit IRI to the ?unit variable
-  
+
   ?unit a samm:Unit .
-  
+
   OPTIONAL {?unit samm:symbol ?symbol} .
   OPTIONAL {?unit samm:commonCode ?code} .
   OPTIONAL {?unit samm:preferredName ?prefName} .
