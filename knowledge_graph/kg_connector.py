@@ -20,6 +20,7 @@ load_nodes_query_file = "knowledge_graph/queries/load_nodes.sparql"
 delete_node_query_file = "knowledge_graph/queries/delete_node.sparql"
 delete_nodes_query_file = "knowledge_graph/queries/delete_nodes.sparql"
 insert_data_query_file = "knowledge_graph/queries/insert_data.sparql"
+insert_delete_query_file = "knowledge_graph/queries/insert_delete.sparql"
 get_uris_by_class_uri_query_file = (
     "knowledge_graph/queries/get_uris_by_class_uri.sparql"
 )
@@ -311,7 +312,7 @@ class SINDITKGConnector:
         subjects_str = " ".join([f"<{str(s)}>" for s in subjects])
 
         # Load the old data in case of failure
-        with open(load_nodes_query_file, "r") as f:
+        """ with open(load_nodes_query_file, "r") as f:
             query_template = f.read()
 
             if "[graph_uri]" in query_template:
@@ -323,10 +324,10 @@ class SINDITKGConnector:
         query_result_old = self.__kg_service.graph_query(query, "application/x-trig")
 
         g_old = Graph()
-        g_old.parse(data=query_result_old, format="trig")
+        g_old.parse(data=query_result_old, format="trig") """
 
         # deleting old nodes and properties
-        with open(delete_nodes_query_file, "r") as f:
+        """ with open(delete_nodes_query_file, "r") as f:
             query_template = f.read()
 
             if "[graph_uri]" in query_template:
@@ -340,12 +341,12 @@ class SINDITKGConnector:
             raise Exception(
                 "Failed to delete existing properties of"
                 "the node. Reason: " + query_result.content
-            )
+            ) """
 
         # To make sure the the data will be restored in case of failure,
         # we use try/except block
         try:
-            with open(insert_data_query_file, "r") as f:
+            with open(insert_delete_query_file, "r") as f:
                 query_template = f.read()
                 if "[graph_uri]" in query_template:
                     query_template = query_template.replace(
@@ -363,9 +364,12 @@ class SINDITKGConnector:
                 else:
                     data += line + "\n"
 
-            query = query_template.replace("[prefixes]", prefixes)
+            # For delete the old data
+            query_template = query_template.replace("[nodes_uri]", subjects_str)
 
+            query = query_template.replace("[prefixes]", prefixes)
             query = query.replace("[data]", data)
+
             query_result = self.__kg_service.graph_update(query)
 
             if not query_result.ok:
@@ -387,7 +391,7 @@ class SINDITKGConnector:
                 raise Exception(f"{query_result.content}")
 
         except Exception as e:
-            self._restore_graph(g_old)
+            # self._restore_graph(g_old)
             raise Exception(f"Failed to save the node. Reason: {e}")
 
         return query_result.ok

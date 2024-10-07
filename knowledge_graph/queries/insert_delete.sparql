@@ -1,0 +1,18 @@
+[prefixes]
+
+DELETE {
+  GRAPH <[graph_uri]> {
+    ?s ?p ?o .
+  }
+}
+INSERT {
+  GRAPH <[graph_uri]> {
+    [data]
+  }
+}
+WHERE {
+  VALUES ?s { [nodes_uri] }
+  GRAPH <[graph_uri]> {
+    ?s ?p ?o .
+  }
+}
