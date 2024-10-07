@@ -21,6 +21,7 @@ delete_node_query_file = "knowledge_graph/queries/delete_node.sparql"
 delete_nodes_query_file = "knowledge_graph/queries/delete_nodes.sparql"
 insert_data_query_file = "knowledge_graph/queries/insert_data.sparql"
 insert_delete_query_file = "knowledge_graph/queries/insert_delete.sparql"
+insert_delete_data_query_file = "knowledge_graph/queries/insert_delete_data.sparql"
 get_uris_by_class_uri_query_file = (
     "knowledge_graph/queries/get_uris_by_class_uri.sparql"
 )
@@ -268,10 +269,141 @@ class SINDITKGConnector:
 
         return query_result.ok
 
+    def update_node(
+        self,
+        node_dict: dict,  # to accept any types of node
+        overwrite: bool = True,  # otherwise, keep both old and new data
+    ) -> bool:
+        """
+        Update a node in the knowledge graph. If overwrite is True, the old data
+        will be deleted and replaced with the new data. Otherwise, the old data
+        will be kept and the new data will be added.
+        """
+
+        if "uri" not in node_dict:
+            raise Exception("Node uri is required")
+        
+        # Remove class_uri from the node_dict
+        if "class_uri" in node_dict:
+            del node_dict["class_uri"]
+
+        node_uri = node_dict["uri"]
+
+        # g: Graph = node.g()
+        # get the list of subject in g
+        subjects = set()
+        subjects.add(URIRef(node_uri))
+        # Check the type of the subjects in the exising graph,
+        # if different return error
+        with open(get_class_uri_by_uri_query_file, "r") as f:
+            query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace(
+                    "[graph_uri]", str(self.__graph_uri)
+                )
+
+        for s in subjects:
+            query = query_template.replace("[node_uri]", str(s))
+            query_result = self.__kg_service.graph_query(query, "text/csv")
+            df = pd.read_csv(StringIO(query_result), sep=",")
+            if len(df) > 0:
+                class_uri = df["class"][0]
+                node_class = URIClassMapping.get(URIRef(class_uri))
+                if node_class is not None:
+                    try:
+                        node = node_class(**node_dict)
+                        g = node.g()
+                    except Exception as e:
+                        raise Exception(f"Failed to update the node {s}. Reason: {e}")
+
+            else:
+                raise Exception(
+                    f"Cannnot find the class of the node {s}. "
+                    "Try to save the node first if it is a new node."
+                )
+
+        subjects_str = " ".join([f"<{str(s)}>" for s in subjects])
+
+        # Load the old data
+        with open(load_nodes_query_file, "r") as f:
+            query_template = f.read()
+
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace(
+                    "[graph_uri]", str(self.__graph_uri)
+                )
+
+        query = query_template.replace("[nodes_uri]", subjects_str)
+        query_result_old = self.__kg_service.graph_query(query, "application/x-trig")
+
+        g_old = Graph()
+        g_old.parse(data=query_result_old, format="trig")
+
+        # Get the data to be removed
+        g_remove = Graph()
+
+        if overwrite:
+            # Find triples in g_old that match the subject and predicate from g
+            for s, p, _ in g:
+                for s_old, p_old, o_old in g_old.triples((s, p, None)):
+                    # Add the matching triples to the new graph
+                    g_remove.add((s_old, p_old, o_old))
+        else:
+            # Find triples in g_old that match the triples from g
+            for s, p, o in g:
+                for s_old, p_old, o_old in g_old.triples((s, p, o)):
+                    # Add the matching triples to the new graph
+                    g_remove.add((s_old, p_old, o_old))
+
+        try:
+            with open(insert_delete_data_query_file, "r") as f:
+                query_template = f.read()
+                if "[graph_uri]" in query_template:
+                    query_template = query_template.replace(
+                        "[graph_uri]", str(self.__graph_uri)
+                    )
+
+            # For delete the old data
+            query_template = query_template.replace("[nodes_uri]", subjects_str)
+
+            graph_data = str(g.serialize(format="longturtle"))
+            graph_remove_data = str(g_remove.serialize(format="longturtle"))
+            # extract the line starting with PREFIX or prefix,
+            # and the data without the prefixes
+            prefixes = ""
+            old_prefixes = ""
+            insert_data = ""
+            for line in graph_data.split("\n"):
+                if line.startswith("PREFIX") or line.startswith("prefix"):
+                    prefixes += line + "\n"
+                else:
+                    insert_data += line + "\n"
+
+            delete_data = ""
+            for line in graph_remove_data.split("\n"):
+                if line.startswith("PREFIX") or line.startswith("prefix"):
+                    old_prefixes += line + "\n"
+                else:
+                    delete_data += line + "\n"
+
+            query = query_template.replace("[prefixes]", prefixes)
+            query = query.replace("[insert_data]", insert_data)
+            query = query.replace("[delete_data]", delete_data)
+
+            query_result = self.__kg_service.graph_update(query)
+
+            if not query_result.ok:
+                raise Exception(f"{query_result.content}")
+
+        except Exception as e:
+            # self._restore_graph(g_old)
+            raise Exception(f"Failed to update the node. Reason: {e}")
+
+        return query_result.ok
+
     def save_node(
         self,
         node: RDFModel,
-        overwrite: bool = True,  # otherwise, keep both old and new data
     ) -> bool:
         """Save a node to the knowledge graph. Create a new node if it
         does not exist, update it otherwise.
@@ -349,7 +481,7 @@ class SINDITKGConnector:
 
         return query_result.ok
 
-    def _restore_graph(self, graph: Graph):
+    """ def _restore_graph(self, graph: Graph):
         with open(insert_data_query_file, "r") as f:
             query_template = f.read()
             if "[graph_uri]" in query_template:
@@ -370,4 +502,4 @@ class SINDITKGConnector:
                 data += line + "\n"
         query = query_template.replace("[prefixes]", prefixes)
         query = query.replace("[data]", data)
-        self.__kg_service.graph_update(query)
+        self.__kg_service.graph_update(query) """

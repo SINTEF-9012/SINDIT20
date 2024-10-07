@@ -266,3 +266,18 @@ async def save_file(node: File) -> dict:
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/kg/node", tags=["Knowledge Graph"])
+async def update_node(node: dict, overwrite: bool = True) -> dict:
+    """
+    Update a node in the knowledge graph. If overwrite is True, old information
+    will be replaced. Otherwise, new information will be added.
+    """
+    try:
+        result = sindit_kg_connector.update_node(node, overwrite=overwrite)
+        if result:
+            return {"result": result}
+    except Exception as e:
+        logger.error(f"Error updating node {node}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
