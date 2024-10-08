@@ -1,5 +1,7 @@
+import asyncio
 from typing import Union, List
 from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
 from initialize_kg_connectors import sindit_kg_connector
 from connectors.setup_connectors import (
     remove_connection_node,
@@ -360,13 +362,86 @@ async def update_node(node: dict, overwrite: bool = True) -> dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-""" async def fake_video_streamer():
-    for i in range(10):
-        yield f"Frame {i}\n"
-        await asyncio.sleep(1)  # Simulate delay between frames
-    print("Done")
+async def get_streaming_property(node_uri: str, refresh_rate: int = 5):
+    if refresh_rate < 1:
+        refresh_rate = 1
+
+    pre_timestamp = None
+
+    while True:
+        node = sindit_kg_connector.load_node_by_uri(node_uri)
+        if not isinstance(node, StreamingProperty) and not isinstance(
+            node, TimeseriesProperty
+        ):
+            raise ValueError(
+                f"Node {node_uri} is not a streaming or timeseries property"
+            )
+
+        cur_timestamp = node.propertyValueTimestamp
+
+        if cur_timestamp != pre_timestamp:
+            yield node.model_dump_json(indent=4) + "\n"
+            pre_timestamp = cur_timestamp
+
+        await asyncio.sleep(refresh_rate)
 
 
 @app.get("/kg/stream", tags=["Knowledge Graph"])
-async def main():
-    return StreamingResponse(fake_video_streamer()) """
+async def stream_property(node_uri: str, refresh_rate: int = 5):
+    """
+    Streams updates from a streaming or timeseries property node in the knowledge
+    graph.
+
+    This endpoint enters an **infinite loop**, continuously checking for updates
+    from a specified node (either a StreamingProperty or TimeseriesProperty) and
+    streaming new data to the client in real time.
+
+    **Important**: The client must handle this continuous stream of data, as the
+    loop will not terminate unless the connection is closed by the client or a
+    server error occurs. Each new chunk of data is sent whenever the node's
+    `propertyValueTimestamp` is updated.
+
+    Parameters:
+    - node_uri (str): The URI of the node to stream. Must refer to a
+      StreamingProperty or TimeseriesProperty.
+    - refresh_rate (int): The interval in seconds at which the node's state is
+      checked for updates. Defaults to 5 seconds, with a minimum refresh rate of
+      1 second.
+
+    Response:
+    - A JSON stream of updates from the node. Each update is sent as a new chunk
+      of JSON data whenever the node's `propertyValueTimestamp` changes.
+
+    Example:
+    - To stream updates from a node with a URI of "http://example.org/node", send
+      a GET request to:
+      `/kg/stream?node_uri=http://example.org/node&refresh_rate=5`
+    - Curl example:
+       ```
+      curl -X 'GET' \
+      'http://localhost:9017/kg/stream?node_uri=http://example.org/node' \
+      -H 'accept: application/json'
+      ```
+    """
+    try:
+        # Perform a pre-check to verify if the node exists
+        # and is valid before starting the streaming response.
+        node = sindit_kg_connector.load_node_by_uri(node_uri)
+        if not isinstance(node, StreamingProperty) and not isinstance(
+            node, TimeseriesProperty
+        ):
+            raise ValueError(
+                f"Node {node_uri} is not a streaming or timeseries property"
+            )
+
+        # If the pre-check passes, then start the streaming response
+        return StreamingResponse(
+            get_streaming_property(node_uri=node_uri, refresh_rate=refresh_rate),
+            media_type="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error streaming node {node_uri}: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Error streaming node {node_uri}: {e}"
+        )
