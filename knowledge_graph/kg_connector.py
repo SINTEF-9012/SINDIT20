@@ -302,25 +302,27 @@ class SINDITKGConnector:
                     "[graph_uri]", str(self.__graph_uri)
                 )
 
-        for s in subjects:
-            query = query_template.replace("[node_uri]", str(s))
-            query_result = self.__kg_service.graph_query(query, "text/csv")
-            df = pd.read_csv(StringIO(query_result), sep=",")
-            if len(df) > 0:
-                class_uri = df["class"][0]
-                node_class = URIClassMapping.get(URIRef(class_uri))
-                if node_class is not None:
-                    try:
-                        node = node_class(**node_dict)
-                        g = node.g()
-                    except Exception as e:
-                        raise Exception(f"Failed to update the node {s}. Reason: {e}")
+        node = None
+        query = query_template.replace("[node_uri]", node_uri)
+        query_result = self.__kg_service.graph_query(query, "text/csv")
+        df = pd.read_csv(StringIO(query_result), sep=",")
+        if len(df) > 0:
+            class_uri = df["class"][0]
+            node_class = URIClassMapping.get(URIRef(class_uri))
+            if node_class is not None:
+                try:
+                    node = node_class(**node_dict)
+                    g = node.g()
+                except Exception as e:
+                    raise Exception(
+                        f"Failed to update the node {node_uri}. Reason: {e}"
+                    )
 
-            else:
-                raise Exception(
-                    f"Cannnot find the class of the node {s}. "
-                    "Try to save the node first if it is a new node."
-                )
+        if node is None:
+            raise Exception(
+                f"Cannnot find the class of the node {node_uri}. "
+                "Try to save the node first if it is a new node."
+            )
 
         subjects_str = " ".join([f"<{str(s)}>" for s in subjects])
 

@@ -25,14 +25,16 @@ from api import metamodel_endpoints  # noqa: F401, E402
 # logger.info("Starting connections and properties...")
 # initialize_connections_and_properties()
 
-logger.info("Starting SINDIT")
 
-# Run fast API
-logger.info("Running FastAPI...")
-uvicorn.run(
-    "api.api:app",
-    host=get_environment_variable("FAST_API_HOST"),
-    port=get_environment_variable_int("FAST_API_PORT"),
-    workers=1,
-    access_log=True,
-)
+if __name__ == "__main__":
+    logger.info("Starting SINDIT")
+
+    # Run fast API
+    logger.info("Running FastAPI...")
+    uvicorn.run(
+        "api.api:app",
+        host=get_environment_variable("FAST_API_HOST"),
+        port=get_environment_variable_int("FAST_API_PORT"),
+        workers=1,
+        access_log=True,
+    )
