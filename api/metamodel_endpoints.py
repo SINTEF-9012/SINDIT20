@@ -6,7 +6,7 @@ from util.log import logger
 from api.api import app
 
 
-@app.post(
+@app.get(
     "/metamodel/search_unit",
     tags=["Metamodel"],
 )
@@ -21,7 +21,7 @@ async def search_unit(search_term: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@app.post(
+@app.get(
     "/metamodel/unit",
     tags=["Metamodel"],
 )
