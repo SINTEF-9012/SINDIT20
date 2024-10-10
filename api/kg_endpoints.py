@@ -370,12 +370,6 @@ async def get_streaming_property(node_uri: str, refresh_rate: int = 5):
 
     while True:
         node = sindit_kg_connector.load_node_by_uri(node_uri)
-        if not isinstance(node, StreamingProperty) and not isinstance(
-            node, TimeseriesProperty
-        ):
-            raise ValueError(
-                f"Node {node_uri} is not a streaming or timeseries property"
-            )
 
         cur_timestamp = node.propertyValueTimestamp
 
