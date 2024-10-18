@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+# from abc import ABC, abstractmethod
 import threading
 import psycopg2
 from connectors.connector import Connector
@@ -19,7 +19,8 @@ class PostgreSQLConnector(Connector):
         port (int): The port number of the PostgreSQL server.
         dbname (str): The name of the PostgreSQL database.
         user (str): The username for accessing the PostgreSQL database.
-        password (str, optional): The password for accessing the database. Defaults to None.
+        password (str, optional): The password for accessing the database.
+            Defaults to None.
     """
 
     id: str = "postgresql"
@@ -101,7 +102,7 @@ class PostgreSQLConnector(Connector):
         """
         if not self.connection:
             raise ConnectionError("PostgreSQL connection is not active.")
-        
+
         cursor = self.connection.cursor()
         cursor.execute(query_str)
         result = cursor.fetchall()
@@ -119,15 +120,16 @@ class PostgreSQLConnector(Connector):
 
 
 class PostgreSQLConnectorBuilder(ObjectBuilder):
-    def build(self, host, port, username, password, uri, kg_connector, configuration, **kwargs):
-        
+    def build(
+        self, host, port, username, password, uri, kg_connector, configuration, **kwargs
+    ):
         dbname = None
         if configuration is not None:
             if "dbname" in configuration:
                 dbname = configuration.get("dbname")
         if dbname is None:
             raise ValueError("PostgreSQL database name is required.")
-          
+
         connector = PostgreSQLConnector(
             host=host,
             port=port,
@@ -140,6 +142,4 @@ class PostgreSQLConnectorBuilder(ObjectBuilder):
         return connector
 
 
-connector_factory.register_builder(
-    PostgreSQLConnector.id, PostgreSQLConnectorBuilder()
-)
+connector_factory.register_builder(PostgreSQLConnector.id, PostgreSQLConnectorBuilder())

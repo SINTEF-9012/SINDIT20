@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+# from abc import ABC, abstractmethod
 from connectors.connector import Connector, Property
 from datetime import datetime
 from knowledge_graph.kg_connector import SINDITKGConnector
@@ -27,7 +27,8 @@ class PostgreSQLProperty(Property):
 
     def update_value(self, connector: Connector, **kwargs) -> None:
         """
-        Receive update from the PostgreSQL connector and query the database for the property value.
+        Receive update from the PostgreSQL connector
+        and query the database for the property value.
         """
         if self.connector is not None:
             postgresql_connector: PostgreSQLConnector = connector
@@ -42,33 +43,43 @@ class PostgreSQLProperty(Property):
 
             # Adding conditions to the query if they exist
             if self.conditions:
-                condition_str = " AND ".join([f"{k}='{v}'" for k, v in self.conditions.items()])
+                condition_str = " AND ".join(
+                    [f"{k}='{v}'" for k, v in self.conditions.items()]
+                )
                 query += f" WHERE {condition_str}"
 
-            #query += " ORDER BY id DESC LIMIT 1;"  # Assuming 'id' or primary key exists to get the latest entry
+            # query += " ORDER BY id DESC LIMIT 1;"
+            # Assuming 'id' or primary key exists to get the latest entry
 
             # Execute the query
             result = postgresql_connector.query(query)
-            
+
             if result:
                 result_row = result[0]  # Fetch the first row of the result
                 self.timestamp = datetime.now()
 
                 # Check if the field is a list or a single value
                 if isinstance(self.field, list):
-                    # Create a dictionary with field names as keys and their respective values
-                    self.value = {self.field[i]: result_row[i] for i in range(len(self.field))}
+                    # Create a dictionary with field names
+                    # as keys and their respective values
+                    self.value = {
+                        self.field[i]: result_row[i] for i in range(len(self.field))
+                    }
                 else:
                     # Single field case, just return the scalar value
                     self.value = result_row[0]
 
                 # Log and update value in the knowledge graph
-                logger.debug(f"Property {self.uri} updated with value {self.value}, timestamp {self.timestamp}")
+                logger.debug(
+                    (
+                        f"Property {self.uri} updated with value {self.value}, "
+                        f"timestamp {self.timestamp}"
+                    )
+                )
 
                 self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
             else:
                 logger.debug(f"No data found for property {self.uri}")
-
 
     def attach(self, connector: Connector) -> None:
         """
@@ -93,7 +104,7 @@ class PostgreSQLPropertyBuilder(ObjectBuilder):
                 field = property_identifiers["field"]
             if "conditions" in property_identifiers:
                 conditions = property_identifiers["conditions"]
-            
+
             if table is None or field is None:
                 logger.error(
                     f"Node {uri} is missing table or field identifiers, "
@@ -118,7 +129,4 @@ class PostgreSQLPropertyBuilder(ObjectBuilder):
             return None
 
 
-property_factory.register_builder(
-    PostgreSQLConnector.id, 
-    PostgreSQLPropertyBuilder()
-)
+property_factory.register_builder(PostgreSQLConnector.id, PostgreSQLPropertyBuilder())
