@@ -256,7 +256,7 @@ class RDFModel(BaseModel):
     def reverse_to_type(value: Any, value_type_hint: Any) -> Any:
         # Convert the value to the correct data type
         # TODO: Should check for other xsd types
-        new_val = value
+        new_val = str(value)
         try:
             if "str" in str(value_type_hint):
                 new_val = str(value)
@@ -272,7 +272,7 @@ class RDFModel(BaseModel):
                 new_val = datetime.fromisoformat(value)
             # Add more type conversions if needed
         except Exception:
-            new_val = value
+            new_val = str(value)
         return new_val
 
     def _reverse_attr(value: Any, value_type_hint: Any) -> None:

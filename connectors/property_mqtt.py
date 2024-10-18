@@ -3,7 +3,7 @@ from connectors.connector import Connector, Property
 from connectors.connector_mqtt import MQTTConnector
 from knowledge_graph.graph_model import StreamingProperty
 
-# from util.log import logger
+from util.log import logger
 from knowledge_graph.kg_connector import SINDITKGConnector
 from connectors.connector_factory import ObjectBuilder
 from connectors.connector_factory import property_factory
@@ -128,6 +128,11 @@ class MQTTPropertyBuilder(ObjectBuilder):
             )
 
             return new_property
+        else:
+            logger.error(
+                f"Node {uri} is not a StreamingProperty, cannot create MQTTProperty"
+            )
+            return None
 
 
 property_factory.register_builder(MQTTConnector.id, MQTTPropertyBuilder())

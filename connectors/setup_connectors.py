@@ -14,8 +14,11 @@ from connectors.connector_factory import connector_factory, property_factory
 # TODO: This is a workaround to avoid circular imports
 import connectors.connector_mqtt  # noqa: F401, E402
 import connectors.connector_influxdb  # noqa: F401, E402
+import connectors.connector_postgresql  # noqa: F401, E402
 import connectors.property_mqtt  # noqa: F401, E402
 import connectors.property_influxdb  # noqa: F401, E402
+import connectors.property_postgresql  # noqa: F401, E402
+
 
 connections = {}
 properties = {}
@@ -75,9 +78,11 @@ def remove_connection_node(node: Connection):
         connection: Connector = connections[node_uri]
 
         connection.observers_lock.acquire()
-        for property in connection._observers.values():
-            property.connector = None
-        connection.observers_lock.release()
+        try:
+            for property in connection._observers.values():
+                property.connector = None
+        finally:
+            connection.observers_lock.release()
 
         connection.stop()
         del connections[node_uri]
@@ -88,10 +93,12 @@ def remove_connection_node(node: Connection):
 def replace_connector(new_connector: Connector, old_connector: Connector):
     if new_connector is not None and old_connector is not None:
         old_connector.observers_lock.acquire()
-        if old_connector._observers is not None:
-            for property in old_connector._observers.values():
-                new_connector.attach(property)
-        old_connector.observers_lock.release()
+        try:
+            if old_connector._observers is not None:
+                for property in old_connector._observers.values():
+                    new_connector.attach(property)
+        finally:
+            old_connector.observers_lock.release()
 
 
 # TODO: Add support for other types of properties here
@@ -194,6 +201,7 @@ def create_connector(node: Connection) -> Connector:
             uri=node_uri,
             kg_connector=sindit_kg_connector,
             token=token,
+            configuration=node.configuration,
         )
 
         """ if str(node.type).lower() == MQTTConnector.id.lower():

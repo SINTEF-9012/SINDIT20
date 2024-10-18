@@ -34,6 +34,7 @@ class Connection(RDFModel):
         "isConnected": GRAPH_MODEL.isConnected,
         "username": GRAPH_MODEL.username,
         "connectionDescription": GRAPH_MODEL.connectionDescription,
+        "configuration": GRAPH_MODEL.configuration,
     }
 
     type: Literal | str = None
@@ -44,6 +45,7 @@ class Connection(RDFModel):
     tokenPath: Literal | str = None
     isConnected: Literal | bool = None
     connectionDescription: Literal | str = None
+    configuration: Literal | dict = None
 
 
 class AbstractAssetProperty(RDFModel):
@@ -76,11 +78,13 @@ class DatabaseProperty(AbstractAssetProperty):
 
     # databasePropertyConnection: Union[URIRefNode, Connection] = None
     query: Literal | str = None
+    propertyIdentifiers: Literal | dict = None
 
     mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
         # "databasePropertyConnection": GRAPH_MODEL.databasePropertyConnection,
         "query": GRAPH_MODEL.query,
+        "propertyIdentifiers": GRAPH_MODEL.propertyIdentifiers,
     }
 
 

@@ -153,6 +153,14 @@ class InfluxDBPropertyBuilder(ObjectBuilder):
                 )
 
                 return new_property
+        else:
+            logger.error(
+                (
+                    f"Node {node.uri} is not a TimeseriesProperty, "
+                    "cannot create InfluxDBProperty"
+                )
+            )
+            return None
 
 
 property_factory.register_builder(InfluxDBConnector.id, InfluxDBPropertyBuilder())

@@ -29,13 +29,13 @@ class Connector:
 
         logger.info(f"Attaching property {property.uri} to connector {self.uri}")
         self.observers_lock.acquire()
-
-        if property.uri not in self._observers:
-            self._observers[property.uri] = property
-            property.connector = self
-            property.attach(self)
-
-        self.observers_lock.release()
+        try:
+            if property.uri not in self._observers:
+                self._observers[property.uri] = property
+                property.connector = self
+                property.attach(self)
+        finally:
+            self.observers_lock.release()
 
     def detach(self, property: Property) -> None:
         """
@@ -44,9 +44,11 @@ class Connector:
         logger.info(f"Detaching {property.uri} from {self}")
 
         self.observers_lock.acquire()
-        if self._observers is not None and property.uri in self._observers:
-            del self._observers[property.uri]
-        self.observers_lock.release()
+        try:
+            if self._observers is not None and property.uri in self._observers:
+                del self._observers[property.uri]
+        finally:
+            self.observers_lock.release()
 
     def notify(self, **kwargs) -> None:
         """
@@ -54,10 +56,17 @@ class Connector:
         """
         logger.debug(f"Node {self.uri} notifies all attached properties")
         self.observers_lock.acquire()
-        if self._observers is not None:
-            for observer in self._observers.values():
-                observer.update_value(self, **kwargs)
-        self.observers_lock.release()
+
+        try:
+            if self._observers is not None:
+                for observer in self._observers.values():
+                    try:
+                        observer.update_value(self, **kwargs)
+                    except Exception as e:
+                        logger.error(f"Failed to notify observer {observer.uri}: {e}")
+
+        finally:
+            self.observers_lock.release()
 
     @abstractmethod
     def start(self, **kwargs) -> any:

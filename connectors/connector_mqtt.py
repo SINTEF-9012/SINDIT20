@@ -109,10 +109,12 @@ class MQTTConnector(Connector):
 
         # Subscribe to the topic again after reconnection
         self.observers_lock.acquire()
-        if self._observers is not None:
-            for property in self._observers.values():
-                self.subscribe(property.topic)
-        self.observers_lock.release()
+        try:
+            if self._observers is not None:
+                for property in self._observers.values():
+                    self.subscribe(property.topic)
+        finally:
+            self.observers_lock.release()
 
     def _on_disconnect(self, client, userdata, disconnect_flags, rc, properties):
         logger.info(
