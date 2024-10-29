@@ -12,9 +12,23 @@ SINTEF Digital Twin project
 The development of this project has just begun...s
 
 
-## GrahDB setup
+## Run backend using Docker Compose
+To start the backend run:
+```bash
+docker-compose up
+```
+This will build the GraphDB docker image and the FastAPI docker image.
 
-Run these scripts from the GraphDB folder:
+The GraphDB instance will be available at: `localhost:7200`
+
+The FastAPI documentation will be exposed at: `http://0.0.0.0:9017`
+
+## Run backend locally
+Desription of how to start the backend locally outside docker.
+The backend consists of a GraphDB database and a FastAPI server.
+
+### GraphDB
+To start GraphDB, run these scripts from the GraphDB folder:
 ```bash
 bash graphdb_install.sh
 bash graphdb_preload.sh
@@ -28,8 +42,11 @@ poetry run python run_test.py
 
 Go to localhost:7200 to configure graphdb
 
-## API uvicorn server
-You need to run `run_sindit.py`
+### API uvicorn server
+To start the FastAPI server, run:
+```bash
+poetry run python run_sindit.py
+```
 
 
 ### Run using vscode launcher
