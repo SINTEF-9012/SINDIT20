@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  graphdb:
+    build: ./GraphDB/Dockerfile
+    ports:
+      - "7200:7200"
+
+  sindit:
+    build: .
+    environment:
+      - GRAPHDB_HOST=graphdb
+      - GRAPHDB_PORT=7200
+    depends_on:
+      - graphdb
+    ports:
+      - "9017:9017"
