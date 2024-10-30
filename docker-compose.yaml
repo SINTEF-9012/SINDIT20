@@ -2,12 +2,16 @@ version: '3.8'
 
 services:
   graphdb:
-    build: ./GraphDB/Dockerfile
+    build:
+      context: ./GraphDB
+      dockerfile: ./Dockerfile
     ports:
       - "7200:7200"
 
   sindit:
-    build: .
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     environment:
       - GRAPHDB_HOST=graphdb
       - GRAPHDB_PORT=7200

@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-slim
+FROM python:3.11-slim as build
 
 # Environment variables
 ENV APPNAME=SINDIT  \
@@ -21,7 +21,9 @@ ENV APPNAME=SINDIT  \
 # Set the working directory in the container
 WORKDIR /app
 
-RUN pip install poetry==1.8.2
+RUN apt-get update \
+    && apt-get -y install libpq-dev gcc \
+    && pip install poetry==1.8.2
 
 # Copy the current directory contents into the container at /app
 COPY api /app/api
@@ -33,7 +35,7 @@ COPY environment_and_configuration /app/environment_and_configuration
 COPY run_sindit.py pyproject.toml initialize_kg_connectors.py initialize_vault.py /app/
 
 # Install any needed packages specified in requirements.txt
-RUN poetry install --without dev && rm -rf $POETRY_CACHE_DIR
+RUN poetry install
 
 # Expose port
 EXPOSE 9017

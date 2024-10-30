@@ -33,7 +33,7 @@ bleak = "^0.22.2"
 influxdb-client = "^1.44.0"
 paho-mqtt = "^2.1.0"
 python-dotenv = "^1.0.1"
-psycopg2 = "^2.9.10"
+psycopg2-binary = "^2.9.10"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.3"
