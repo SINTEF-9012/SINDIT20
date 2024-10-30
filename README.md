@@ -13,10 +13,12 @@ The development of this project has just begun...s
 
 
 ## Run backend using Docker Compose
-To start the backend run:
+To start the backend run (add the --build flag to build images before starting containers (build from scratch)):
 ```bash
 docker-compose up
+docker-compose up --build
 ```
+
 This will build the GraphDB docker image and the FastAPI docker image.
 
 The GraphDB instance will be available at: `localhost:7200`
