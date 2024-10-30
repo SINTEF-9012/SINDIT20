@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-slim as build
+FROM python:3.11-slim AS build
 
 # Environment variables
 ENV APPNAME=SINDIT  \
