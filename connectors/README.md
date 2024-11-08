@@ -40,3 +40,42 @@ client.disconnect()
 ```
 
 ![Image](../docs/img/humidity_output.png)
+
+
+## S3Connector
+
+For testing using a local minio instance. Start a minio docker container:
+
+```bash
+docker run -p 9000:9000 -p 9001:9001 \
+  quay.io/minio/minio server /data --console-address ":9001"
+```
+This will spin up a docker container with minio. The container exposes the 9000 port for API connection and 9001 for managing minio through a frontend. The minio instance will have default credentials.
+
+Using the S3Connector:
+```python
+from connectors.s3_connector import S3Connector
+s3 = S3Connector(endpoint_url="http://localhost:9000")
+s3.start()
+s3.create_bucket('my-bucket')
+
+## upload an object throught the client
+with open('test.jpg', 'rb') as data:
+    s3.put_object(bucket='my-bucket', Key='test.jpg', Body=data)
+
+## upload an object using a presigned url
+response = s3.create_presigned_url_for_upload_object('my-bucket', 'test.txt')
+
+import requests
+with open(object_name, 'rb') as f:
+    files = {'file': (object_name, f)}
+    http_response = requests.post(response['url'], data=response['fields'], files=files)
+
+
+## download an object using presigned url
+response = s3.create_presigned_url_for_download_objec('my-bucket', 'test.txt')
+
+import requests
+http_response = requests.get(response)
+
+```
