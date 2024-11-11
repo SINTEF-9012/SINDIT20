@@ -55,7 +55,7 @@ This will spin up a docker container with minio. The container exposes the 9000 
 Using the S3Connector:
 ```python
 from connectors.s3_connector import S3Connector
-s3 = S3Connector(endpoint_url="http://localhost:9000")
+s3 = S3Connector(host="http://localhost", port=9000)
 s3.start()
 s3.create_bucket('my-bucket')
 

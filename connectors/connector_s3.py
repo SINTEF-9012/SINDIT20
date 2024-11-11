@@ -13,32 +13,45 @@ class S3Connector(Connector):
 
     def __init__(
         self,
-        endpoint_url: str = "http://localhost:9000",
+        host: str = "localhost",
+        port: int = 9000,
         access_key_id: str = "minioadmin",
         secret_access_key: str = "minioadmin",
-        kg_connector: SINDITKGConnector = None,
         region_name: str = None,
         expiration: int = 3600,
+        uri: str = None,
+        kg_connector: SINDITKGConnector = None,
     ):
         super().__init__()
 
         self.region_name = region_name
-        self.endpoint_url = endpoint_url
-        self.__access_key_id = access_key_id
-        self.__secret_access_key = secret_access_key
+        self.endpoint_url = f"{host}:{port}"
+        if access_key_id is None:
+            self.__access_key_id = "minioadmin"
+        else:
+            self.__access_key_id = access_key_id
+        if secret_access_key is None:
+            self.__secret_access_key = "minioadmin"
+        else:
+            self.__secret_access_key = secret_access_key
         self.kg_connector = kg_connector
+        self.uri = f"s3://{host}:{port}"
+        if uri is not None:
+            self.uri = uri
 
     def start(self, **kwargs):
         """Start the S3 client."""
-        if self.__access_key_id and self.__secret_access_key:
-            self.client = boto3.client(
-                "s3",
-                endpoint_url=self.endpoint_url,
-                aws_access_key_id=self.__access_key_id,
-                aws_secret_access_key=self.__secret_access_key,
-                region_name=self.region_name,
-            )
-            self.update_connection_status(True)
+        logger.debug("starting s3 connector...")
+        logger.debug("keys: ", self.__access_key_id, self.__secret_access_key)
+        logger.debug("setting up the s3 client...")
+        self.client = boto3.client(
+            "s3",
+            endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.__access_key_id,
+            aws_secret_access_key=self.__secret_access_key,
+            region_name=self.region_name,
+        )
+        self.update_connection_status(True)
 
     def stop(self, **kwargs):
         """Stop the S3 client."""
@@ -158,10 +171,11 @@ class S3ConnectorBuilder(ObjectBuilder):
         port: str,
         username: str,
         password: str,
+        uri: str,
         kg_connector: SINDITKGConnector = None,
         configuration: dict = None,
+        **kwargs,
     ) -> S3Connector:
-        endpoint_url = f"{host}:{port}"  # http://localhost:9000
         region_name = None
         expiration = 3600
         if configuration is not None:
@@ -174,12 +188,14 @@ class S3ConnectorBuilder(ObjectBuilder):
                     pass
 
         connector = S3Connector(
-            endpoint_url=endpoint_url,
+            host=host,
+            port=port,
             access_key_id=username,
             secret_access_key=password,
-            kg_connector=kg_connector,
             region_name=region_name,
             expiration=expiration,
+            uri=uri,
+            kg_connector=kg_connector,
         )
         return connector
 
