@@ -15,9 +15,11 @@ from connectors.connector_factory import connector_factory, property_factory
 import connectors.connector_mqtt  # noqa: F401, E402
 import connectors.connector_influxdb  # noqa: F401, E402
 import connectors.connector_postgresql  # noqa: F401, E402
+import connectors.connector_s3  # noqa: F401, E402
 import connectors.property_mqtt  # noqa: F401, E402
 import connectors.property_influxdb  # noqa: F401, E402
 import connectors.property_postgresql  # noqa: F401, E402
+import connectors.property_s3  # noqa: F401, E402
 
 
 connections = {}

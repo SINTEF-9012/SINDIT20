@@ -1,5 +1,6 @@
 from connectors.connector import Connector
 from connectors.connector_factory import ObjectBuilder, connector_factory
+from knowledge_graph.kg_connector import SINDITKGConnector
 from util.log import logger
 import boto3
 from botocore.exceptions import ClientError
@@ -15,7 +16,9 @@ class S3Connector(Connector):
         endpoint_url: str = "http://localhost:9000",
         access_key_id: str = "minioadmin",
         secret_access_key: str = "minioadmin",
+        kg_connector: SINDITKGConnector = None,
         region_name: str = None,
+        expiration: int = 3600,
     ):
         super().__init__()
 
@@ -23,6 +26,7 @@ class S3Connector(Connector):
         self.endpoint_url = endpoint_url
         self.__access_key_id = access_key_id
         self.__secret_access_key = secret_access_key
+        self.kg_connector = kg_connector
 
     def start(self, **kwargs):
         """Start the S3 client."""
@@ -34,10 +38,12 @@ class S3Connector(Connector):
                 aws_secret_access_key=self.__secret_access_key,
                 region_name=self.region_name,
             )
+            self.update_connection_status(True)
 
     def stop(self, **kwargs):
         """Stop the S3 client."""
         self.client.stop()
+        self.update_connection_status(False)
 
     def list_buckets(self):
         """List all buckets in the S3 storage."""
@@ -148,16 +154,32 @@ class S3ConnectorBuilder(ObjectBuilder):
 
     def build(
         self,
-        endpoint_url: str,
-        access_key_id: str,
-        secret_access_key: str,
-        region_name: str = None,
+        host: str,
+        port: str,
+        username: str,
+        password: str,
+        kg_connector: SINDITKGConnector = None,
+        configuration: dict = None,
     ) -> S3Connector:
+        endpoint_url = f"{host}:{port}"  # http://localhost:9000
+        region_name = None
+        expiration = 3600
+        if configuration is not None:
+            if "region_name" in configuration:
+                region_name = configuration.get("region_name")
+            if "expiration" in configuration:
+                try:
+                    expiration = int(configuration.get("expiration"))
+                except ValueError:
+                    pass
+
         connector = S3Connector(
             endpoint_url=endpoint_url,
-            access_key_id=access_key_id,
-            secret_access_key=secret_access_key,
+            access_key_id=username,
+            secret_access_key=password,
+            kg_connector=kg_connector,
             region_name=region_name,
+            expiration=expiration,
         )
         return connector
 

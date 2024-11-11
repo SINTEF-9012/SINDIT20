@@ -118,6 +118,20 @@ class TimeseriesProperty(DatabaseProperty):
     timeseriesTags: Literal | dict = None
 
 
+class S3ObjectProperty(RDFModel):
+    CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.S3ObjectProperty
+
+    bucket: Literal | str = None
+    key: Literal | str = None
+    expiration: Literal | int = None
+
+    mapping: ClassVar[dict] = {
+        "bucket": GRAPH_MODEL.bucket,
+        "key": GRAPH_MODEL.key,
+        "expiration": GRAPH_MODEL.expiration,
+    }
+
+
 class File(DatabaseProperty):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.File
 

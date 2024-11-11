@@ -17,6 +17,7 @@ from knowledge_graph.graph_model import (
     Connection,
     DatabaseProperty,
     File,
+    S3ObjectProperty,
     StreamingProperty,
     TimeseriesProperty,
 )
@@ -301,6 +302,27 @@ async def create_file(node: File) -> dict:
 
     **Important**: All existing information related to this node will be
     completely removed before adding the new node.
+
+    If you want to update a node without removing all its old information,
+    use the update node endpoint instead.
+    """
+    try:
+        result = sindit_kg_connector.save_node(node)
+
+        if result:
+            update_propery_node(node)
+
+        return {"result": result}
+    except Exception as e:
+        logger.error(f"Error saving node {node}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# S3 File object
+@app.post("/kg/s3_object", tags=["Knowledge Graph"])
+async def create_s3_object(node: S3ObjectProperty) -> dict:
+    """
+    Create or save a S3 object node to the knowledge graph.
 
     If you want to update a node without removing all its old information,
     use the update node endpoint instead.

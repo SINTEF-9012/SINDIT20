@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
 
 
@@ -28,3 +28,10 @@ def get_current_local_time() -> datetime:
     local_timezone = datetime.now().astimezone().tzinfo
     local_time = datetime.now().astimezone(local_timezone)
     return local_time
+
+
+def add_seconds_to_timestamp(timestamp: datetime, seconds: int) -> datetime:
+    """
+    Add seconds to timestamp
+    """
+    return timestamp + timedelta(seconds=seconds)
