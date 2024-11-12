@@ -7,7 +7,14 @@ from botocore.exceptions import ClientError
 
 
 class S3Connector(Connector):
-    """S3 Object Storage Connector."""
+    """S3 Object Storage Connector.
+
+    To use S3Connector as standalone class without a running backend;
+    - make sure to pass argument "no_update_connection_status"
+      to start and stop methods:
+        - s3.start(no_update_connection_status=True)
+        - s3.stop(no_update_connection_status=True)
+    """
 
     id: str = "s3"
 
@@ -41,9 +48,7 @@ class S3Connector(Connector):
 
     def start(self, **kwargs):
         """Start the S3 client."""
-        logger.debug("starting s3 connector...")
-        logger.debug("keys: ", self.__access_key_id, self.__secret_access_key)
-        logger.debug("setting up the s3 client...")
+        logger.debug("starting s3 connector client...")
         self.client = boto3.client(
             "s3",
             endpoint_url=self.endpoint_url,
@@ -51,12 +56,18 @@ class S3Connector(Connector):
             aws_secret_access_key=self.__secret_access_key,
             region_name=self.region_name,
         )
-        self.update_connection_status(True)
+        if kwargs.get("no_update_connection_status"):
+            logger.info("will not update the connection status")
+        else:
+            self.update_connection_status(True)
 
     def stop(self, **kwargs):
         """Stop the S3 client."""
         self.client.stop()
-        self.update_connection_status(False)
+        if kwargs.get("no_update_connection_status"):
+            logger.info("will not update the connection status")
+        else:
+            self.update_connection_status(False)
 
     def list_buckets(self):
         """List all buckets in the S3 storage."""

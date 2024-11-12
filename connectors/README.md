@@ -56,7 +56,7 @@ Using the S3Connector:
 ```python
 from connectors.s3_connector import S3Connector
 s3 = S3Connector(host="http://localhost", port=9000)
-s3.start()
+s3.start(no_update_connection_status=True)
 s3.create_bucket('my-bucket')
 
 ## upload an object throught the client
@@ -78,4 +78,6 @@ response = s3.create_presigned_url_for_download_objec('my-bucket', 'test.txt')
 import requests
 http_response = requests.get(response)
 
+# stop the client
+s3.stop(no_update_connection_status=True)
 ```
