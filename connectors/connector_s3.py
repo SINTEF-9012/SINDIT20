@@ -46,6 +46,19 @@ class S3Connector(Connector):
         if uri is not None:
             self.uri = uri
 
+    def _set_connection_status(self, connected: bool, **kwargs):
+        """Set the connection status."""
+        if kwargs.get("no_update_connection_status"):
+            logger.debug("no update connection status")
+            pass
+        else:
+            if connected:
+                logger.info("connected to s3")
+                self.update_connection_status(True)
+            else:
+                logger.error("could not connect to s3")
+                self.update_connection_status(False)
+
     def start(self, **kwargs):
         """Start the S3 client."""
         logger.debug("starting s3 connector client...")
@@ -56,18 +69,17 @@ class S3Connector(Connector):
             aws_secret_access_key=self.__secret_access_key,
             region_name=self.region_name,
         )
-        if kwargs.get("no_update_connection_status"):
-            logger.info("will not update the connection status")
-        else:
-            self.update_connection_status(True)
+        try:
+            self.client.list_buckets()
+            self._set_connection_status(True, **kwargs)
+        except Exception as e:
+            logger.error(f"error starting s3 connector client: {e}")
+            self._set_connection_status(False, **kwargs)
 
     def stop(self, **kwargs):
         """Stop the S3 client."""
         self.client.stop()
-        if kwargs.get("no_update_connection_status"):
-            logger.info("will not update the connection status")
-        else:
-            self.update_connection_status(False)
+        self._set_connection_status(False, **kwargs)
 
     def list_buckets(self):
         """List all buckets in the S3 storage."""
