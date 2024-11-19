@@ -118,7 +118,7 @@ class TimeseriesProperty(DatabaseProperty):
     timeseriesTags: Literal | dict = None
 
 
-class S3ObjectProperty(RDFModel):
+class S3ObjectProperty(AbstractAssetProperty):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.S3ObjectProperty
 
     bucket: Literal | str = None
@@ -126,6 +126,7 @@ class S3ObjectProperty(RDFModel):
     expiration: Literal | int = None
 
     mapping: ClassVar[dict] = {
+        **AbstractAssetProperty.mapping,
         "bucket": GRAPH_MODEL.bucket,
         "key": GRAPH_MODEL.key,
         "expiration": GRAPH_MODEL.expiration,
@@ -197,6 +198,7 @@ URIClassMapping = {
     StreamingProperty.CLASS_URI: StreamingProperty,
     TimeseriesProperty.CLASS_URI: TimeseriesProperty,
     File.CLASS_URI: File,
+    S3ObjectProperty.CLASS_URI: S3ObjectProperty,
     AbstractAsset.CLASS_URI: AbstractAsset,
     SINDITKG.CLASS_URI: SINDITKG,
 }
