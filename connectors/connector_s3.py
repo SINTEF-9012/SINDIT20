@@ -149,16 +149,16 @@ class S3Connector(Connector):
 
     def create_presigned_url_for_upload_object(
         self,
-        bucket_name: str,
-        object_name: str,
+        bucket: str,
+        key: str,
         fields: dict = None,
         conditions: list = None,
         expiration: int = 3600,
     ):
         """Generate a presigned URL to POST request for upload a file to S3 bucket
 
-        :param bucket_name: string
-        :param object_name: string
+        :param bucket: string
+        :param key: string
         :param fields: Dictionary of prefilled form fields
         :param conditions: List of conditions to include in the policy
         :param expiration: Time in seconds for the presigned URL to remain valid
@@ -171,8 +171,8 @@ class S3Connector(Connector):
         # Generate a presigned S3 POST URL
         try:
             response = self.client.generate_presigned_post(
-                bucket_name,
-                object_name,
+                bucket,
+                key,
                 Fields=fields,
                 Conditions=conditions,
                 ExpiresIn=expiration,
