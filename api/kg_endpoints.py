@@ -39,6 +39,7 @@ from api.api import app
         StreamingProperty,
         TimeseriesProperty,
         File,
+        S3ObjectProperty,
     ],
 )
 async def get_node(
@@ -69,6 +70,7 @@ async def get_node(
             StreamingProperty,
             TimeseriesProperty,
             File,
+            S3ObjectProperty,
         ]
     ],
 )
@@ -101,6 +103,7 @@ async def get_nodes_by_class(
             StreamingProperty,
             TimeseriesProperty,
             File,
+            S3ObjectProperty,
         ]
     ],
 )
