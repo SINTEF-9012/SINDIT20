@@ -33,6 +33,7 @@ class S3Connector(Connector):
 
         self.region_name = region_name
         self.endpoint_url = f"{host}:{port}"
+        self.kg_connector = kg_connector
         if access_key_id is None:
             self.__access_key_id = "minioadmin"
         else:
@@ -41,10 +42,10 @@ class S3Connector(Connector):
             self.__secret_access_key = "minioadmin"
         else:
             self.__secret_access_key = secret_access_key
-        self.kg_connector = kg_connector
-        self.uri = f"s3://{host}:{port}"
         if uri is not None:
             self.uri = uri
+        else:
+            self.uri = f"s3://{host}:{port}"
 
     def _set_connection_status(self, connected: bool, **kwargs):
         """Set the connection status."""
