@@ -25,10 +25,6 @@ class S3Property(Property):
         self.kg_connector = kg_connector
         self.expiration = expiration
 
-    def attach(self, connector: S3Connector) -> None:
-        """Attach the property to S3Connector"""
-        pass
-
     def _value_has_expired(self) -> bool:
         """
         Check if S3 value (presigned download url) has expired.
@@ -80,6 +76,15 @@ class S3Property(Property):
             except Exception:
                 logger.debug("Bucket does probably not exist")
                 return False
+
+    def attach(self, connector: S3Connector) -> None:
+        """Attach the property to S3Connector"""
+        # use the update_value method to set the value and timestamp
+        logger.debug(
+            f"""Attaching S3 property {self.uri} to
+            S3 connector {connector.uri}"""
+        )
+        self.update_value(connector)
 
     def update_value(self, connector: S3Connector, **kwargs) -> None:
         """update the property value and timestamp"""
