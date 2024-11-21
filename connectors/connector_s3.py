@@ -48,7 +48,9 @@ class S3Connector(Connector):
             self.uri = f"s3://{host}:{port}"
 
     def _set_connection_status(self, connected: bool, **kwargs):
-        """Set the connection status."""
+        """
+        Set the connection status.
+        """
         if kwargs.get("no_update_connection_status"):
             logger.debug("no update connection status")
             pass
@@ -61,7 +63,9 @@ class S3Connector(Connector):
                 self.update_connection_status(False)
 
     def start(self, **kwargs):
-        """Start the S3 client."""
+        """
+        Start the S3 client.
+        """
         logger.debug("starting s3 connector client...")
         self.client = boto3.client(
             "s3",
@@ -78,34 +82,42 @@ class S3Connector(Connector):
             self._set_connection_status(False, **kwargs)
 
     def stop(self, **kwargs):
-        """Stop the S3 client."""
+        """
+        Stop the S3 client.
+        """
         self.client.stop()
         self._set_connection_status(False, **kwargs)
 
     def list_buckets(self):
-        """List all buckets in the S3 storage."""
+        """
+        List all buckets in the S3 storage.
+        """
         response = self.client.list_buckets()
         return response
 
     def list_objects(self, bucket: str):
-        """List all objects in a bucket."""
+        """
+        List all objects in a bucket.
+        """
         response = self.client.list_objects_v2(Bucket=bucket)
         return response
 
     def get_object(self, bucket: str, key: str):
-        """Get information about an object."""
+        """
+        Get information about an object.
+        """
         response = self.client.get_object(Bucket=bucket, Key=key)
         return response
 
     def put_object(self, bucket: str, key: str, data: bytes):
-        """Put an object to a bucket.
-        Bucket is the name of the bucket to upload the file to.
-        The key is the full name of the file to upload. For example key='image.jpg'.
+        """Put an object into a bucket.
         The data is the file data to upload.
             :param bucket: string
             :param key: string
             :param data: bytes
-
+        bucket is the name of the bucket to upload the file to.
+        The key is the path/filename of the object inside the bucket.
+        For example key='random/path/to/file/image.jpg'.
         Example of usage:
         with open('test.jpg', 'rb') as data:
             s3.put_object(bucket='my-bucket', Key='test.jpg', Body=data)
@@ -114,25 +126,31 @@ class S3Connector(Connector):
         return response
 
     def delete_object(self, bucket: str, key: str):
-        """Delete an object from a bucket."""
+        """
+        Delete an object from a bucket.
+        """
         response = self.client.delete_object(Bucket=bucket, Key=key)
         return response
 
     def create_bucket(self, bucket: str):
-        """Create a bucket."""
+        """
+        Create a bucket.
+        """
         response = self.client.create_bucket(Bucket=bucket)
         return response
 
     def delete_bucket(self, bucket: str):
-        """Delete a bucket."""
+        """
+        Delete a bucket.
+        """
         response = self.client.delete_bucket(Bucket=bucket)
         return response
 
     def download_object(self, bucket: str, key: str, file_path: str) -> None:
         """Download an object from a bucket.
-        Bucket is the name of the bucket containing the object.
-        Key is the name of the object to download.
-        Filepath is the path in which save the object.
+        bucket is the name of the bucket containing the object.
+        key is the name of the object to download.
+        file_path is the path in which save the object.
             :param bucket: string
             :param key: string
             :param file_path: string
@@ -142,7 +160,14 @@ class S3Connector(Connector):
     def create_presigned_url_for_download_object(
         self, bucket: str, key: str, expiration: int = 3600
     ):
-        """Generate a presigned URL to download an object."""
+        """
+        Generate a presigned URL to download an object.
+
+        :param bucket: string
+        :param key: string
+        :param expiration: Time in seconds for the presigned URL to remain valid
+
+        """
         response = self.client.generate_presigned_url(
             "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=expiration
         )
@@ -168,8 +193,6 @@ class S3Connector(Connector):
             fields: Dictionary of form fields and values to submit with the POST
         :return: None if error.
         """
-
-        # Generate a presigned S3 POST URL
         try:
             response = self.client.generate_presigned_post(
                 bucket,
@@ -187,7 +210,9 @@ class S3Connector(Connector):
 
 
 class S3ConnectorBuilder(ObjectBuilder):
-    """A class representing an S3 connector builder."""
+    """
+    A class representing an S3 connector builder.
+    """
 
     def build(
         self,
