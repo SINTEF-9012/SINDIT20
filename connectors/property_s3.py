@@ -1,20 +1,33 @@
 from connectors.connector import Property
 from connectors.connector_factory import ObjectBuilder
 from connectors.connector_factory import property_factory
-from knowledge_graph.kg_connector import SINDITKGConnector
 from knowledge_graph.graph_model import S3ObjectProperty
+from knowledge_graph.kg_connector import SINDITKGConnector
 from connectors.connector_s3 import S3Connector
 from util.datetime_util import get_current_local_time, add_seconds_to_timestamp
 from util.log import logger
+import threading
+import time
 
 
 class S3Property(Property):
+    """
+    S3 Property class to manage S3 object storage properties.
+
+    Parameters:
+        param: uri: str: URI of the property
+        param: bucket: str: S3 bucket name
+        param: key: str: S3 object key
+        param: expiration: int: Expiration time in seconds for the presigned url
+        param: kg_connector: SINDITKGConnector: Knowledge Graph connector
+    """
+
     def __init__(
         self,
         uri: str,
         bucket: str,
         key: str,
-        expiration: int = 3600,
+        expiration: int = None,
         kg_connector: SINDITKGConnector = None,
     ):
         self.uri = str(uri)
@@ -23,7 +36,17 @@ class S3Property(Property):
         self.timestamp = None
         self.value = None
         self.kg_connector = kg_connector
-        self.expiration = expiration
+        self.thread = None
+        self._stop_thread_flag = threading.Event()
+        self.create_download_url = None
+        self.refresh_download_url = 5
+        if expiration is not None:
+            self.expiration = expiration
+        else:
+            self.expiration = 3600
+
+    def __del__(self):
+        self.stop_thread()
 
     def _value_has_expired(self) -> bool:
         """
@@ -48,7 +71,9 @@ class S3Property(Property):
         return expiration_time
 
     def _bucket_exists(self, connector: S3Connector) -> bool:
-        """Check if the bucket exists in the S3 storage"""
+        """
+        Check if the bucket exists in the S3 storage
+        """
         if self.connector is not None:
             s3_connector: S3Connector = connector
             response = s3_connector.list_buckets()
@@ -62,7 +87,9 @@ class S3Property(Property):
                 return False
 
     def _key_exists(self, connector: S3Connector) -> bool:
-        """Check if the key/object exists in the S3 storage"""
+        """
+        Check if the key/object exists in the S3 storage
+        """
         if self.connector is not None:
             s3_connector: S3Connector = connector
             try:
@@ -78,16 +105,74 @@ class S3Property(Property):
                 return False
 
     def attach(self, connector: S3Connector) -> None:
-        """Attach the property to S3Connector"""
+        """
+        Attach the property to S3Connector
+        """
         # use the update_value method to set the value and timestamp
+        if connector is not None:
+            # This will overwrite the expiration with the connector expiration!
+            self.expiration = connector.expiration
+
         logger.debug(
             f"""Attaching S3 property {self.uri} to
             S3 connector {connector.uri}"""
         )
         self.update_value(connector)
 
+    def _update_value_upload_url(self, connector: S3Connector) -> None:
+        """
+        Update the upload url in a separate thread until it becomes a download url!
+        """
+        upload_url_expires = self.refresh_download_url * 60
+        while self.create_download_url and not self._stop_thread_flag.is_set():
+            # 1. Create the presigned url for upload
+            logger.debug("Creating presigned url for upload")
+            self.value = connector.create_presigned_url_for_upload_object(
+                bucket=self.bucket, key=self.key, expiration=upload_url_expires
+            )
+            self.timestamp = get_current_local_time()
+            # 2. update kg values accordingly
+            self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
+            # 3. await for the refresh_download_url time
+            time.sleep(self.refresh_download_url)
+            # 4 Check if the key exists.
+            if self._key_exists(connector):
+                self.create_download_url = False
+                logger.debug("Key exists. Break the loop")
+                break
+            else:
+                logger.debug("Key does not exist. Continue refreshing presigned url")
+                continue
+
+        if self.create_download_url is False:
+            logger.debug("Key exists. Update value to a download url")
+            self._update_value_download_url(connector)
+
+    def _stop_thread(self):
+        """
+        Stop the thread gracefully.
+        """
+        if self.thread is not None:
+            self._stop_thread_flag.set()
+            self.thread.join()
+            self.thread = None
+
+    def _update_value_download_url(self, connector: S3Connector) -> None:
+        """
+        Update the download url in the property
+        """
+        logger.debug(f"Updating S3 property download url {self.uri}")
+        self.value = connector.create_presigned_url_for_download_object(
+            bucket=self.bucket, key=self.key, expiration=self.expiration
+        )
+        self.timestamp = get_current_local_time()
+        logger.debug(f"value: {self.value}")
+        self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
+
     def update_value(self, connector: S3Connector, **kwargs) -> None:
-        """update the property value and timestamp"""
+        """
+        Update the property value and timestamp
+        """
         logger.debug(f"Updating S3 property value {self.uri}")
         if self.connector is None:
             logger.error("No connector attached to the property")
@@ -108,26 +193,22 @@ class S3Property(Property):
                 if not self._bucket_exists(s3_connector):
                     s3_connector.create_bucket(self.bucket)
                 if not self._key_exists(s3_connector):
-                    self.value = s3_connector.create_presigned_url_for_upload_object(
-                        bucket=self.bucket, key=self.key, expiration=self.expiration
+                    # TODO: create thread to update value until becomes a download url
+                    self.create_download_url = True
+                    self.thread = threading.Thread(
+                        target=self._update_value_upload_url, args=(s3_connector,)
                     )
-                    self.timestamp = get_current_local_time()
+                    self.thread.daemon = True
+                    self.thread.start()
                 else:
                     if self._value_has_expired():
-                        self.value = s3_connector.create_presigned_url_for_download_object(  # noqa E501
-                            bucket=self.bucket, key=self.key, expiration=self.expiration
-                        )
-                        timestamp = get_current_local_time()
-                        if self.timestamp != timestamp:
-                            self.timestamp = timestamp
+                        self._update_value_download_url(s3_connector)
                     else:
                         logger.debug(
                             f"""S3 property value has not expired.
                             Time: {self.timestamp}
                             Expires: {self._get_expiration_time()}"""
                         )
-                        pass
-            self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
 
 
 class S3PropertyBuilder(ObjectBuilder):
@@ -135,16 +216,11 @@ class S3PropertyBuilder(ObjectBuilder):
         if isinstance(node, S3ObjectProperty):
             bucket = node.bucket
             key = node.key
-            if node.expiration is None:
-                expiration = 3600
-            else:
-                expiration = node.expiration
 
             new_property = S3Property(
                 uri=uri,
                 bucket=bucket,
                 key=key,
-                expiration=expiration,
                 kg_connector=kg_connector,
             )
             return new_property
