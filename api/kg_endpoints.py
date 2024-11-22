@@ -327,8 +327,7 @@ async def create_s3_object(node: S3ObjectProperty) -> dict:
     """
     Create or save a S3 object node to the knowledge graph.
 
-    If you want to update a node without removing all its old information,
-    use the update node endpoint instead.
+    TODO: Add more details on how to use this endpoint.
     """
     try:
         result = sindit_kg_connector.save_node(node)
