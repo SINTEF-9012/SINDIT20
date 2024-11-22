@@ -4,16 +4,27 @@ from knowledge_graph.kg_connector import SINDITKGConnector
 from util.log import logger
 import boto3
 from botocore.exceptions import ClientError
+import time
+import threading
 
 
 class S3Connector(Connector):
     """S3 Object Storage Connector.
 
     To use S3Connector as standalone class without a running backend;
-    - make sure to pass argument "no_update_connection_status"
+    * make sure to pass argument "no_update_connection_status"
       to start and stop methods:
-        - s3.start(no_update_connection_status=True)
-        - s3.stop(no_update_connection_status=True)
+        s3.start(no_update_connection_status=True)
+        s3.stop(no_update_connection_status=True)
+
+    Parameters:
+        host: str: S3 server hostname
+        port: int: S3 server port
+        access_key_id: str: S3 access key id
+        secret_access_key: str: S3 secret access key
+        region_name: str: S3 region name (optional)
+        expiration: int: Expiration time in seconds for the presigned url
+        uri: str: URI of the connector (identifier for the connector instance)
     """
 
     id: str = "s3"
@@ -30,7 +41,8 @@ class S3Connector(Connector):
         kg_connector: SINDITKGConnector = None,
     ):
         super().__init__()
-
+        self.thread = None
+        self._stop_event = threading.Event()
         self.region_name = region_name
         self.endpoint_url = f"{host}:{port}"
         self.kg_connector = kg_connector
@@ -46,6 +58,10 @@ class S3Connector(Connector):
             self.uri = uri
         else:
             self.uri = f"s3://{host}:{port}"
+        if expiration is not None:
+            self.expiration = expiration
+        else:
+            self.expiration = 3600
 
     def _set_connection_status(self, connected: bool, **kwargs):
         """
@@ -66,7 +82,7 @@ class S3Connector(Connector):
         """
         Start the S3 client.
         """
-        logger.debug("starting s3 connector client...")
+        logger.debug("Starting s3 connector client...")
         self.client = boto3.client(
             "s3",
             endpoint_url=self.endpoint_url,
@@ -77,6 +93,9 @@ class S3Connector(Connector):
         try:
             self.client.list_buckets()
             self._set_connection_status(True, **kwargs)
+            self.thread = threading.Thread(target=self.update_property)
+            self.thread.daemon = True
+            self.thread.start()
         except Exception as e:
             logger.error(f"error starting s3 connector client: {e}")
             self._set_connection_status(False, **kwargs)
@@ -87,6 +106,11 @@ class S3Connector(Connector):
         """
         self.client.stop()
         self._set_connection_status(False, **kwargs)
+        if self.thread is not None:
+            self._stop_event.set()
+            self.thread.join()
+            self.thread = None
+        logger.info(f"S3 connector {self.uri} stopped")
 
     def list_buckets(self):
         """
@@ -207,6 +231,18 @@ class S3Connector(Connector):
 
         # The response contains the presigned URL and required fields
         return response
+
+    def update_property(self):
+        """
+        Notify all attached properties to update their values.
+        """
+        while not self._stop_event.is_set():
+            try:
+                logger.debug(f"S3 Connector node {self.uri} updating property")
+                self.notify()
+            except Exception as e:
+                logger.error(f"Error updating property: {e}")
+            time.sleep(self.expiration)
 
 
 class S3ConnectorBuilder(ObjectBuilder):
