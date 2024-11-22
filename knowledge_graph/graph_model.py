@@ -123,13 +123,11 @@ class S3ObjectProperty(AbstractAssetProperty):
 
     bucket: Literal | str = None
     key: Literal | str = None
-    expiration: Literal | int = None
 
     mapping: ClassVar[dict] = {
         **AbstractAssetProperty.mapping,
         "bucket": GRAPH_MODEL.bucket,
         "key": GRAPH_MODEL.key,
-        "expiration": GRAPH_MODEL.expiration,
     }
 
 
