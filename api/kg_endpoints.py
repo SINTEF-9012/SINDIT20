@@ -325,9 +325,14 @@ async def create_file(node: File) -> dict:
 @app.post("/kg/s3_object", tags=["Knowledge Graph"])
 async def create_s3_object(node: S3ObjectProperty) -> dict:
     """
-    Create or save a S3 object node to the knowledge graph.
+    Create new or add existing S3 object node to the knowledge graph.
 
-    TODO: Add more details on how to use this endpoint.
+    Adding an existing S3 object to the knowledge graph will create
+    a download url for the object. Query the node to get the download url.
+
+    Adding a key that does not exist in the S3 bucket will generate
+    a json-object that can be used to upload the object.
+    Query the node to get the json-object with the upload url.
     """
     try:
         result = sindit_kg_connector.save_node(node)

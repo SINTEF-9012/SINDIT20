@@ -61,10 +61,10 @@ s3.create_bucket('my-bucket')
 
 ## upload an object throught the client
 with open('test.jpg', 'rb') as data:
-    s3.put_object(bucket='my-bucket', Key='test.jpg', Body=data)
+    s3.put_object(bucket='my-bucket', key='key-of-object', data=data)
 
 ## upload an object using a presigned url
-response = s3.create_presigned_url_for_upload_object('my-bucket', 'test.txt')
+response = s3.create_presigned_url_for_upload_object(bucket='my-bucket', key='my-object')
 
 import requests
 with open(object_name, 'rb') as f:
@@ -73,7 +73,7 @@ with open(object_name, 'rb') as f:
 
 
 ## download an object using presigned url
-response = s3.create_presigned_url_for_download_objec('my-bucket', 'test.txt')
+response = s3.create_presigned_url_for_download_objec('my-bucket', 'my-object')
 
 import requests
 http_response = requests.get(response)
