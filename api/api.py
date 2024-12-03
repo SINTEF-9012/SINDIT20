@@ -40,7 +40,8 @@ app = fastapi.FastAPI(
 )
 
 # TODO: This should not be hardcoded
-origins = ["http://localhost:5173"]
+# TODO: For actual deployment, this needs to be set properly
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
