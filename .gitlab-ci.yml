@@ -1,9 +1,9 @@
 image: python:3.11
 
 stages:
-  - unittest
-  - coverage
+  - test
   - analysis
+  - build
 
 variables:
   # Set PROJECT_NAME to the name of the project folder.
@@ -11,12 +11,9 @@ variables:
   PROJECT_NAME: sindit
   ROOTDIR: $CI_PROJECT_DIR/projects/$PROJECT_NAME
   RULES_CHANGES_PATH: $ROOTDIR/**/*
-
-before_script:
-  - cd projects/$PROJECT_NAME
-  - pip install poetry
-  - poetry install
-  - echo $SONAR_HOST_URL
+  CI_REGISTRY: gitlab.sintef.no:5050
+  IMAGE_PATH: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+  DOCKER_TLS_CERTDIR: ""
 
 .base-rules:
   rules:
@@ -38,10 +35,13 @@ before_script:
     # Run if on a branch and not a merge request
     - if: $CI_COMMIT_BRANCH
 
-
 pytest:
-  stage: unittest
+  stage: test
   extends: .base-rules
+  before_script:
+    - cd projects/$PROJECT_NAME
+    - pip install poetry
+    - poetry install
   script:
     - pip install junit-xml
     - poetry run pytest --junitxml=junit.xml -m "not slow and not gitlab_exempt"
@@ -54,8 +54,12 @@ pytest:
       junit: $ROOTDIR/junit.xml
 
 coverage:
-  stage: coverage
+  stage: test
   extends: .base-rules
+  before_script:
+    - cd projects/$PROJECT_NAME
+    - pip install poetry
+    - poetry install
   dependencies:
     - pytest
   script:
@@ -101,3 +105,59 @@ sonarqube:
     - ls -la
     - sonar-scanner
   allow_failure: true
+
+docker-build-sindit:
+  stage: build
+  extends: .base-rules
+  image: jdrouet/docker-with-buildx:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    IMGE_NAME: sindit
+  allow_failure: false
+  before_script:
+    - cd projects/$PROJECT_NAME
+    - |
+      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
+      -u $CI_REGISTRY_USER --password-stdin
+  script:
+    docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64
+      --label "git-commit-sha=$CI_COMMIT_SHA"
+      --label "git-commit-branch=$CI_COMMIT_BRANCH"
+      --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
+      --label "git-commit-title=$CI_COMMIT_TITLE"
+      -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+      -t $IMAGE_PATH/$IMAGE_NAME:latest .
+#  rules:
+#    - if: $CI_COMMIT_BRANCH == "sindit"
+#    - if: $CI_COMMIT_BRANCH == "main"
+
+docker-build-graphdb:
+  stage: build
+  extends: .base-rules
+  image: jdrouet/docker-with-buildx:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    IMGE_NAME: sindit-graphdb
+  allow_failure: false
+  before_script:
+    - cd projects/$PROJECT_NAME
+    - |
+      echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
+      -u $CI_REGISTRY_USER --password-stdin
+  script:
+    docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64
+      --label "git-commit-sha=$CI_COMMIT_SHA"
+      --label "git-commit-branch=$CI_COMMIT_BRANCH"
+      --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
+      --label "git-commit-title=$CI_COMMIT_TITLE"
+      -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+      -t $IMAGE_PATH/$IMAGE_NAME:latest ./GraphDB
+#  rules:
+#    - if: $CI_COMMIT_BRANCH == "sindit"
+#    - if: $CI_COMMIT_BRANCH == "main"
