@@ -110,6 +110,8 @@ docker-build-sindit:
   stage: build
   extends: .base-rules
   image: jdrouet/docker-with-buildx:stable
+  tags:
+    - dind
   services:
     - docker:dind
   variables:
@@ -136,6 +138,8 @@ docker-build-graphdb:
   stage: build
   extends: .base-rules
   image: jdrouet/docker-with-buildx:stable
+  tags:
+    - dind
   services:
     - docker:dind
   variables:
@@ -155,7 +159,8 @@ docker-build-graphdb:
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
       --label "git-commit-title=$CI_COMMIT_TITLE"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-      -t $IMAGE_PATH/$IMAGE_NAME:latest ./GraphDB
+      -t $IMAGE_PATH/$IMAGE_NAME:latest
+      ./GraphDB
 #  rules:
 #    - if: $CI_COMMIT_BRANCH == "sindit"
 #    - if: $CI_COMMIT_BRANCH == "main"
