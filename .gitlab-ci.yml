@@ -137,14 +137,14 @@ docker-build-sindit:
       --label "git-commit-title=$CI_COMMIT_TITLE"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -t $IMAGE_PATH/$IMAGE_NAME:latest .
-#  rules:
-#    - if: $CI_COMMIT_BRANCH == "sindit"
-#    - if: $CI_COMMIT_BRANCH == "main"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
+    - if: $CI_COMMIT_BRANCH == "main"
 
 docker-build-graphdb:
   stage: build
   extends: .base-rules
-  image: jdrouet/docker-with-buildx:stable
+  image: docker:latest
   tags:
     - dind
   services:
@@ -173,6 +173,6 @@ docker-build-graphdb:
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -t $IMAGE_PATH/$IMAGE_NAME:latest
       ./GraphDB
-#  rules:
-#    - if: $CI_COMMIT_BRANCH == "sindit"
-#    - if: $CI_COMMIT_BRANCH == "main"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
+    - if: $CI_COMMIT_BRANCH == "main"
