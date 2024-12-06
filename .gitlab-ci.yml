@@ -115,6 +115,7 @@ docker-build-sindit:
   services:
     - docker:dind
   variables:
+    DOCKER_DRIVER: overlay2
     IMAGE_NAME: sindit
   allow_failure: false
   before_script:
@@ -143,6 +144,7 @@ docker-build-graphdb:
   services:
     - docker:dind
   variables:
+    DOCKER_DRIVER: overlay2
     IMAGE_NAME: sindit-graphdb
   allow_failure: false
   before_script:
