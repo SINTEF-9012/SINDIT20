@@ -159,8 +159,13 @@ docker-build-graphdb:
     - |
       echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY \
       -u $CI_REGISTRY_USER --password-stdin
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - docker buildx create --name mybuilder --use
   script:
-    docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64
+    docker buildx build
+      --push
+      --platform linux/arm/v7,linux/arm64/v8,linux/amd64
+      --provenance=false
       --label "git-commit-sha=$CI_COMMIT_SHA"
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
