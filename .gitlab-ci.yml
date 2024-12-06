@@ -113,8 +113,6 @@ docker-build-sindit:
   services:
     - docker:dind
   variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_DRIVER: overlay2
     IMGE_NAME: sindit
   allow_failure: false
   before_script:
