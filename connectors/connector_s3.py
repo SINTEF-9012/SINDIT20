@@ -93,7 +93,9 @@ class S3Connector(Connector):
         try:
             self.client.list_buckets()
             self._set_connection_status(True, **kwargs)
-            self.thread = threading.Thread(target=self.update_property)
+            self.thread = threading.Thread(
+                target=self.update_property, name="connector_s3"
+            )
             self.thread.daemon = True
             self.thread.start()
         except Exception as e:
