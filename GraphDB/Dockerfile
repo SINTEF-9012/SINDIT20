@@ -1,5 +1,6 @@
 # Stage 1: Build stage
-FROM eclipse-temurin:21.0.5_11-jdk-alpine AS build
+FROM eclipse-temurin:21.0.5_11-jre AS build
+# FROM eclipse-temurin:21.0.5_11-jdk-alpine AS build
 
 # Build time arguments
 ARG version=10.2.2
