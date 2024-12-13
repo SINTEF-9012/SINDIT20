@@ -17,8 +17,9 @@ ENV JAVA_OPTS="-Xmx4g"
 WORKDIR /tmp
 
 # Install GraphDB & Import data
-RUN apk add --no-cache bash curl util-linux procps net-tools busybox-extras wget less gcompat && \
-    apk upgrade libssl3 libcrypto3 busybox && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends bash curl util-linux procps net-tools wget unzip && \
+    rm -rf /var/lib/apt/lists/* && \
     curl -fsSL "https://maven.ontotext.com/repository/owlim-releases/com/ontotext/graphdb/graphdb/${version}/graphdb-${version}-dist.zip" > \
     graphdb-${version}.zip && \
     bash -c 'md5sum -c - <<<"$(curl -fsSL https://maven.ontotext.com/repository/owlim-releases/com/ontotext/graphdb/graphdb/${version}/graphdb-${version}-dist.zip.md5)  graphdb-${version}.zip"' && \
