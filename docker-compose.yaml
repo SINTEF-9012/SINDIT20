@@ -28,4 +28,4 @@ services:
     ports:
       - "9017:9017"
 volumes:
-  data: 
+  data:
