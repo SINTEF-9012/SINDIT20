@@ -18,6 +18,8 @@ ENV APPNAME=SINDIT  \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
+ENV DOCKER_ENV=True
+
 # Set the working directory in the container
 WORKDIR /app
 

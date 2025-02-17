@@ -1,46 +1,24 @@
-# Stage 1: Build stage
-FROM eclipse-temurin:21.0.5_11-jre AS build
-# FROM eclipse-temurin:21.0.5_11-jdk-alpine AS build
+# Step 1: Use the official GraphDB base image
+FROM ontotext/graphdb:10.2.2
 
-# Build time arguments
-ARG version=10.2.2
+RUN apt-get update
+RUN apt-get --assume-yes install curl
 
-# Environment variables
-ENV GRAPHDB_PARENT_DIR=/opt/graphdb
-ENV GRAPHDB_HOME=${GRAPHDB_PARENT_DIR}/home
-ENV GRAPHDB_INSTALL_DIR=${GRAPHDB_PARENT_DIR}/dist
-ENV PATH=${GRAPHDB_INSTALL_DIR}/bin:$PATH
-ENV JAVA_OPTS="-Xmx4g"
+# Step 2: Set the working directory to the GraphDB home directory (where GraphDB stores repositories)
+WORKDIR /opt/graphdb/home
 
+# Step 3: Copy the local GraphDB home directory (containing the indexed repository) to the container
+# Replace '/path/to/GraphDB/home' with the path to your local GraphDB home directory
+COPY . /opt/graphdb/home/
 
-# Working directory
-WORKDIR /tmp
+ENV GDB_JAVA_OPTS="-Xms2g -Xmx4g"
 
-# Install GraphDB & Import data
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends bash curl util-linux procps net-tools wget unzip && \
-    rm -rf /var/lib/apt/lists/* && \
-    curl -fsSL "https://maven.ontotext.com/repository/owlim-releases/com/ontotext/graphdb/graphdb/${version}/graphdb-${version}-dist.zip" > \
-    graphdb-${version}.zip && \
-    bash -c 'md5sum -c - <<<"$(curl -fsSL https://maven.ontotext.com/repository/owlim-releases/com/ontotext/graphdb/graphdb/${version}/graphdb-${version}-dist.zip.md5)  graphdb-${version}.zip"' && \
-    mkdir -p ${GRAPHDB_PARENT_DIR} && \
-    cd ${GRAPHDB_PARENT_DIR} && \
-    unzip /tmp/graphdb-${version}.zip && \
-    rm /tmp/graphdb-${version}.zip && \
-    mv graphdb-${version} dist && \
-    mkdir -p ${GRAPHDB_HOME} && \
-    mkdir -p ${GRAPHDB_PARENT_DIR}/tmp
+RUN mkdir -p tmp
+RUN importrdf preload --force --recursive -q .tmp/ -c ./repo-config.ttl ./graph_model
+RUN rm -rf ./tmp
 
-# Copy files
-COPY repo-config.ttl ${GRAPHDB_PARENT_DIR}/
-COPY graph_model ${GRAPHDB_PARENT_DIR}/graph_model
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-
-# Make the entrypoint script executable
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Expose port
+# Step 4: Expose the necessary ports (GraphDB runs on port 7200 by default)
 EXPOSE 7200
 
-# Entrypoint
-ENTRYPOINT ["entrypoint.sh"]
+# Step 5: Start the GraphDB server
+CMD ["../bin/graphdb"]

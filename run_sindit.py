@@ -1,17 +1,25 @@
-from dotenv import load_dotenv
-
-# TODO: This should be removed in production
-load_dotenv("./environment_and_configuration/dev_environment_backend.env")
-
-import uvicorn  # noqa: E402
 from util.environment_and_configuration import (  # noqa: E402
     get_environment_variable,
+    get_environment_variable_bool,
     get_environment_variable_int,
 )  # noqa: E402
 
 from util.log import logger  # noqa: E402
 
 logger.setLevel(get_environment_variable("LOG_LEVEL", optional=True, default="INFO"))
+
+#if not running in docker, load environment variables from dev .env file
+if not get_environment_variable_bool("DOCKER_ENV", optional=True, default=False):
+    from dotenv import load_dotenv
+    logger.info("Loading environment variables from dev_environment_backend.env")
+    load_dotenv("environment_and_configuration/dev_environment_backend.env")
+else:
+    logger.info("Running in Docker, using environment variables from Dockerfile")
+
+import uvicorn  # noqa: E402
+
+
+
 
 from api import kg_endpoints  # noqa: F401, E402
 from api import vault_endpoints  # noqa: F401, E402
