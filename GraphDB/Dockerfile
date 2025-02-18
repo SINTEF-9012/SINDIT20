@@ -1,5 +1,5 @@
 # Step 1: Use the official GraphDB base image
-FROM ontotext/graphdb:10.2.2
+FROM ontotext/graphdb:10.2.2-arm64
 
 RUN apt-get update
 RUN apt-get --assume-yes install curl
