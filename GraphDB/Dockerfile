@@ -1,8 +1,8 @@
 # Step 1: Use the official GraphDB base image
-FROM ontotext/graphdb:10.2.2-arm64
+FROM ontotext/graphdb:10.2.2
 
-RUN apt-get update
-RUN apt-get --assume-yes install curl
+#RUN apt-get update
+#RUN apt-get --assume-yes install curl
 
 # Step 2: Set the working directory to the GraphDB home directory (where GraphDB stores repositories)
 WORKDIR /opt/graphdb/home

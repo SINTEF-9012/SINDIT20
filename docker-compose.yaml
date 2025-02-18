@@ -9,12 +9,6 @@ services:
       - "7200:7200"
     volumes:
       - data:/opt/graphdb/home  # Persist data between container restarts
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:7200/repositories | grep -E '^(200|401)$'"]
-      interval: 5s  # Check every 30 seconds
-      timeout: 5s  # Timeout for each check
-      retries: 10  # Mark as unhealthy after 5 consecutive failures
-      start_period: 5s  # Wait 10s before starting health checks
 
   sindit:
     build:
@@ -23,8 +17,7 @@ services:
     env_file:
       - environment_and_configuration/docker_environment_backend.env  # Load environment variables from this file
     depends_on:
-      graphdb:
-        condition: service_healthy  # Wait for GraphDB to be healthy before starting backend
+      - graphdb
     ports:
       - "9017:9017"
 volumes:
