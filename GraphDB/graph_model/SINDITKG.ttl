@@ -43,7 +43,7 @@
 :Connection a samm:Entity ;
    samm:preferredName "Connection"@en ;
    samm:description "Connection information to connect to a server"@en ;
-   samm:properties ( :tokenPath :type :passwordPath :username :port :host :isConnected :connectionDescription ) .
+   samm:properties ( :tokenPath :type :passwordPath :username :port :host :isConnected :connectionDescription :configuration ) .
 
 :assetProperties a samm:Property ;
    samm:preferredName "Asset Properties"@en ;
@@ -92,13 +92,18 @@
    samm:preferredName "Connection Description"@en ;
    samm:characteristic samm-c:Text .
 
+:configuration a samm:Property ;
+   samm:preferredName "Connection configuration"@en ;
+   samm:description "other configuration values of the connection"@en ;
+   samm:characteristic samm-c:Text .
+
 :AssetPropertyList a samm-c:List ;
    samm:preferredName "Asset Property List"@en ;
    samm:dataType :AbstractAssetProperty .
 
 :AbstractAssetProperty a samm:Entity ;
    samm:description "Represent an abstract property of an asset"@en ;
-   samm:properties ( :propertyUnit :propertySemanticID :propertyDescription :propertyDataType :propertyValue ) .
+   samm:properties ( :propertyUnit :propertySemanticID :propertyDescription :propertyDataType :propertyValue :propertyName :propertyValueTimestamp :propertyConnection ) .
 
 :propertyUnit a samm:Property ;
    samm:preferredName "Property Unit"@en ;
@@ -127,12 +132,38 @@
    samm:characteristic samm-c:Text ;
    samm:exampleValue "Red" .
 
-:StreamingPropertyConnection a samm-c:SingleEntity ;
+:propertyName a samm:Property ;
+   samm:preferredName "Property Name"@en ;
+   samm:description "Name of the property"@en ;
+   samm:characteristic samm-c:Timestamp .
+
+:propertyValueTimestamp a samm:Property ;
+   samm:preferredName "Property Value Timestamp"@en ;
+   samm:characteristic samm-c:Timestamp .
+
+:propertyConnection a samm:Property ;
+   samm:preferredName "Property Connection"@en ;
+   samm:description "The connection to the data source that stores the property value"@en ;
+   samm:characteristic :PropertyConnection .
+
+:PropertyConnection a samm-c:SingleEntity ;
    samm:dataType :Connection .
+
+:timeseriesTags a samm:Property ;
+   samm:preferredName "timeseries Tags"@en ;
+   samm:characteristic samm-c:Text .
 
 :fileType a samm:Property ;
    samm:characteristic samm-c:MimeType ;
    samm:exampleValue "application/pdf" .
+
+:timeseriesRetrievalMethod a samm:Property ;
+   samm:preferredName "Timeseries Retrieval Method"@en ;
+   samm:characteristic samm-c:Text .
+
+:key a samm:Property ;
+   samm:preferredName "Key"@en ;
+   samm:characteristic samm-c:Text .
 
 :streamingTopic a samm:Property ;
    samm:description "The topic of the value (MQTT) or the URL (REST)"@en ;
@@ -142,39 +173,49 @@
 :DatabaseProperty a samm:Entity ;
    samm:extends :AbstractAssetProperty ;
    samm:description "A property that refers to a value stored in a database"@en ;
-   samm:properties ( :databasePropertyConnection :query ) .
-
-:DatabasePropertyConnection a samm-c:SingleEntity ;
-   samm:dataType :Connection .
-
-:databasePropertyConnection a samm:Property ;
-   samm:description "Refer to the connection of the database"@en ;
-   samm:characteristic :DatabasePropertyConnection .
+   samm:properties ( :propertyIdentifiers :query ) .
 
 :query a samm:Property ;
    samm:description "The query used to retrieve the data from database"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "SQL query or influxdb query" .
 
+:timeseriesIdentifiers a samm:Property ;
+   samm:preferredName "Timeseries Identifiers"@en ;
+   samm:characteristic samm-c:Text .
+
+:propertyIdentifiers a samm:Property ;
+   samm:preferredName "Property Identifiers"@en ;
+   samm:description "Details of the configuration of the values in the database"@en ;
+   samm:characteristic samm-c:Text .
+
 :filePath a samm:Property ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "path/to/file.pdf" .
-
-:streamingPropertyConnection a samm:Property ;
-   samm:description "Refer to the connection of the streaming server"@en ;
-   samm:characteristic :StreamingPropertyConnection .
 
 :File a samm:Entity ;
    samm:extends :DatabaseProperty ;
    samm:description "Refers to a file stored in a database"@en ;
    samm:properties ( :fileType :filePath ) .
 
+:S3ObjectProperty a samm:Entity ;
+   samm:extends :AbstractAssetProperty ;
+   samm:properties ( :bucket :key ) .
+
 :StreamingProperty a samm:Entity ;
    samm:extends :AbstractAssetProperty ;
    samm:description "A property that refers to a value from a streaming server"@en ;
-   samm:properties ( :streamingPropertyConnection :streamingTopic ) .
+   samm:properties ( :streamingPath :streamingTopic ) .
 
 :TimeseriesProperty a samm:Entity ;
    samm:extends :DatabaseProperty ;
    samm:description "A property that refers to a timeseries value stored in a database"@en ;
-   samm:properties ( ) .
+   samm:properties ( :timeseriesIdentifiers :timeseriesRetrievalMethod :timeseriesTags ) .
+
+:streamingPath a samm:Property ;
+   samm:description "Refer to the connection of the streaming server"@en ;
+   samm:characteristic samm-c:Text .
+
+:bucket a samm:Property ;
+   samm:preferredName "Bucket"@en ;
+   samm:characteristic samm-c:Text .

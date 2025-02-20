@@ -508,6 +508,33 @@ class RDFModel(BaseModel):
 
         return return_individuals
 
+    def deserialize_graph(
+        g: Graph,
+        created_individuals: dict = {},
+        uri_class_mapping: dict = {},
+    ):
+        return_individuals = created_individuals
+        if return_individuals is None or return_individuals == {}:
+            return_individuals = {}
+
+        individuals = [ind for ind, _, _ in g.triples((None, RDF.type, None))]
+        for ind in individuals:
+            class_uri = g.value(subject=ind, predicate=RDF.type)
+            node_class = uri_class_mapping.get(class_uri)
+            if node_class is None:
+                continue
+
+            return_individuals = RDFModel.deserialize(
+                g,
+                node_class,
+                ind,
+                class_uri,
+                return_individuals,
+                uri_class_mapping,
+            )
+        
+        return return_individuals
+
     def _set_obj_att(ind_obj, att_name, att_value):
         att_type_hint = get_type_hints(ind_obj.__class__).get(att_name)
 

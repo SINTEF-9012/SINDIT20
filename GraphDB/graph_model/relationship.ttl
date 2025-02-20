@@ -1,0 +1,103 @@
+
+
+@prefix samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#> .
+@prefix samm-c: <urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#> .
+@prefix samm-e: <urn:samm:org.eclipse.esmf.samm:entity:2.1.0#> .
+@prefix unit: <urn:samm:org.eclipse.esmf.samm:unit:2.1.0#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <urn:samm:sindit.sintef.no:1.0.0#> .
+@prefix samm-u: <urn:samm:org.eclipse.esmf.samm:unit:2.1.0#> .
+
+:relationshipUnit a samm:Property ;
+   samm:preferredName "Relationship Unit"@en ;
+   samm:characteristic samm-c:Text .
+
+:ControlsRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For control loops or automation."@en ;
+   samm:properties ( ) .
+
+:DerivedFromRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For versioning or data lineage."@en ;
+   samm:properties ( ) .
+
+:relationshipSource a samm:Property ;
+   samm:preferredName "Relationship Source"@en ;
+   samm:characteristic :RelationshipSource .
+
+:UsesRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For resource or service dependencies."@en ;
+   samm:properties ( ) .
+
+:relationshipValue a samm:Property ;
+   samm:preferredName "RelationshipValue"@en ;
+   samm:characteristic samm-c:Text .
+
+:relationshipType a samm:Property ;
+   samm:preferredName "Relationship Type"@en ;
+   samm:characteristic samm-c:Text .
+
+:relationshipSemanticID a samm:Property ;
+   samm:preferredName "Relationship Semantic ID"@en ;
+   samm:characteristic samm-c:Text .
+
+:PartOfRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For networked or linked assets."@en ;
+   samm:properties ( ) .
+
+:ConsistOfRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For hierarchical structures."@en ;
+   samm:properties ( ) .
+
+:relationshipTarget a samm:Property ;
+   samm:preferredName "Relationship Target"@en ;
+   samm:characteristic :RelationshipTarget .
+
+:RelationshipSource a samm-c:SingleEntity ;
+   samm:dataType :AbstractAsset .
+
+:Characteristic6 a samm:Characteristic .
+
+:relationshipDescription a samm:Property ;
+   samm:preferredName "Relationship Description"@en ;
+   samm:characteristic samm-c:Text .
+
+:RelationshipTarget a samm-c:SingleEntity ;
+   samm:dataType :AbstractAsset .
+
+:SimulatesRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For simulation models."@en ;
+   samm:properties ( ) .
+
+:ConnectedToRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For networked or linked assets."@en ;
+   samm:properties ( ) .
+
+:DependsOnRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For dependency modeling."@en ;
+   samm:properties ( ) .
+
+:AbstractRelationship a samm:Entity ;
+   samm:preferredName "Abstract Relationship"@en ;
+   samm:description "For custom relationship type"@en ;
+   samm:properties ( :relationshipTarget :relationshipSource :relationshipUnit :relationshipValue :relationshipSemanticID :relationshipType :relationshipDescription ) .
+
+:CommunicatesWithRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For data exchange between assets."@en ;
+   samm:properties ( ) .
+
+:MonitorRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For condition monitoring."@en ;
+   samm:properties ( ) .
+

@@ -63,7 +63,7 @@ class AbstractAssetProperty(RDFModel):
     }
 
     propertyUnit: Union[URIRefNode, Literal, str] = None
-    propertySemanticID: Literal | str = None
+    propertySemanticID: Union[URIRefNode, Literal, str] = None
     propertyDescription: Literal | str = None
     propertyDataType: Union[URIRefNode, Literal, str] = None
     propertyValue: Literal | dict | Any = None
@@ -189,7 +189,7 @@ class SINDITKG(RDFModel):
     dataConnections: List[Union[URIRefNode, Connection]] = None
 
 
-URIClassMapping = {
+NodeURIClassMapping = {
     Connection.CLASS_URI: Connection,
     AbstractAssetProperty.CLASS_URI: AbstractAssetProperty,
     DatabaseProperty.CLASS_URI: DatabaseProperty,

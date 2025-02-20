@@ -1,0 +1,18 @@
+PREFIX samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#>
+PREFIX sindit: <urn:samm:sindit.sintef.no:1.0.0#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+CONSTRUCT {
+  ?s ?p ?o .
+}
+WHERE { 
+    ?relationship_type (samm:extends)* sindit:AbstractRelationship .
+
+     GRAPH <[graph_uri]> {
+        ?s rdf:type ?relationship_type .
+        ?s ?p ?o .
+        
+        # Ensure that the relationship involves the specific asset in either source or target
+        ?s sindit:relationshipSource | sindit:relationshipTarget <[node_uri]> .
+     }
+}

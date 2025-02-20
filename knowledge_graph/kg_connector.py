@@ -7,8 +7,9 @@ from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
 )
 from knowledge_graph.graph_model import (
     KG_NS,
-    URIClassMapping,
+    NodeURIClassMapping,
 )
+from knowledge_graph.relationship_model import RelationshipURIClassMapping
 from rdflib import RDF, XSD, Graph, URIRef
 from rdflib.term import _is_valid_uri
 
@@ -30,6 +31,13 @@ list_named_graphs_query_file = "knowledge_graph/queries/list_named_graphs.sparql
 search_unit_query_file = "knowledge_graph/queries/find_unit.sparql"
 get_all_units_query_file = "knowledge_graph/queries/get_all_units.sparql"
 search_unit_by_uri_query_file = "knowledge_graph/queries/find_unit_by_uri.sparql"
+get_all_relationship_types_query_file = (
+    "knowledge_graph/queries/get_all_relationship_types.sparql"
+)
+
+get_relationships_by_node_query_file = (
+    "knowledge_graph/queries/get_relationships_by_node.sparql"
+)
 
 
 class SINDITKGConnector:
@@ -157,6 +165,7 @@ class SINDITKGConnector:
         node_class=None,
         depth: int = 1,
         created_individuals: dict = {},
+        uri_class_mapping: dict = NodeURIClassMapping,
     ) -> RDFModel:
         # read the sparql query from the file
         with open(load_node_query_file, "r") as f:
@@ -203,12 +212,17 @@ class SINDITKGConnector:
             node_class,
             URIRef(node_uri),
             created_individuals=created_individuals,
-            uri_class_mapping=URIClassMapping,
+            uri_class_mapping=uri_class_mapping,
         )
 
         return ret
 
-    def load_nodes_by_class(self, class_uri: str, depth: int = 1) -> list:
+    def load_nodes_by_class(
+        self,
+        class_uri: str,
+        depth: int = 1,
+        uri_class_mapping: dict = NodeURIClassMapping,
+    ) -> list:
         with open(get_uris_by_class_uri_query_file, "r") as f:
             query_template = f.read()
             if "[graph_uri]" in query_template:
@@ -224,10 +238,10 @@ class SINDITKGConnector:
         for uri in df["node"]:
             ret = self._load_node(
                 uri,
-                # URIClassMapping.get(URIRef(class_uri)),
                 None,
                 depth,
                 created_individuals=created_individuals,
+                uri_class_mapping=uri_class_mapping,
             )
             created_individuals.update(ret)
             node = ret[uri]
@@ -237,9 +251,12 @@ class SINDITKGConnector:
         # print(nodes)
         return nodes
 
-    def load_all_nodes(self) -> list:
+    def load_all_nodes(
+        self,
+        uri_class_mapping: dict = NodeURIClassMapping,
+    ) -> list:
         nodes = []
-        for class_uri in URIClassMapping.keys():
+        for class_uri in uri_class_mapping.keys():
             nodes += self.load_nodes_by_class(class_uri, depth=1)
 
         node_uris = []
@@ -273,6 +290,7 @@ class SINDITKGConnector:
         self,
         node_dict: dict,  # to accept any types of node
         overwrite: bool = True,  # otherwise, keep both old and new data
+        uri_class_mapping: dict = NodeURIClassMapping,
     ) -> bool:
         """
         Update a node in the knowledge graph. If overwrite is True, the old data
@@ -308,7 +326,7 @@ class SINDITKGConnector:
         df = pd.read_csv(StringIO(query_result), sep=",")
         if len(df) > 0:
             class_uri = df["class"][0]
-            node_class = URIClassMapping.get(URIRef(class_uri))
+            node_class = uri_class_mapping.get(URIRef(class_uri))
             if node_class is not None:
                 try:
                     node = node_class(**node_dict)
@@ -505,3 +523,50 @@ class SINDITKGConnector:
         query = query_template.replace("[prefixes]", prefixes)
         query = query.replace("[data]", data)
         self.__kg_service.graph_update(query) """
+
+    def get_all_relationship_types(self):
+        with open(get_all_relationship_types_query_file, "r") as f:
+            try:
+                query = f.read()
+                query_result = self.__kg_service.graph_query(query, "text/csv")
+                df = pd.read_csv(StringIO(query_result), sep=",")
+                if df.empty:
+                    return []
+                else:
+                    df.rename(columns={"s": "uri", "d": "description"}, inplace=True)
+                    return df.to_dict(orient="records")
+            except Exception as e:
+                raise Exception(f"Failed to get all relationship types. Reason: {e}")
+
+    def get_all_relationships(
+        self, uri_class_mapping: dict = RelationshipURIClassMapping
+    ):
+        return self.load_nodes_by_class(
+            "urn:samm:sindit.sintef.no:1.0.0#AbstractRelationship",
+            1,
+            uri_class_mapping=uri_class_mapping,
+        )
+
+    def get_relationships_by_node(
+        self, node_uri: str, uri_class_mapping: dict = RelationshipURIClassMapping
+    ):
+        with open(get_relationships_by_node_query_file, "r") as f:
+            query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace(
+                    "[graph_uri]", str(self.__graph_uri)
+                )
+
+        query = query_template.replace("[node_uri]", node_uri)
+        query_result = self.__kg_service.graph_query(query, "application/x-trig")
+        g = Graph()
+        g.parse(data=query_result, format="trig")
+
+        ret = RDFModel.deserialize_graph(
+            g,
+            None,
+            uri_class_mapping=uri_class_mapping,
+        )
+
+        nodes = ret.values()
+        return nodes
