@@ -532,7 +532,7 @@ class RDFModel(BaseModel):
                 return_individuals,
                 uri_class_mapping,
             )
-        
+
         return return_individuals
 
     def _set_obj_att(ind_obj, att_name, att_value):

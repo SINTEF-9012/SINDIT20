@@ -36,7 +36,8 @@ class ConsistOfRelationship(AbstractRelationship):
     }
 
     relationshipType: Literal | str = "consistsOf"
-    
+
+
 class PartOfRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.PartOfRelationship
 
@@ -45,8 +46,9 @@ class PartOfRelationship(AbstractRelationship):
     }
 
     relationshipType: Literal | str = "partOf"
-    
-#ConnectedToRelationship
+
+
+# ConnectedToRelationship
 class ConnectedToRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.ConnectedToRelationship
 
@@ -56,7 +58,8 @@ class ConnectedToRelationship(AbstractRelationship):
 
     relationshipType: Literal | str = "connectedTo"
 
-#DependsOnRelationship
+
+# DependsOnRelationship
 class DependsOnRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.DependsOnRelationship
 
@@ -66,7 +69,8 @@ class DependsOnRelationship(AbstractRelationship):
 
     relationshipType: Literal | str = "dependsOn"
 
-#DerivedFromRelationship
+
+# DerivedFromRelationship
 class DerivedFromRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.DerivedFromRelationship
 
@@ -75,8 +79,9 @@ class DerivedFromRelationship(AbstractRelationship):
     }
 
     relationshipType: Literal | str = "derivedFrom"
-    
-#MonitorsRelationship
+
+
+# MonitorsRelationship
 class MonitorsRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.MonitorsRelationship
 
@@ -85,8 +90,9 @@ class MonitorsRelationship(AbstractRelationship):
     }
 
     relationshipType: Literal | str = "monitors"
-    
-#ControlsRelationship
+
+
+# ControlsRelationship
 class ControlsRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.ControlsRelationship
 
@@ -95,8 +101,9 @@ class ControlsRelationship(AbstractRelationship):
     }
 
     relationshipType: Literal | str = "controls"
-    
-#SimulatesRelationship
+
+
+# SimulatesRelationship
 class SimulatesRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.SimulatesRelationship
 
@@ -104,10 +111,10 @@ class SimulatesRelationship(AbstractRelationship):
         **AbstractRelationship.mapping,
     }
 
-    relationshipType: Literal | str = "simulates" 
-    
+    relationshipType: Literal | str = "simulates"
 
-#UsesRelationship
+
+# UsesRelationship
 class UsesRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.UsesRelationship
 
@@ -116,8 +123,9 @@ class UsesRelationship(AbstractRelationship):
     }
 
     relationshipType: Literal | str = "uses"
-    
-#CommunicatesWithRelationship
+
+
+# CommunicatesWithRelationship
 class CommunicatesWithRelationship(AbstractRelationship):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.CommunicatesWithRelationship
 
@@ -125,9 +133,9 @@ class CommunicatesWithRelationship(AbstractRelationship):
         **AbstractRelationship.mapping,
     }
 
-    relationshipType: Literal | str = "communicatesWith"   
-    
-      
+    relationshipType: Literal | str = "communicatesWith"
+
+
 RelationshipURIClassMapping = {
     AbstractRelationship.CLASS_URI: AbstractRelationship,
     ConsistOfRelationship.CLASS_URI: ConsistOfRelationship,

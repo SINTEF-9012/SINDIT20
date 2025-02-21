@@ -1,7 +1,7 @@
 PREFIX samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#>
-select distinct ?s ?d where { 
+select distinct ?s ?d where {
     ?s (samm:extends)* <urn:samm:sindit.sintef.no:1.0.0#AbstractRelationship> .
     OPTIONAL{
         ?s samm:description ?d
     }
-} 
+}

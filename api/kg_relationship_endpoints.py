@@ -31,6 +31,7 @@ async def get_all_relationship_types():
         logger.error(f"Error getting relationship types: {e}")
         raise HTTPException(status_code=404, detail=str(e))
 
+
 @app.post("/kg/relationship", tags=["Knowledge Graph"])
 async def create_relationship(
     relationship: Union[AbstractRelationship, ConsistOfRelationship]
@@ -46,47 +47,26 @@ async def create_relationship(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/kg/relationship", tags=["Knowledge Graph"],
-         response_model_exclude_none=True,
-         response_model=List[Union[AbstractRelationship, 
-                                   ConsistOfRelationship, 
-                                   PartOfRelationship, 
-                                   ConnectedToRelationship,
-                                   DependsOnRelationship,
-                                   DerivedFromRelationship,
-                                   MonitorsRelationship,
-                                   ControlsRelationship,
-                                   SimulatesRelationship,
-                                   UsesRelationship,
-                                   CommunicatesWithRelationship,
-                                   ]])
-                               
-async def get_all_relationships():
-    """
-    Get all relationships.
-    """
-    try:
-        return sindit_kg_connector.get_all_relationships()
-    except Exception as e:
-        logger.error(f"Error getting all relationships: {e}")
-        raise HTTPException(status_code=404, detail=str(e))
-    
-
-
-@app.get("/kg/relationship_by_node", tags=["Knowledge Graph"],
-            response_model_exclude_none=True,
-            response_model=List[Union[AbstractRelationship, 
-                                    ConsistOfRelationship, 
-                                    PartOfRelationship, 
-                                    ConnectedToRelationship,
-                                    DependsOnRelationship,
-                                    DerivedFromRelationship,
-                                    MonitorsRelationship,
-                                    ControlsRelationship,
-                                    SimulatesRelationship,
-                                    UsesRelationship,
-                                    CommunicatesWithRelationship,
-                                    ]])
+@app.get(
+    "/kg/relationship_by_node",
+    tags=["Knowledge Graph"],
+    response_model_exclude_none=True,
+    response_model=List[
+        Union[
+            AbstractRelationship,
+            ConsistOfRelationship,
+            PartOfRelationship,
+            ConnectedToRelationship,
+            DependsOnRelationship,
+            DerivedFromRelationship,
+            MonitorsRelationship,
+            ControlsRelationship,
+            SimulatesRelationship,
+            UsesRelationship,
+            CommunicatesWithRelationship,
+        ]
+    ],
+)
 async def get_relationship_by_node(node_uri: str):
     """
     Get a relationship by its URI.
@@ -95,4 +75,35 @@ async def get_relationship_by_node(node_uri: str):
         return sindit_kg_connector.get_relationships_by_node(node_uri)
     except Exception as e:
         logger.error(f"Error getting relationship by URI: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get(
+    "/kg/relationship",
+    tags=["Knowledge Graph"],
+    response_model_exclude_none=True,
+    response_model=List[
+        Union[
+            AbstractRelationship,
+            ConsistOfRelationship,
+            PartOfRelationship,
+            ConnectedToRelationship,
+            DependsOnRelationship,
+            DerivedFromRelationship,
+            MonitorsRelationship,
+            ControlsRelationship,
+            SimulatesRelationship,
+            UsesRelationship,
+            CommunicatesWithRelationship,
+        ]
+    ],
+)
+async def get_all_relationships():
+    """
+    Get all relationships.
+    """
+    try:
+        return sindit_kg_connector.get_all_relationships()
+    except Exception as e:
+        logger.error(f"Error getting all relationships: {e}")
         raise HTTPException(status_code=404, detail=str(e))

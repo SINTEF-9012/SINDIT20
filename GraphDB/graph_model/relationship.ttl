@@ -100,4 +100,3 @@
    samm:extends :AbstractRelationship ;
    samm:description "For condition monitoring."@en ;
    samm:properties ( ) .
-
