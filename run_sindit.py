@@ -6,7 +6,7 @@ from util.environment_and_configuration import (  # noqa: E402
 
 from util.log import logger  # noqa: E402
 
-logger.setLevel(get_environment_variable("LOG_LEVEL", optional=True, default="INFO"))
+logger.setLevel("INFO")
 
 # if not running in docker, load environment variables from dev .env file
 if not get_environment_variable_bool("DOCKER_ENV", optional=True, default=False):
@@ -17,6 +17,8 @@ if not get_environment_variable_bool("DOCKER_ENV", optional=True, default=False)
 else:
     logger.info("Running in Docker, using environment variables from Dockerfile")
 
+
+logger.setLevel(get_environment_variable("LOG_LEVEL", optional=True, default="INFO"))
 import uvicorn  # noqa: E402
 
 
