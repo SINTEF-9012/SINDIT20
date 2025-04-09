@@ -183,7 +183,6 @@ push-to-github:
   image: alpine:latest
   before_script:
     - apk add --no-cache git openssh  # Install Git and SSH
-    - echo "DEBUG GITHUB_TOKEN is ${GITHUB_TOKEN}"  # Debugging step to check if the token is available
     - cd $ROOTDIR  # Navigate to the ROOTDIR (sindit project directory)
     - git config --global user.email "ci@sindit.com" && git config --global user.name "SINDIT CI"
     - git init  # Initialize a new Git repository for the sindit project
