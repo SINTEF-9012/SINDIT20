@@ -186,8 +186,8 @@ push-to-github:
     - git config --global user.email "ci@sindit.com"
     - git config --global user.name "SINDIT CI"
 
-    # Clone only the 'sindit' branch
-    - git clone --branch sindit $CI_REPOSITORY_URL project
+    # Clone the current GitLab branch (either 'main' or 'sindit')
+    - git clone --branch $CI_COMMIT_BRANCH $CI_REPOSITORY_URL project
     - cd project
 
     # Set ROOTDIR relative to the Git repo root
@@ -208,3 +208,4 @@ push-to-github:
     - git push github subtree-sindit:main --force
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
+    - if: $CI_COMMIT_BRANCH == "main"
