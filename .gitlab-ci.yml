@@ -176,3 +176,26 @@ docker-build-graphdb:
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
     - if: $CI_COMMIT_BRANCH == "main"
+
+push-to-github:
+  stage: deploy
+  image: alpine/git
+  before_script:
+    - apk add --no-cache openssh
+    - git config --global user.email "ci@sindit.com"
+    - git config --global user.name "SINDIT CI"
+    # Navigate to the ROOTDIR (sindit project directory)
+    - cd $ROOTDIR
+    # Initialize a new Git repository for the sindit project
+    - git init
+    - git remote add github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20.git
+    - git fetch github
+    - git checkout -b sindit || true
+    # Add all files from the sindit project directory
+    - git add .
+    - git commit -m "CI/CD: Sync sindit branch from GitLab to GitHub" || true
+  script:
+    # Push the sindit branch to GitHub
+    - git push -u github sindit --force
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
