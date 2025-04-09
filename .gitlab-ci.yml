@@ -197,6 +197,6 @@ push-to-github:
         git remote add github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20.git
       fi
   script:
-    - git push github sindit:main  # Push the sindit branch from GitLab to the main branch in GitHub
+    - git push github sindit:main  --force # Push the sindit branch from GitLab to the main branch in GitHub
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
