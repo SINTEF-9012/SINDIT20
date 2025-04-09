@@ -36,7 +36,8 @@ python-dotenv = "^1.0.1"
 psycopg2-binary = "^2.9.10"
 boto3 = "^1.35.54"
 PyJWT = "2.10.1"
-passlib[bcrypt] = "1.7.4"
+passlib = { version = "1.7.4", extras = ["bcrypt"] }
+python-multipart = "0.0.20"
 
 
 [tool.poetry.group.test.dependencies]
