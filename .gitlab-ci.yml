@@ -182,9 +182,9 @@ push-to-github:
   image: alpine/git
   before_script:
     - apk add --no-cache openssh
+    - cd $ROOTDIR  # Navigate to the ROOTDIR (sindit project directory)
     - git config --global user.email "ci@sindit.com"
     - git config --global user.name "SINDIT CI"
-    - cd $ROOTDIR  # Navigate to the ROOTDIR (sindit project directory)
     - git init  # Initialize a new Git repository for the sindit project
     - git remote add github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20.git
     - git fetch github
