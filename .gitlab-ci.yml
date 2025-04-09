@@ -4,6 +4,7 @@ stages:
   - test
   - analysis
   - build
+  - deploy
 
 variables:
   # Set PROJECT_NAME to the name of the project folder.
@@ -190,7 +191,7 @@ push-to-github:
     - git fetch github
     - git checkout -b sindit || true
     - git add .  # Add all files from the sindit project directory
-    - git commit -m "CI/CD: Sync sindit branch from GitLab to GitHub" || true
+    - git commit -m "CICD Sync sindit branch from GitLab to GitHub" || true
   script:
     - git push -u github sindit --force  # Push the sindit branch to GitHub
   rules:
