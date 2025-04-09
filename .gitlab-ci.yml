@@ -182,7 +182,7 @@ push-to-github:
   stage: build
   image: alpine:latest
   before_script:
-    - apk add --no-cache git openssh
+    - apk add --no-cache git git-subtree openssh
     - git config --global user.email "ci@sindit.com"
     - git config --global user.name "SINDIT CI"
 
