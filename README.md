@@ -116,15 +116,7 @@ fake_users_db = {
 }
 ```
 
-To generate a new hashed password, use the following Python snippet:
-```python
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-hashed_password = pwd_context.hash("new_password")
-print(f"Hashed password: {hashed_password}")
-```
-
+To generate a new hashed password, use the  Python snippet in `password_hash.py`.
 Replace `"new_password"` with your desired password.
 
 ---
