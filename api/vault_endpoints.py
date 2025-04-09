@@ -1,6 +1,7 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from initialize_vault import secret_vault
 from util.log import logger
+from api.authentication_endpoints import User, get_current_active_user
 
 from api.api import app
 
@@ -23,7 +24,11 @@ from api.api import app
         },
     },
 )
-async def store_secret(secret_path: str, secret_value: str) -> dict:
+async def store_secret(
+    secret_path: str,
+    secret_value: str,
+    current_user: User = Depends(get_current_active_user),
+) -> dict:
     """
     Store a secret in the vault.
     """
@@ -55,7 +60,9 @@ async def store_secret(secret_path: str, secret_value: str) -> dict:
         },
     },
 )
-async def list_secret_paths() -> dict:
+async def list_secret_paths(
+    current_user: User = Depends(get_current_active_user),
+) -> dict:
     """
     List all secret paths in the vault.
     """

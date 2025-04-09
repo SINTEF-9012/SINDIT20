@@ -21,7 +21,7 @@ tags_metadata = [
     },
     {
         "name": "Vault",
-        "description": "Operations related to the secret vault",
+        "description": "Operations related to the secret vault and authenitcation",
     },
     {
         "name": "Metamodel",

@@ -1,7 +1,8 @@
 import asyncio
 from typing import Union, List
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from fastapi.responses import StreamingResponse
+from api.authentication_endpoints import User, get_current_active_user
 from initialize_kg_connectors import sindit_kg_connector
 from connectors.setup_connectors import (
     remove_connection_node,
@@ -43,8 +44,7 @@ from api.api import app
     ],
 )
 async def get_node(
-    node_uri: str,
-    depth: int = 1,
+    node_uri: str, depth: int = 1, current_user: User = Depends(get_current_active_user)
 ):
     """
     Get a node from the knowledge graph by its URI.
@@ -77,6 +77,7 @@ async def get_node(
 async def get_nodes_by_class(
     node_class: str,
     depth: int = 1,
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Get a node from the knowledge graph by its class.
@@ -107,7 +108,7 @@ async def get_nodes_by_class(
         ]
     ],
 )
-async def get_nodes():
+async def get_nodes(current_user: User = Depends(get_current_active_user)):
     """
     Get all nodes from the knowledge graph.
     """
@@ -119,7 +120,9 @@ async def get_nodes():
 
 
 @app.delete("/kg/node", tags=["Knowledge Graph"])
-async def delete_node(node_uri: str) -> dict:
+async def delete_node(
+    node_uri: str, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Delete a node from the knowledge graph by its URI.
     """
@@ -142,7 +145,9 @@ async def delete_node(node_uri: str) -> dict:
 
 # SINDITKG
 @app.post("/kg/sindit_kg", tags=["Knowledge Graph"])
-async def create_sindit_kg(node: SINDITKG) -> dict:
+async def create_sindit_kg(
+    node: SINDITKG, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save a SINDITKG node to the knowledge graph.
 
@@ -161,7 +166,9 @@ async def create_sindit_kg(node: SINDITKG) -> dict:
 
 
 @app.post("/kg/asset", tags=["Knowledge Graph"])
-async def create_asset(node: AbstractAsset) -> dict:
+async def create_asset(
+    node: AbstractAsset, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save an abstract asset node to the knowledge graph.
 
@@ -180,7 +187,9 @@ async def create_asset(node: AbstractAsset) -> dict:
 
 
 @app.post("/kg/connection", tags=["Knowledge Graph"])
-async def create_connection(node: Connection) -> dict:
+async def create_connection(
+    node: Connection, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save a connection node to the knowledge graph.
 
@@ -203,7 +212,9 @@ async def create_connection(node: Connection) -> dict:
 
 # AbstractAssetProperty
 @app.post("/kg/asset_property", tags=["Knowledge Graph"])
-async def create_asset_property(node: AbstractAssetProperty) -> dict:
+async def create_asset_property(
+    node: AbstractAssetProperty, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save an abstract asset property node to the knowledge graph.
 
@@ -227,7 +238,9 @@ async def create_asset_property(node: AbstractAssetProperty) -> dict:
 
 # DatabaseProperty
 @app.post("/kg/database_property", tags=["Knowledge Graph"])
-async def create_database_property(node: DatabaseProperty) -> dict:
+async def create_database_property(
+    node: DatabaseProperty, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save a database property node to the knowledge graph.
 
@@ -251,7 +264,9 @@ async def create_database_property(node: DatabaseProperty) -> dict:
 
 # StreamingProperty
 @app.post("/kg/streaming_property", tags=["Knowledge Graph"])
-async def create_streaming_property(node: StreamingProperty) -> dict:
+async def create_streaming_property(
+    node: StreamingProperty, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save a streaming property node to the knowledge graph.
 
@@ -275,7 +290,9 @@ async def create_streaming_property(node: StreamingProperty) -> dict:
 
 # TimeseriesProperty
 @app.post("/kg/timeseries_property", tags=["Knowledge Graph"])
-async def create_timeseries_property(node: TimeseriesProperty) -> dict:
+async def create_timeseries_property(
+    node: TimeseriesProperty, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save a timeseries property node to the knowledge graph.
 
@@ -299,7 +316,9 @@ async def create_timeseries_property(node: TimeseriesProperty) -> dict:
 
 # File
 @app.post("/kg/file", tags=["Knowledge Graph"])
-async def create_file(node: File) -> dict:
+async def create_file(
+    node: File, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create or save a file node to the knowledge graph.
 
@@ -323,7 +342,9 @@ async def create_file(node: File) -> dict:
 
 # S3 File object
 @app.post("/kg/s3_object", tags=["Knowledge Graph"])
-async def create_s3_object(node: S3ObjectProperty) -> dict:
+async def create_s3_object(
+    node: S3ObjectProperty, current_user: User = Depends(get_current_active_user)
+) -> dict:
     """
     Create new or add existing S3 object node to the knowledge graph.
 
@@ -347,7 +368,11 @@ async def create_s3_object(node: S3ObjectProperty) -> dict:
 
 
 @app.post("/kg/node", tags=["Knowledge Graph"])
-async def update_node(node: dict, overwrite: bool = True) -> dict:
+async def update_node(
+    node: dict,
+    overwrite: bool = True,
+    current_user: User = Depends(get_current_active_user),
+) -> dict:
     """
     Updates a node in the knowledge graph.
 
@@ -391,7 +416,11 @@ async def update_node(node: dict, overwrite: bool = True) -> dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_streaming_property(node_uri: str, refresh_rate: int = 5):
+async def get_streaming_property(
+    node_uri: str,
+    refresh_rate: int = 5,
+    current_user: User = Depends(get_current_active_user),
+):
     if refresh_rate < 1:
         refresh_rate = 1
 
@@ -410,7 +439,11 @@ async def get_streaming_property(node_uri: str, refresh_rate: int = 5):
 
 
 @app.get("/kg/stream", tags=["Knowledge Graph"])
-async def stream_property(node_uri: str, refresh_rate: int = 5):
+async def stream_property(
+    node_uri: str,
+    refresh_rate: int = 5,
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Streams updates from a streaming or timeseries property node in the knowledge
     graph.

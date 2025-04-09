@@ -1,6 +1,7 @@
 from typing import List, Union
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from initialize_kg_connectors import sindit_kg_connector
+from api.authentication_endpoints import User, get_current_active_user
 
 from knowledge_graph.relationship_model import (
     AbstractRelationship,
@@ -21,7 +22,9 @@ from api.api import app
 
 
 @app.get("/kg/relationship_types", tags=["Knowledge Graph"])
-async def get_all_relationship_types():
+async def get_all_relationship_types(
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Get all relationship types.
     """
@@ -34,7 +37,8 @@ async def get_all_relationship_types():
 
 @app.post("/kg/relationship", tags=["Knowledge Graph"])
 async def create_relationship(
-    relationship: Union[AbstractRelationship, ConsistOfRelationship]
+    relationship: Union[AbstractRelationship, ConsistOfRelationship],
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Create a relationship between two assets.
@@ -67,7 +71,9 @@ async def create_relationship(
         ]
     ],
 )
-async def get_relationship_by_node(node_uri: str):
+async def get_relationship_by_node(
+    node_uri: str, current_user: User = Depends(get_current_active_user)
+):
     """
     Get a relationship by its URI.
     """
@@ -98,7 +104,7 @@ async def get_relationship_by_node(node_uri: str):
         ]
     ],
 )
-async def get_all_relationships():
+async def get_all_relationships(current_user: User = Depends(get_current_active_user)):
     """
     Get all relationships.
     """

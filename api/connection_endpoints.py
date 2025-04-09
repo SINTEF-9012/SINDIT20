@@ -2,6 +2,8 @@ from connectors.setup_connectors import initialize_connections_and_properties
 
 from util.log import logger
 from api.api import app
+from api.authentication_endpoints import User, get_current_active_user
+from fastapi import Depends
 
 
 @app.get(
@@ -20,7 +22,9 @@ from api.api import app
         }
     },
 )
-async def refresh_connections_and_properties():
+async def refresh_connections_and_properties(
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Refresh connections and properties.
     """

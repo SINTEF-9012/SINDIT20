@@ -1,5 +1,6 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from initialize_kg_connectors import sindit_kg_connector
+from api.authentication_endpoints import User, get_current_active_user
 
 from util.log import logger
 
@@ -30,7 +31,9 @@ from api.api import app
         },
     },
 )
-async def get_workspace():
+async def get_workspace(
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Get the name (uri) of the current workspace.
     """
@@ -67,7 +70,9 @@ async def get_workspace():
         },
     },
 )
-async def get_workspaces():
+async def get_workspaces(
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Get a list of all available workspaces.
     """
@@ -104,6 +109,7 @@ async def get_workspaces():
 )
 async def switch_workspace(
     workspace_uri: str,
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Switch to a new workspace.

@@ -74,3 +74,57 @@ poetry run python run_sindit.py
     ]
 }
 ```
+## Using the API
+
+### Authentication
+The API requires a valid authentication token for most endpoints. Follow these steps to authenticate and use the API:
+
+1. **Generate a Token**:
+   - Use the `/token` endpoint to generate an access token.
+   - Example `curl` command:
+     ```bash
+     curl -X POST "http://127.0.0.1:8000/token" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "username=new_user&password=new_password"
+     ```
+   - Replace `new_user` and `new_password` with the credentials provided below.
+
+2. **Use the Token**:
+   - Include the token in the `Authorization` header for all subsequent API calls:
+     ```bash
+     curl -X GET "http://127.0.0.1:8000/endpoint" \
+     -H "Authorization: Bearer your_generated_token_here"
+     ```
+
+3. **Access API Documentation**:
+   - The FastAPI documentation is available at: `http://127.0.0.1:8000/docs`
+
+---
+
+### Generate New Username and Password
+To add a new user, update the `fake_users_db` in `authentication_endpoints.py` with the following credentials:
+
+```python
+fake_users_db = {
+    "new_user": {
+        "username": "new_user",
+        "full_name": "New User",
+        "email": "new_user@example.com",
+        "hashed_password": "$2b$12$eW5j9GdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba",  # Password: new_password
+        "disabled": False,
+    }
+}
+```
+
+To generate a new hashed password, use the following Python snippet:
+```python
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+hashed_password = pwd_context.hash("new_password")
+print(f"Hashed password: {hashed_password}")
+```
+
+Replace `"new_password"` with your desired password.
+
+---
