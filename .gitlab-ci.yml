@@ -190,6 +190,9 @@ push-to-github:
     - git clone --branch sindit $CI_REPOSITORY_URL project
     - cd project
 
+    # Set ROOTDIR relative to the Git repo root
+    - export ROOTDIR="projects/sindit"
+
     # Set GitHub remote (will override if it already exists)
     - |
       if git remote | grep -q github; then
