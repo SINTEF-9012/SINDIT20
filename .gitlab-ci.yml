@@ -182,18 +182,15 @@ push-to-github:
   stage: build
   image: alpine:latest
   before_script:
-    - apk add --no-cache git openssh  # Install Git and SSH
-    - cd $ROOTDIR  # Navigate to the ROOTDIR (sindit project directory)
-    - git config --global user.email "ci@sindit.com" && git config --global user.name "SINDIT CI"
-    - git init  # Initialize a new Git repository for the sindit project
-    - |
-      if git remote | grep -q gitlab; then
-        git remote set-url gitlab $CI_REPOSITORY_URL
-      else
-        git remote add gitlab $CI_REPOSITORY_URL
-      fi
-    - git fetch gitlab sindit  # Fetch the full commit history from the sindit branch in GitLab
-    - git checkout sindit  # Check out the sindit branch
+    - apk add --no-cache git openssh
+    - git config --global user.email "ci@sindit.com"
+    - git config --global user.name "SINDIT CI"
+
+    # Clone only the 'sindit' branch
+    - git clone --branch sindit $CI_REPOSITORY_URL project
+    - cd project
+
+    # Set GitHub remote (will override if it already exists)
     - |
       if git remote | grep -q github; then
         git remote set-url github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20.git
@@ -201,6 +198,10 @@ push-to-github:
         git remote add github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20.git
       fi
   script:
-    - git push github sindit:main --force  # Push the sindit branch from GitLab to the main branch in GitHub
+    # Create a new branch from the subtree at $ROOTDIR
+    - git subtree split --prefix=$ROOTDIR -b subtree-sindit
+
+    # Push the subtree branch to GitHub's main branch
+    - git push github subtree-sindit:main --force
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
