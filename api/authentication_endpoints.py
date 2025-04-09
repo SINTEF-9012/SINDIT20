@@ -1,12 +1,10 @@
-from fastapi.responses import JSONResponse
-from util.log import logger
 from api.api import app
 
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
@@ -18,16 +16,19 @@ SECRET_KEY = "ce1cd8c0ba492a14d9dfeb2778946ea1a8c3d084042492455f223a1cbf8cc93d"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-#TODO: replace by real database
+# TODO: replace by real database
 fake_users_db = {
     "sindit": {
         "username": "sindit",
         "full_name": "SINDIT",
         "email": "sindit@sintef.no",
-        "hashed_password": "$2b$12$dk94mGdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba",
+        "hashed_password": (
+            "$2b$12$dk94mGdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba"
+        ),
         "disabled": False,
     }
 }
+
 
 class Token(BaseModel):
     access_token: str
@@ -47,10 +48,12 @@ class User(BaseModel):
 
 class UserInDB(User):
     hashed_password: str
-    
+
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -65,7 +68,8 @@ def get_user(db, username: str):
         user_dict = db[username]
         return UserInDB(**user_dict)
 
-#TODO: replace by real database
+
+# TODO: replace by real database
 def authenticate_user(fake_db, username: str, password: str):
     user = get_user(fake_db, username)
     if not user:
@@ -73,6 +77,7 @@ def authenticate_user(fake_db, username: str, password: str):
     if not verify_password(password, user.hashed_password):
         return False
     return user
+
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -84,6 +89,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
@@ -104,12 +110,14 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         raise credentials_exception
     return user
 
+
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
 
 @app.post("/token", tags=["Vault"])
 async def login_for_access_token(
