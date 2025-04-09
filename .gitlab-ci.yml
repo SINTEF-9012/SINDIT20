@@ -187,17 +187,16 @@ push-to-github:
     - cd $ROOTDIR  # Navigate to the ROOTDIR (sindit project directory)
     - git config --global user.email "ci@sindit.com" && git config --global user.name "SINDIT CI"
     - git init  # Initialize a new Git repository for the sindit project
+    - git remote add gitlab $CI_REPOSITORY_URL  # Add GitLab as a remote
+    - git fetch gitlab sindit  # Fetch the full commit history from the sindit branch in GitLab
+    - git checkout sindit  # Check out the sindit branch
     - |
       if git remote | grep -q github; then
         git remote set-url github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20.git
       else
         git remote add github https://$GITHUB_TOKEN@github.com/SINTEF-9012/SINDIT20.git
       fi
-    - git fetch github
-    - git checkout -b sindit || true
-    - git add .  # Add all files from the sindit project directory
-    - git commit -m "CICD Sync sindit branch from GitLab to GitHub" || true
   script:
-    - git push -u github sindit --force  # Push the sindit branch to GitHub
+    - git push github sindit:main  # Push the sindit branch from GitLab to the main branch in GitHub
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
