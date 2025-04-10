@@ -27,7 +27,7 @@ The GraphDB instance will be available at: `localhost:7200`
 The FastAPI documentation will be exposed at: `http://0.0.0.0:9017`
 
 ## Run backend locally
-Description of how to start the backend locally outside docker.
+Desription of how to start the backend locally outside docker.
 The backend consists of a GraphDB database and a FastAPI server.
 
 ### GraphDB
@@ -51,54 +51,54 @@ To start the FastAPI server, run:
 poetry run python run_sindit.py
 ```
 
+
 ### Run using vscode launcher
 
 ```bash
 {
-        // Use IntelliSense to learn about possible attributes.
-        // Hover to view descriptions of existing attributes.
-        // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-        "version": "0.2.0",
-        "configurations": [
-                {
-                        "name": "Python Debugger: Current File",
-                        "type": "debugpy",
-                        "request": "launch",
-                        "program": "${file}",
-                        "console": "integratedTerminal",
-                        "cwd": "/Users/gorans/projects/monorepo/projects/sindit",
-                        "justMyCode": false,
-                        "envFile": "/Users/gorans/projects/monorepo/projects/sindit/environment_and_configuration/dev_environment_backend.env",
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "/Users/gorans/projects/monorepo/projects/sindit",
+            "justMyCode": false,
+            "envFile": "/Users/gorans/projects/monorepo/projects/sindit/environment_and_configuration/dev_environment_backend.env",
 
-                }
-        ]
+        }
+    ]
 }
 ```
-
 ## Using the API
 
 ### Authentication
 The API requires a valid authentication token for most endpoints. Follow these steps to authenticate and use the API:
 
 1. **Generate a Token**:
-     - Use the `/token` endpoint to generate an access token.
-     - Example `curl` command:
-         ```bash
-         curl -X POST "http://127.0.0.1:8000/token" \
-         -H "Content-Type: application/x-www-form-urlencoded" \
-         -d "username=new_user&password=new_password"
-         ```
-     - Replace `new_user` and `new_password` with the credentials provided below.
+   - Use the `/token` endpoint to generate an access token.
+   - Example `curl` command:
+     ```bash
+     curl -X POST "http://127.0.0.1:8000/token" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "username=new_user&password=new_password"
+     ```
+   - Replace `new_user` and `new_password` with the credentials provided below.
 
 2. **Use the Token**:
-     - Include the token in the `Authorization` header for all subsequent API calls:
-         ```bash
-         curl -X GET "http://127.0.0.1:8000/endpoint" \
-         -H "Authorization: Bearer your_generated_token_here"
-         ```
+   - Include the token in the `Authorization` header for all subsequent API calls:
+     ```bash
+     curl -X GET "http://127.0.0.1:8000/endpoint" \
+     -H "Authorization: Bearer your_generated_token_here"
+     ```
 
 3. **Access API Documentation**:
-     - The FastAPI documentation is available at: `http://127.0.0.1:8000/docs`
+   - The FastAPI documentation is available at: `http://127.0.0.1:8000/docs`
 
 ---
 
@@ -107,17 +107,17 @@ To add a new user, update the `fake_users_db` in `authentication_endpoints.py` w
 
 ```python
 fake_users_db = {
-        "new_user": {
-                "username": "new_user",
-                "full_name": "New User",
-                "email": "new_user@example.com",
-                "hashed_password": "$2b$12$eW5j9GdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba",  # Password: new_password
-                "disabled": False,
-        }
+    "new_user": {
+        "username": "new_user",
+        "full_name": "New User",
+        "email": "new_user@example.com",
+        "hashed_password": "$2b$12$eW5j9GdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba",  # Password: new_password
+        "disabled": False,
+    }
 }
 ```
 
-To generate a new hashed password, use the Python snippet in `password_hash.py`.
+To generate a new hashed password, use the  Python snippet in `password_hash.py`.
 Replace `"new_password"` with your desired password.
 
 ---
