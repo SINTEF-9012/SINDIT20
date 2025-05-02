@@ -1,9 +1,9 @@
 PREFIX samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#>
 
 SELECT DISTINCT ?s ?d WHERE {
-    VALUES ?s { [types_uri] 
+    VALUES ?s { [types_uri]
     }
-   
+
     OPTIONAL {
         ?s samm:description ?d
     }

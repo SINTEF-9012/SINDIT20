@@ -220,4 +220,3 @@
 :bucket a samm:Property ;
    samm:preferredName "Bucket"@en ;
    samm:characteristic samm-c:Text .
-

@@ -34,4 +34,3 @@
    samm:description "Type of authentication method"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "tokenbased" .
-

@@ -1,9 +1,10 @@
-from typing import Any, ClassVar, Union
+from typing import ClassVar
 
-from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
+from common.semantic_knowledge_graph.rdf_model import RDFModel
 from rdflib import Literal, URIRef
 
 from knowledge_graph.graph_model import GRAPH_MODEL
+
 
 class DataspaceManagement(RDFModel):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.DataspaceManagement
@@ -22,7 +23,7 @@ class DataspaceManagement(RDFModel):
     authenticationKey: Literal | str = None
     isActive: Literal | bool = False
     dataspaceDescription: Literal | str = None
-    
+
 
 DataspaceURIClassMapping = {
     DataspaceManagement.CLASS_URI: DataspaceManagement,
