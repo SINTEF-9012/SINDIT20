@@ -24,7 +24,7 @@ from api.api import app
 @app.get("/kg/relationship_types", tags=["Knowledge Graph"])
 async def get_all_relationship_types(
     current_user: User = Depends(get_current_active_user),
-):
+) -> list:
     """
     Get all relationship types.
     """
@@ -37,7 +37,19 @@ async def get_all_relationship_types(
 
 @app.post("/kg/relationship", tags=["Knowledge Graph"])
 async def create_relationship(
-    relationship: Union[AbstractRelationship, ConsistOfRelationship],
+    relationship: Union[
+        ConsistOfRelationship,
+        PartOfRelationship,
+        ConnectedToRelationship,
+        DependsOnRelationship,
+        DerivedFromRelationship,
+        MonitorsRelationship,
+        ControlsRelationship,
+        SimulatesRelationship,
+        UsesRelationship,
+        CommunicatesWithRelationship,
+        AbstractRelationship,
+    ],
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -57,7 +69,6 @@ async def create_relationship(
     response_model_exclude_none=True,
     response_model=List[
         Union[
-            AbstractRelationship,
             ConsistOfRelationship,
             PartOfRelationship,
             ConnectedToRelationship,
@@ -68,6 +79,7 @@ async def create_relationship(
             SimulatesRelationship,
             UsesRelationship,
             CommunicatesWithRelationship,
+            AbstractRelationship,
         ]
     ],
 )
@@ -90,7 +102,6 @@ async def get_relationship_by_node(
     response_model_exclude_none=True,
     response_model=List[
         Union[
-            AbstractRelationship,
             ConsistOfRelationship,
             PartOfRelationship,
             ConnectedToRelationship,
@@ -101,6 +112,7 @@ async def get_relationship_by_node(
             SimulatesRelationship,
             UsesRelationship,
             CommunicatesWithRelationship,
+            AbstractRelationship,
         ]
     ],
 )

@@ -10,6 +10,7 @@ from knowledge_graph.graph_model import (
     NodeURIClassMapping,
 )
 from knowledge_graph.relationship_model import RelationshipURIClassMapping
+from knowledge_graph.dataspace_model import DataspaceURIClassMapping
 from rdflib import RDF, XSD, Graph, URIRef
 from rdflib.term import _is_valid_uri
 
@@ -38,6 +39,8 @@ get_all_relationship_types_query_file = (
 get_relationships_by_node_query_file = (
     "knowledge_graph/queries/get_relationships_by_node.sparql"
 )
+
+get_node_types_query_file = "knowledge_graph/queries/get_node_types.sparql"
 
 
 class SINDITKGConnector:
@@ -257,7 +260,9 @@ class SINDITKGConnector:
     ) -> list:
         nodes = []
         for class_uri in uri_class_mapping.keys():
-            nodes += self.load_nodes_by_class(class_uri, depth=1)
+            nodes += self.load_nodes_by_class(
+                class_uri, depth=1, uri_class_mapping=uri_class_mapping
+            )
 
         node_uris = []
         return_nodes = []
@@ -538,6 +543,26 @@ class SINDITKGConnector:
             except Exception as e:
                 raise Exception(f"Failed to get all relationship types. Reason: {e}")
 
+    def get_node_types(self, uri_class_mapping: dict = NodeURIClassMapping):
+        type_uris = " ".join(f"<{uri}>" for uri in uri_class_mapping.keys())
+
+        with open(get_node_types_query_file, "r") as f:
+            try:
+                query = f.read()
+                query = query.replace("[types_uri]", type_uris)
+
+                query_result = self.__kg_service.graph_query(query, "text/csv")
+                df = pd.read_csv(StringIO(query_result), sep=",")
+
+                if df.empty:
+                    return []
+                else:
+                    df.rename(columns={"s": "uri", "d": "description"}, inplace=True)
+                    return df.to_dict(orient="records")
+
+            except Exception as e:
+                raise Exception(f"Failed to get all node types. Reason: {e}")
+
     def get_all_relationships(
         self, uri_class_mapping: dict = RelationshipURIClassMapping
     ):
@@ -570,3 +595,17 @@ class SINDITKGConnector:
 
         nodes = ret.values()
         return nodes
+
+    def get_all_dataspace_node_types(
+        self, uri_class_mapping: dict = DataspaceURIClassMapping
+    ) -> list:
+        return self.get_node_types(
+            uri_class_mapping=uri_class_mapping,
+        )
+
+    def get_all_dataspace_nodes(
+        self, uri_class_mapping: dict = DataspaceURIClassMapping
+    ) -> list:
+        return self.load_all_nodes(
+            uri_class_mapping=uri_class_mapping,
+        )

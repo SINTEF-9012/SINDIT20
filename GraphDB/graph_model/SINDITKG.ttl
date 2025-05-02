@@ -200,6 +200,7 @@
 
 :S3ObjectProperty a samm:Entity ;
    samm:extends :AbstractAssetProperty ;
+   samm:description "A property that refers to an object in an S3-compliant server."@en ;
    samm:properties ( :bucket :key ) .
 
 :StreamingProperty a samm:Entity ;
@@ -219,3 +220,4 @@
 :bucket a samm:Property ;
    samm:preferredName "Bucket"@en ;
    samm:characteristic samm-c:Text .
+

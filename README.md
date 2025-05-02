@@ -84,7 +84,7 @@ The API requires a valid authentication token for most endpoints. Follow these s
    - Use the `/token` endpoint to generate an access token.
    - Example `curl` command:
      ```bash
-     curl -X POST "http://127.0.0.1:8000/token" \
+     curl -X POST "http://127.0.0.1:9017/token" \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "username=new_user&password=new_password"
      ```
@@ -93,12 +93,12 @@ The API requires a valid authentication token for most endpoints. Follow these s
 2. **Use the Token**:
    - Include the token in the `Authorization` header for all subsequent API calls:
      ```bash
-     curl -X GET "http://127.0.0.1:8000/endpoint" \
+     curl -X GET "http://127.0.0.1:9017/endpoint" \
      -H "Authorization: Bearer your_generated_token_here"
      ```
 
 3. **Access API Documentation**:
-   - The FastAPI documentation is available at: `http://127.0.0.1:8000/docs`
+   - The FastAPI documentation is available at: `http://127.0.0.1:9017/docs`
 
 ---
 

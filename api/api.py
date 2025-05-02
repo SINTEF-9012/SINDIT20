@@ -12,12 +12,16 @@ tags_metadata = [
         "description": "Operations related to the knowledge graph",
     },
     {
-        "name": "Workspace",
-        "description": "Operations related to the workspace",
-    },
-    {
         "name": "Connection",
         "description": "Operations related to the connections and properties",
+    },
+    {
+        "name": "Dataspace",
+        "description": "Operations related to the dataspace",
+    },
+    {
+        "name": "Workspace",
+        "description": "Operations related to the workspace",
     },
     {
         "name": "Vault",

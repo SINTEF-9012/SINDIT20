@@ -27,6 +27,20 @@ from util.log import logger
 from api.api import app
 
 
+@app.get("/kg/node_types", tags=["Knowledge Graph"])
+async def get_all_node_types(
+    current_user: User = Depends(get_current_active_user),
+) -> list:
+    """
+    Get all node types.
+    """
+    try:
+        return sindit_kg_connector.get_node_types()
+    except Exception as e:
+        logger.error(f"Error getting node types: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @app.get(
     "/kg/node",
     tags=["Knowledge Graph"],
