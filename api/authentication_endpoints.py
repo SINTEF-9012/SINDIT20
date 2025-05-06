@@ -10,11 +10,18 @@ from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
-# to get a string like this run:
-# openssl rand -hex 32
-SECRET_KEY = "ce1cd8c0ba492a14d9dfeb2778946ea1a8c3d084042492455f223a1cbf8cc93d"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+from util.environment_and_configuration import (
+    get_environment_variable,
+    get_environment_variable_int,
+)
+
+SECRET_KEY = get_environment_variable("SECRET_KEY")
+ALGORITHM = get_environment_variable("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = get_environment_variable_int(
+    "ACCESS_TOKEN_EXPIRE_MINUTES", default=30
+)
+
 
 # TODO: replace by real database
 fake_users_db = {
