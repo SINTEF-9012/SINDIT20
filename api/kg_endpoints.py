@@ -329,7 +329,7 @@ async def create_timeseries_property(
 
 
 # File
-@app.post("/kg/file", tags=["Knowledge Graph"])
+@app.post("/kg/file", tags=["Knowledge Graph"], deprecated=True)
 async def create_file(
     node: File, current_user: User = Depends(get_current_active_user)
 ) -> dict:
@@ -341,6 +341,9 @@ async def create_file(
 
     If you want to update a node without removing all its old information,
     use the update node endpoint instead.
+
+    **Deprecated**: This API is deprecated and may be removed in future versions.
+    Use S3ObjectProperty instead.
     """
     try:
         result = sindit_kg_connector.save_node(node)

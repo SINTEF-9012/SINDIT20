@@ -17,4 +17,3 @@ for file in "${INPUT_DIR}"/*.ttl; do
       "${GRAPHDB_URL}/repositories/${REPO_ID}/statements"
   fi
 done
-
