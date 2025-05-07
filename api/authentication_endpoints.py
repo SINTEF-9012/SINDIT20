@@ -16,6 +16,7 @@ from util.environment_and_configuration import (
     get_environment_variable_int,
 )
 
+# TODO: replace by real database
 SECRET_KEY = get_environment_variable("SECRET_KEY")
 ALGORITHM = get_environment_variable("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = get_environment_variable_int(

@@ -1,5 +1,9 @@
 #! /bin/bash
 
+echo "Preloading GraphDB with RDF data"
+echo "This script will ERASE ALL DATA in existing repository and load the data model from the graph_model directory."
+echo "To update the repository with new data, use graphdb_reload.sh instead."
+
 export version=10.2.2
 export GRAPHDB_PARENT_DIR=.
 export GRAPHDB_HOME=${GRAPHDB_PARENT_DIR}/home
