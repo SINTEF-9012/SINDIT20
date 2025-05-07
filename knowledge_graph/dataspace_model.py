@@ -1,9 +1,13 @@
-from typing import ClassVar
+from typing import ClassVar, List, Union
 
-from common.semantic_knowledge_graph.rdf_model import RDFModel
+from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from rdflib import Literal, URIRef
 
-from knowledge_graph.graph_model import GRAPH_MODEL
+from knowledge_graph.graph_model import (
+    GRAPH_MODEL,
+    AbstractAsset,
+    AbstractAssetProperty,
+)
 
 
 class DataspaceManagement(RDFModel):
@@ -23,6 +27,9 @@ class DataspaceManagement(RDFModel):
     authenticationKey: Literal | str = None
     isActive: Literal | bool = False
     dataspaceDescription: Literal | str = None
+    dataspaceAssets: List[
+        Union[URIRefNode, AbstractAssetProperty, AbstractAsset]
+    ] = None
 
 
 DataspaceURIClassMapping = {
