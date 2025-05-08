@@ -15,6 +15,7 @@ from knowledge_graph.relationship_model import (
     SimulatesRelationship,
     UsesRelationship,
     CommunicatesWithRelationship,
+    IsTypeOfRelationship,
 )
 from util.log import logger
 
@@ -49,6 +50,7 @@ async def create_relationship(
         UsesRelationship,
         CommunicatesWithRelationship,
         AbstractRelationship,
+        IsTypeOfRelationship,
     ],
     current_user: User = Depends(get_current_active_user),
 ):
@@ -80,6 +82,7 @@ async def create_relationship(
             UsesRelationship,
             CommunicatesWithRelationship,
             AbstractRelationship,
+            IsTypeOfRelationship,
         ]
     ],
 )
@@ -113,6 +116,7 @@ async def get_relationship_by_node(
             UsesRelationship,
             CommunicatesWithRelationship,
             AbstractRelationship,
+            IsTypeOfRelationship,
         ]
     ],
 )

@@ -38,7 +38,7 @@
 :AbstractAsset a samm:Entity ;
    samm:preferredName "Asset"@en ;
    samm:description "Represent an asset information model"@en ;
-   samm:properties ( :assetProperties :assetDescription ) .
+   samm:properties ( :assetProperties :assetDescription :assetType ) .
 
 :Connection a samm:Entity ;
    samm:preferredName "Connection"@en ;
@@ -54,6 +54,12 @@
    samm:preferredName "Description of the asset"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "This is a milling machine" .
+
+:assetType a samm:Property ;
+   samm:preferredName "asset Type"@en ;
+   samm:description "To describe the type of the asset."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "Solar panel, Solar Panel Type" .
 
 :tokenPath a samm:Property ;
    samm:preferredName "Token path"@en ;
@@ -149,9 +155,22 @@
 :PropertyConnection a samm-c:SingleEntity ;
    samm:dataType :Connection .
 
+:CollectionPropertiesList a samm-c:List ;
+   samm:dataType :AbstractAssetProperty .
+
 :timeseriesTags a samm:Property ;
    samm:preferredName "timeseries Tags"@en ;
    samm:characteristic samm-c:Text .
+
+:PropertyCollection a samm:Entity ;
+   samm:extends :AbstractAssetProperty ;
+   samm:preferredName "Property Collection"@en ;
+   samm:description "A collection of different properties"@en ;
+   samm:properties ( :collectionProperties ) .
+
+:collectionProperties a samm:Property ;
+   samm:description "List of the properties in the collection"@en ;
+   samm:characteristic :CollectionPropertiesList .
 
 :fileType a samm:Property ;
    samm:characteristic samm-c:MimeType ;
@@ -174,6 +193,8 @@
    samm:extends :AbstractAssetProperty ;
    samm:description "A property that refers to a value stored in a database"@en ;
    samm:properties ( :propertyIdentifiers :query ) .
+
+:Constraint1 a samm:Constraint .
 
 :query a samm:Property ;
    samm:description "The query used to retrieve the data from database"@en ;

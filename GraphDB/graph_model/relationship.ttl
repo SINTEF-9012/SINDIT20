@@ -62,14 +62,17 @@
 :RelationshipSource a samm-c:SingleEntity ;
    samm:dataType :AbstractAsset .
 
-:Characteristic6 a samm:Characteristic .
-
 :relationshipDescription a samm:Property ;
    samm:preferredName "Relationship Description"@en ;
    samm:characteristic samm-c:Text .
 
 :RelationshipTarget a samm-c:SingleEntity ;
    samm:dataType :AbstractAsset .
+
+:IsTypeOfRelationship a samm:Entity ;
+   samm:extends :AbstractRelationship ;
+   samm:description "For instance/type relationship"@en ;
+   samm:properties ( ) .
 
 :SimulatesRelationship a samm:Entity ;
    samm:extends :AbstractRelationship ;

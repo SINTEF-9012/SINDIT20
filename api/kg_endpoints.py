@@ -21,6 +21,7 @@ from knowledge_graph.graph_model import (
     S3ObjectProperty,
     StreamingProperty,
     TimeseriesProperty,
+    PropertyCollection,
 )
 from util.log import logger
 
@@ -55,6 +56,7 @@ async def get_all_node_types(
         TimeseriesProperty,
         File,
         S3ObjectProperty,
+        PropertyCollection,
     ],
 )
 async def get_node(
@@ -85,6 +87,7 @@ async def get_node(
             TimeseriesProperty,
             File,
             S3ObjectProperty,
+            PropertyCollection,
         ]
     ],
 )
@@ -119,6 +122,7 @@ async def get_nodes_by_class(
             TimeseriesProperty,
             File,
             S3ObjectProperty,
+            PropertyCollection,
         ]
     ],
 )
@@ -377,6 +381,33 @@ async def create_s3_object(
 
         if result:
             update_propery_node(node)
+
+        return {"result": result}
+    except Exception as e:
+        logger.error(f"Error saving node {node}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/kg/property_collection", tags=["Knowledge Graph"])
+async def create_property_collection(
+    node: PropertyCollection, current_user: User = Depends(get_current_active_user)
+) -> dict:
+    """
+    Create or save a property collection node to the knowledge graph.
+
+    **Important**: All existing information related to this node will be
+    completely removed before adding the new node.
+
+    If you want to update a node without removing all its old information,
+    use the update node endpoint instead.
+    """
+    try:
+        result = sindit_kg_connector.save_node(node)
+
+        if result:
+            for prop in node.collectionProperties:
+                if isinstance(prop, AbstractAssetProperty):
+                    update_propery_node(prop)
 
         return {"result": result}
     except Exception as e:

@@ -136,6 +136,17 @@ class CommunicatesWithRelationship(AbstractRelationship):
     relationshipType: Literal | str = "communicatesWith"
 
 
+# IsTypeOfRelationship
+class IsTypeOfRelationship(AbstractRelationship):
+    CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.IsTypeOfRelationship
+
+    mapping: ClassVar[dict] = {
+        **AbstractRelationship.mapping,
+    }
+
+    relationshipType: Literal | str = "isTypeOf"
+
+
 RelationshipURIClassMapping = {
     AbstractRelationship.CLASS_URI: AbstractRelationship,
     ConsistOfRelationship.CLASS_URI: ConsistOfRelationship,
@@ -148,4 +159,5 @@ RelationshipURIClassMapping = {
     SimulatesRelationship.CLASS_URI: SimulatesRelationship,
     UsesRelationship.CLASS_URI: UsesRelationship,
     CommunicatesWithRelationship.CLASS_URI: CommunicatesWithRelationship,
+    IsTypeOfRelationship.CLASS_URI: IsTypeOfRelationship,
 }

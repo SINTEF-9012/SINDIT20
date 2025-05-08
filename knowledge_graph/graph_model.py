@@ -144,12 +144,36 @@ class File(DatabaseProperty):
     filePath: Literal | str = None
 
 
+class PropertyCollection(AbstractAssetProperty):
+    """Represents a collection of different properties."""
+
+    CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.PropertyCollection
+
+    mapping: ClassVar[dict] = {
+        **AbstractAssetProperty.mapping,
+        "collectionProperties": GRAPH_MODEL.collectionProperties,
+    }
+
+    collectionProperties: List[
+        Union[
+            URIRefNode,
+            AbstractAssetProperty,
+            DatabaseProperty,
+            StreamingProperty,
+            TimeseriesProperty,
+            File,
+            S3ObjectProperty,
+        ]
+    ] = None  # List of properties in the collection
+
+
 class AbstractAsset(RDFModel):
     CLASS_URI: ClassVar[URIRef] = GRAPH_MODEL.AbstractAsset
 
     mapping: ClassVar[dict] = {
         "assetProperties": GRAPH_MODEL.assetProperties,
         "assetDescription": GRAPH_MODEL.assetDescription,
+        "assetType": GRAPH_MODEL.assetType,
     }
 
     assetProperties: List[
@@ -160,10 +184,13 @@ class AbstractAsset(RDFModel):
             StreamingProperty,
             TimeseriesProperty,
             File,
+            S3ObjectProperty,
+            PropertyCollection,
         ]
     ] = None
 
     assetDescription: Literal | str = None
+    assetType: Literal | str = None
 
     # def __init__(
     #     self,
@@ -197,6 +224,7 @@ NodeURIClassMapping = {
     TimeseriesProperty.CLASS_URI: TimeseriesProperty,
     File.CLASS_URI: File,
     S3ObjectProperty.CLASS_URI: S3ObjectProperty,
+    PropertyCollection.CLASS_URI: PropertyCollection,
     AbstractAsset.CLASS_URI: AbstractAsset,
     SINDITKG.CLASS_URI: SINDITKG,
 }
