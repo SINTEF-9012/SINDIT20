@@ -115,7 +115,7 @@ async def switch_workspace(
     Switch to a new workspace.
     """
     try:
-        graph_uri = sindit_kg_connector.set_graph_uri(workspace_uri)
+        graph_uri = sindit_kg_connector.set_graph_uri(workspace_uri.strip())
         return {"workspace_uri": graph_uri}
 
         # TODO: switching to a new workspace should also

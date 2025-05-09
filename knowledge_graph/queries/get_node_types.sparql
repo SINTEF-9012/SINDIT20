@@ -8,3 +8,4 @@ SELECT DISTINCT ?s ?d WHERE {
         ?s samm:description ?d
     }
 }
+ORDER BY ?s

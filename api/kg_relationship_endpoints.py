@@ -90,7 +90,8 @@ async def get_relationship_by_node(
     node_uri: str, current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get a relationship by its URI.
+    Get a relationship by URI of either the source or target node.
+    This will return all relationships that are connected to the node.
     """
     try:
         return sindit_kg_connector.get_relationships_by_node(node_uri)

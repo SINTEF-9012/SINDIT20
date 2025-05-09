@@ -5,3 +5,4 @@ select distinct ?s ?d where {
         ?s samm:description ?d
     }
 }
+ORDER BY ?s

@@ -59,7 +59,7 @@ async def get_all_node_types(
         PropertyCollection,
     ],
 )
-async def get_node(
+async def get_node_by_uri(
     node_uri: str, depth: int = 1, current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -73,7 +73,7 @@ async def get_node(
 
 
 @app.get(
-    "/kg/nodes_by_class",
+    "/kg/nodes_by_type",
     tags=["Knowledge Graph"],
     response_model_exclude_none=True,
     response_model=List[
@@ -91,18 +91,19 @@ async def get_node(
         ]
     ],
 )
-async def get_nodes_by_class(
-    node_class: str,
+async def get_nodes_by_type(
+    type_uri: str,
     depth: int = 1,
     current_user: User = Depends(get_current_active_user),
 ):
     """
-    Get a node from the knowledge graph by its class.
+    Get a node from the knowledge graph by its type.
+    To get type uri, use the `/kg/node_types` endpoint.
     """
     try:
-        return sindit_kg_connector.load_nodes_by_class(node_class, depth=depth)
+        return sindit_kg_connector.load_nodes_by_class(type_uri, depth=depth)
     except Exception as e:
-        logger.error(f"Error getting node by class {node_class}: {e}")
+        logger.error(f"Error getting node by type {type_uri}: {e}")
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -126,7 +127,7 @@ async def get_nodes_by_class(
         ]
     ],
 )
-async def get_nodes(current_user: User = Depends(get_current_active_user)):
+async def get_all_nodes(current_user: User = Depends(get_current_active_user)):
     """
     Get all nodes from the knowledge graph.
     """
@@ -549,3 +550,74 @@ async def stream_property(
         raise HTTPException(
             status_code=500, detail=f"Error streaming node {node_uri}: {e}"
         )
+
+
+@app.get(
+    "/kg/advanced_search_node",
+    tags=["Knowledge Graph"],
+    response_model_exclude_none=True,
+    response_model=List[
+        Union[
+            AbstractAsset,
+            SINDITKG,
+            Connection,
+            AbstractAssetProperty,
+            DatabaseProperty,
+            StreamingProperty,
+            TimeseriesProperty,
+            File,
+            S3ObjectProperty,
+            PropertyCollection,
+        ]
+    ],
+)
+async def advanced_search_node(
+    type_uri: str = None,
+    attribute: str = None,
+    attribute_value: str = None,
+    is_value_uri: bool = False,
+    filtering_condition: str = None,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Advanced search for nodes in the knowledge graph.
+
+    This endpoint allows you to search for nodes based on their type and
+    specific attributes. You can filter nodes by their type and one or more
+    attributes.
+
+    Parameters:
+    - type_uri (str): The type of the node to search for. This is optinal.
+    - attribute (str): The attribute name of the node to search for. This is optional
+    - attribute_value (str): The value of the attribute to search
+      for. This can be a string or a URI. For numbere, try to indicate the
+      type of the number (e.g., "int", "float", etc.) in the value.
+      Example: `"7.847"^^xsd:float`
+    - is_value_uri (bool): If `True`, the `attribute_value` is treated as a URI.
+      If `False`, it is treated as a string. Defaults to `False`.
+    - filtering_condition (str): Optional filtering condition to apply to the
+      search. For example, you can use SPARQL-like syntax to filter results based on
+      specific criteria.
+      Example:
+      - `"?value > 10"` to filter nodes with values greater than 10.
+      - CONTAINS(STR(?value), "Temp") to filter nodes with values  containing "Temp".
+
+    Response:
+    - A list of nodes that match the specified criteria.
+
+    Example:
+    - To search for nodes of type "http://example.org/asset" with an attribute
+      "http://example.org/attribute" equal to "value", send a GET request to:
+      `/kg/advanced_search_node?type=http://example.org/asset&attribute=http://example.org/attribute&attribute_value=value`
+    """
+    try:
+        return sindit_kg_connector.find_node_by_attribute(
+            type_uri=type_uri,
+            attribute_uri=attribute,
+            attribute_value=attribute_value,
+            is_value_uri=is_value_uri,
+            filtering_condition=filtering_condition,
+        )
+    except Exception as e:
+        logger.error(f"Error searching node: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

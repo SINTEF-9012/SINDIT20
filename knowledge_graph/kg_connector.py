@@ -6,6 +6,7 @@ from common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
 from knowledge_graph.graph_model import (
+    GRAPH_MODEL,
     KG_NS,
     NodeURIClassMapping,
 )
@@ -41,6 +42,8 @@ get_relationships_by_node_query_file = (
 )
 
 get_node_types_query_file = "knowledge_graph/queries/get_node_types.sparql"
+
+advanced_search_query_file = "knowledge_graph/queries/advanced_search_node.sparql"
 
 
 class SINDITKGConnector:
@@ -252,6 +255,92 @@ class SINDITKGConnector:
 
         # print(created_individuals)
         # print(nodes)
+        return nodes
+
+    def find_node_by_attribute(
+        self,
+        type_uri: str,
+        attribute_uri: str,
+        attribute_value: str,
+        is_value_uri: bool = False,
+        filtering_condition: str = None,
+        uri_class_mapping: dict = NodeURIClassMapping,
+    ) -> list:
+        # check if either atribute_value or filtering_condition is provided
+        # but not both
+        if attribute_value is None and filtering_condition is None:
+            raise Exception("Either attribute_value or filtering_condition is required")
+        if attribute_value is not None and filtering_condition is not None:
+            raise Exception(
+                (
+                    "Either attribute_value or filtering_condition is required, "
+                    "but not both"
+                )
+            )
+
+        with open(advanced_search_query_file, "r") as f:
+            query_template = f.read()
+            if "[graph_uri]" in query_template:
+                query_template = query_template.replace(
+                    "[graph_uri]", str(self.__graph_uri)
+                )
+        if type_uri is not None:
+            query_template = query_template.replace(
+                "[FILTER_BY_TYPE]", f"?node rdf:type <{type_uri}> ."
+            )
+        else:
+            query_template = query_template.replace("[FILTER_BY_TYPE]", "")
+
+        if attribute_uri is not None:
+            if "label" in attribute_uri:
+                new_attribute = f"rdfs:{attribute_uri}"
+            else:
+                new_attribute = f"<{GRAPH_MODEL}{attribute_uri}>"
+        else:
+            new_attribute = "?attribute"
+
+        if attribute_value is not None:
+            attribute_value = attribute_value.strip()
+            if is_value_uri:
+                new_value = f"<{attribute_value}>"
+            else:
+                new_value = f'"{attribute_value}"'
+                # try not to put quotes around the value
+                # if attribute_value is a number, do not put quotes
+                # if attribute_value is a date, do not put quotes
+                # if attribute_value is a string, put quotes
+                # if attribute start with quote, do not put quotes
+                if attribute_value.startswith('"') or attribute_value.startswith("'"):
+                    new_value = attribute_value
+                elif attribute_value.isnumeric():
+                    new_value = attribute_value
+                elif attribute_value.replace(".", "", 1).isdigit():
+                    new_value = attribute_value
+
+            query_template = query_template.replace(
+                "[FILTER_BY_ATTRIBUTE]", f"?node {new_attribute} {new_value} ."
+            )
+        else:
+            query_template = query_template.replace(
+                "[FILTER_BY_ATTRIBUTE]",
+                f"?node {new_attribute} ?value . FILTER({filtering_condition})",
+            )
+
+        query_result = self.__kg_service.graph_query(query_template, "text/csv")
+        df = pd.read_csv(StringIO(query_result), sep=",")
+        created_individuals = {}
+        nodes = []
+        for uri in df["node"]:
+            ret = self._load_node(
+                uri,
+                None,
+                1,
+                created_individuals=created_individuals,
+                uri_class_mapping=uri_class_mapping,
+            )
+            created_individuals.update(ret)
+            node = ret[uri]
+            nodes.append(node)
         return nodes
 
     def load_all_nodes(
