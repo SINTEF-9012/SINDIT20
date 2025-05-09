@@ -604,11 +604,6 @@ async def advanced_search_node(
 
     Response:
     - A list of nodes that match the specified criteria.
-
-    Example:
-    - To search for nodes of type "http://example.org/asset" with an attribute
-      "http://example.org/attribute" equal to "value", send a GET request to:
-      `/kg/advanced_search_node?type=http://example.org/asset&attribute=http://example.org/attribute&attribute_value=value`
     """
     try:
         return sindit_kg_connector.find_node_by_attribute(
