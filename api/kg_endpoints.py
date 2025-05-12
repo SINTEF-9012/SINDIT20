@@ -600,7 +600,7 @@ async def advanced_search_node(
       specific criteria.
       Example:
       - `"?value > 10"` to filter nodes with values greater than 10.
-      - CONTAINS(STR(?value), "Temp") to filter nodes with values  containing "Temp".
+      - `CONTAINS(STR(?value), "Temp")` to filter nodes with values  containing "Temp".
 
     Response:
     - A list of nodes that match the specified criteria.
