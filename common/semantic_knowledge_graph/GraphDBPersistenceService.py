@@ -74,13 +74,28 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
         )
         return response
 
-    def graph_update(self, update: str) -> bool:
+    def graph_update_old(self, update: str) -> bool:
         params = {
             "update": update,
         }
         response = self.__client_api.post(
             "/statements",
             params=params,
+            retries=5,
+            auth=(self.__username, self.__password),
+        )
+
+        return response
+
+    def graph_update(self, update: str) -> bool:
+        data = {
+            "update": update,
+        }
+        response = self.__client_api.post(
+            "/statements",
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            # headers={"Content-Type": "application/sparql-update"},
             retries=5,
             auth=(self.__username, self.__password),
         )
