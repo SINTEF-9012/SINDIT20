@@ -177,7 +177,8 @@ async def create_sindit_kg(
     use the update node endpoint instead.
     """
     try:
-        return sindit_kg_connector.save_node(node)
+        result = sindit_kg_connector.save_node(node)
+        return {"result": result}
 
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")

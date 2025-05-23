@@ -50,8 +50,12 @@ class FsVault(Vault):
     def __init__(self, vaultPath):
         self.vaultPath = vaultPath
         configs = Properties()
-        with open(vaultPath, "rb") as f:
-            configs.load(f, "utf-8")
+        try:
+            with open(vaultPath, "rb") as f:
+                configs.load(f, "utf-8")
+        except FileNotFoundError:
+            with open(vaultPath, "wb") as f:
+                pass  # Create an empty file
         self.configs = configs
         logger.info(f"Loaded vault from {vaultPath}")
 
