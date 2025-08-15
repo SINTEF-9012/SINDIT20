@@ -193,7 +193,7 @@ class RDFModel(BaseModel):
                         ret_str += f"{key}: {value}\n"
 
             ret_str = "\n".join(["\t" + line for line in ret_str.split("\n")])
-            return f"<{self.__class__.__name__}:\n{ret_str}\n>"
+            return f"<{obj.__class__.__name__}:\n{ret_str}\n>"
 
         # Initial set of visited URIs
         visited = set()
@@ -424,6 +424,8 @@ class RDFModel(BaseModel):
                                 )  # Recursively add nested RDFModel
                             elif isinstance(item, URIRef):
                                 obj._add(obj.uri, rdf_property, item, g)
+                            elif isinstance(item, Literal): ## New, need to be tested!
+                                obj._add(obj.uri, rdf_property, item, g)
                             else:
                                 raise TypeError(
                                     f"Unexpected type {type(item)} for value {item}"
@@ -544,11 +546,6 @@ class RDFModel(BaseModel):
             new_att_value = att_value
 
         if att_type_hint is not None:
-            # if the type hint is a list
-            # if(str(att_type_hint).startswith('typing.List') ):
-            # print(att_type_hint)
-            # print(type(att_type_hint))
-
             if "__origin__" in dir(att_type_hint) and (
                 att_type_hint.__origin__ == list or att_type_hint.__origin__ == List
             ):
@@ -563,9 +560,31 @@ class RDFModel(BaseModel):
                     # set the value as a list
                     setattr(ind_obj, att_name, [new_att_value])
             else:
-                setattr(ind_obj, att_name, new_att_value)
+                
+                # get the exising value, New, need to be tested!!
+                existing_value = getattr(ind_obj, att_name, None)
+                # if the existing value is not None
+                if existing_value is not None:
+                    # append the new value to the existing value
+                    if not isinstance(existing_value, list):
+                        existing_value = [existing_value]
+                    setattr(ind_obj, att_name, existing_value + [new_att_value])
+                # if the existing value is None
+                else:
+                    setattr(ind_obj, att_name, new_att_value)
+                     
         else:
-            setattr(ind_obj, att_name, new_att_value)
+            # get the exising value, New, need to be tested!!
+            existing_value = getattr(ind_obj, att_name, None)
+            # if the existing value is not None
+            if existing_value is not None:
+                # append the new value to the existing value
+                if not isinstance(existing_value, list):
+                    existing_value = [existing_value]
+                setattr(ind_obj, att_name, existing_value + [new_att_value])
+            # if the existing value is None
+            else:
+                setattr(ind_obj, att_name, new_att_value)
 
     def _set_att_from_graph(
         ind_obj,

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import Any, ClassVar, List, Union
@@ -158,6 +159,7 @@ class PropertyCollection(AbstractAssetProperty):
         Union[
             URIRefNode,
             AbstractAssetProperty,
+            PropertyCollection,
             DatabaseProperty,
             StreamingProperty,
             TimeseriesProperty,
