@@ -424,7 +424,7 @@ class RDFModel(BaseModel):
                                 )  # Recursively add nested RDFModel
                             elif isinstance(item, URIRef):
                                 obj._add(obj.uri, rdf_property, item, g)
-                            elif isinstance(item, Literal): ## New, need to be tested!
+                            elif isinstance(item, Literal):  # New, need to be tested!
                                 obj._add(obj.uri, rdf_property, item, g)
                             else:
                                 raise TypeError(
@@ -560,7 +560,6 @@ class RDFModel(BaseModel):
                     # set the value as a list
                     setattr(ind_obj, att_name, [new_att_value])
             else:
-                
                 # get the exising value, New, need to be tested!!
                 existing_value = getattr(ind_obj, att_name, None)
                 # if the existing value is not None
@@ -572,7 +571,7 @@ class RDFModel(BaseModel):
                 # if the existing value is None
                 else:
                     setattr(ind_obj, att_name, new_att_value)
-                     
+
         else:
             # get the exising value, New, need to be tested!!
             existing_value = getattr(ind_obj, att_name, None)
