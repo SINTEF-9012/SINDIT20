@@ -4,7 +4,9 @@ from enum import Enum
 from typing import Any, ClassVar, List, Union
 
 from common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
-from rdflib import Literal, Namespace, URIRef
+from rdflib import XSD, Literal, Namespace, URIRef
+
+from pydantic import field_validator, model_validator
 
 
 class GraphNamespace(Enum):
@@ -72,6 +74,73 @@ class AbstractAssetProperty(RDFModel):
     propertyValueTimestamp: Literal | datetime | float | int | str = None
 
     propertyConnection: Union[URIRefNode, Connection] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_property_data_type(cls, values):
+        """Set propertyDataType based on propertyValue if not provided"""
+        # Handle both dict and object inputs
+        if isinstance(values, dict):
+            data = values
+        else:
+            data = values.__dict__ if hasattr(values, "__dict__") else {}
+
+        # Only set propertyDataType if it's not already provided
+        if "propertyDataType" not in data or data.get("propertyDataType") is None:
+            property_value = data.get("propertyValue")
+            if property_value is not None:
+                if isinstance(property_value, datetime):
+                    data["propertyDataType"] = URIRefNode(uri=str(XSD.dateTimeStamp))
+                elif isinstance(property_value, bool):
+                    data["propertyDataType"] = URIRefNode(uri=str(XSD.boolean))
+
+        return data
+
+    @field_validator("propertyValue", mode="before")
+    @classmethod
+    def validate_property_value(cls, v, info):
+        """Deserialize propertyValue based on propertyDataType"""
+        if v is None:
+            return v
+
+        # Get propertyDataType from the data
+        data_type = info.data.get("propertyDataType")
+
+        # If propertyValue is already the correct type, return as is
+        if data_type is None:
+            return v
+
+        # Convert data_type to string for comparison
+        data_type_str = str(data_type).lower()
+
+        try:
+            # Handle different data types
+            if "int" in data_type_str or "integer" in data_type_str:
+                return int(v) if not isinstance(v, int) else v
+            elif (
+                "float" in data_type_str
+                or "double" in data_type_str
+                or "decimal" in data_type_str
+            ):
+                return float(v) if not isinstance(v, float) else v
+            elif "bool" in data_type_str or "boolean" in data_type_str:
+                if isinstance(v, str):
+                    return v.lower() in ["true", "1", "yes", "on"]
+                return bool(v)
+            elif "datetime" in data_type_str or "timestamp" in data_type_str:
+                if isinstance(v, str):
+                    # Try to parse ISO format datetime
+                    try:
+                        return datetime.fromisoformat(v.replace("Z", "+00:00"))
+                    except ValueError:
+                        return v
+                return v
+            else:
+                return v
+
+        except (ValueError, TypeError):
+            # If conversion fails, return original value
+            return v
 
 
 class DatabaseProperty(AbstractAssetProperty):
