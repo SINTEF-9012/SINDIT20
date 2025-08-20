@@ -7,10 +7,13 @@
     </a>
     <img src="https://img.shields.io/badge/code%20style-black-black" alt="Code Style Black">
     <img src="https://img.shields.io/badge/python-3.11-blue" alt="Python Version">
+    <a href="https://pypi.org/project/sindit/">
+        <img src="https://img.shields.io/pypi/v/sindit.svg" alt="PyPI version">
+    </a>
 </div>
 
 <div align="center">
-    <img src="./docs/img/sindit_logo.png" alt="SINDIT Logo" width="350">
+    <img src="https://raw.githubusercontent.com/SINTEF-9012/SINDIT20/refs/heads/main/docs/img/sindit_logo.png" alt="SINDIT Logo" width="350">
 </div>
 
 ## Run backend using Docker Compose

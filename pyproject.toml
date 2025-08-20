@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.isort]
 multi_line_output = 3
 line_length = 88
@@ -8,11 +12,23 @@ profile = "black"
 line_length = 88
 
 [tool.poetry]
-name = "SINDIT"
-version = "0.0.1"
-authors = ["author <author@sintef.no>"]
+name = "sindit"
+version = "0.0.3"
+authors = ["An Lam <an.lam@sintef.no>", "Gøran Brekke Svaland <goran.svaland@sintef.no>"]
 description = "SINTEF Digital Twin Framework"
-package-mode = false
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/SINTEF-9012/SINDIT20"
+repository = "https://github.com/SINTEF-9012/SINDIT20"
+keywords = ["digital-twin", "framework", "sintef"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+[[tool.poetry.packages]]
+include = "sindit"
+from = "src"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
@@ -49,10 +65,6 @@ coverage-badge = "^1.1.0"
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.4"
 isort = "^5.13.2"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
