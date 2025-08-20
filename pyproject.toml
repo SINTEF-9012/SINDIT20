@@ -26,9 +26,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-[[tool.poetry.packages]]
-include = "sindit"
-from = "src"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
