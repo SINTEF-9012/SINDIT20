@@ -1,6 +1,7 @@
 import fastapi
 from util.environment_and_configuration import ConfigGroups, get_configuration
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 
 description = """This is the API for the SINDIT project.
@@ -42,6 +43,11 @@ app = fastapi.FastAPI(
     openapi_tags=tags_metadata,
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
 )
+
+# Add ProxyHeadersMiddleware so FastAPI sees the correct scheme/host behind Traefik
+# Otherwise, DELETE get into a https > http > https ping pong where auth header is lost
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
 
 # TODO: This should not be hardcoded
 # TODO: For actual deployment, this needs to be set properly
