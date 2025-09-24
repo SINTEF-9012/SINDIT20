@@ -31,13 +31,13 @@ RUN apt-get update \
     && pip install poetry==1.8.2
 
 # Copy the current directory contents into the container at /app
-COPY api /app/api
-COPY util /app/util
-COPY common /app/common
-COPY connectors /app/connectors
-COPY knowledge_graph /app/knowledge_graph
-COPY environment_and_configuration /app/environment_and_configuration
-COPY run_sindit.py pyproject.toml initialize_kg_connectors.py initialize_vault.py /app/
+COPY src/sindit/api /app/api
+COPY src/sindit/util /app/util
+COPY src/sindit/common /app/common
+COPY src/sindit/connectors /app/connectors
+COPY src/sindit/knowledge_graph /app/knowledge_graph
+COPY src/sindit/environment_and_configuration /app/environment_and_configuration
+COPY src/sindit/run_sindit.py src/sindit/pyproject.toml src/sindit/initialize_kg_connectors.py src/sindit/initialize_vault.py /app/
 
 # Install any needed packages specified in requirements.txt
 RUN poetry install
