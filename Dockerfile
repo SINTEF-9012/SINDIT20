@@ -31,19 +31,24 @@ RUN apt-get update \
     && pip install poetry==1.8.2
 
 # Copy the current directory contents into the container at /app
-COPY api /app/api
-COPY util /app/util
-COPY common /app/common
-COPY connectors /app/connectors
-COPY knowledge_graph /app/knowledge_graph
-COPY environment_and_configuration /app/environment_and_configuration
-COPY run_sindit.py pyproject.toml initialize_kg_connectors.py initialize_vault.py /app/
+COPY src/sindit/api /app/sindit/api
+COPY src/sindit/util /app/sindit/util
+COPY src/sindit/common /app/sindit/common
+COPY src/sindit/connectors /app/sindit/connectors
+COPY src/sindit/knowledge_graph /app/sindit/knowledge_graph
+COPY src/sindit/environment_and_configuration /app/sindit/environment_and_configuration
+COPY src/sindit/run_sindit.py src/sindit/initialize_kg_connectors.py src/sindit/initialize_vault.py /app/sindit/
+COPY pyproject.toml /app/
 
 # Install any needed packages specified in requirements.txt
 RUN poetry install
 
 # Expose port
 EXPOSE 9017
+
+WORKDIR /app/sindit
+#Set PYTHONPATH to /app, so that sindit package can be found
+ENV PYTHONPATH="/app:${PYTHONPATH}"
 
 # Run run_sindit.py when the container launches
 CMD ["poetry", "run", "python", "run_sindit.py"]

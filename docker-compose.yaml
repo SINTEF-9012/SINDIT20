@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
     env_file:
-      - environment_and_configuration/docker_environment_backend.env  # Load environment variables from this file
+      - src/sindit/environment_and_configuration/docker_environment_backend.env  # Load environment variables from this file
     depends_on:
       - graphdb
     ports:
