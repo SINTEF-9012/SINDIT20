@@ -13,7 +13,7 @@
 </div>
 
 <div align="center">
-    <img src="https://raw.githubusercontent.com/SINTEF-9012/SINDIT20/refs/heads/main/docs/img/sindit_logo.png" alt="SINDIT Logo" width="350">
+    <img src="https://raw.githubusercontent.com/SINTEF-9012/SINDIT20/refs/heads/main/src/sindit/docs/img/sindit_logo.png" alt="SINDIT Logo" width="350">
 </div>
 
 ## Run backend using Docker Compose
