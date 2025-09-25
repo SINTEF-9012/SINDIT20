@@ -26,14 +26,14 @@ else:
 import uvicorn  # noqa: E402
 
 
-from api import kg_endpoints  # noqa: F401, E402
-from api import vault_endpoints  # noqa: F401, E402
-from api import connection_endpoints  # noqa: F401, E402
-from api import workspace_endpoints  # noqa: F401, E402
-from api import metamodel_endpoints  # noqa: F401, E402
-from api import kg_relationship_endpoints  # noqa: F401, E402
-from api import authentication_endpoints  # noqa: F401, E402
-from api import dataspace_endpoints  # noqa: F401, E402
+from sindit.api import kg_endpoints  # noqa: F401, E402
+from sindit.api import vault_endpoints  # noqa: F401, E402
+from sindit.api import connection_endpoints  # noqa: F401, E402
+from sindit.api import workspace_endpoints  # noqa: F401, E402
+from sindit.api import metamodel_endpoints  # noqa: F401, E402
+from sindit.api import kg_relationship_endpoints  # noqa: F401, E402
+from sindit.api import authentication_endpoints  # noqa: F401, E402
+from sindit.api import dataspace_endpoints  # noqa: F401, E402
 
 
 # from connectors.setup_connectors import initialize_connections_and_properties
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Run fast API
     logger.info("Running FastAPI...")
     uvicorn.run(
-        "api.api:app",
+        "sindit.api.api:app",
         host=get_environment_variable("FAST_API_HOST"),
         port=get_environment_variable_int("FAST_API_PORT"),
         workers=1,
