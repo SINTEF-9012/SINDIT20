@@ -4,20 +4,33 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import jwt
+import os
+import base64
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
+from sindit.util.log import logger
 
 from sindit.util.environment_and_configuration import (
     get_environment_variable,
     get_environment_variable_int,
 )
 
-# TODO: replace by real database
-SECRET_KEY = get_environment_variable("SECRET_KEY")
+from sindit.initialize_vault import secret_vault
+
+SECRET_KEY = get_environment_variable("SECRET_KEY", optional=True, default=None)
+if not SECRET_KEY:
+    # Generate a random secret key
+    SECRET_KEY = base64.urlsafe_b64encode(os.urandom(32)).decode("utf-8")
+    logger.info(
+        "Secret key not set for token generation, using random key: %s", SECRET_KEY
+    )
+    logger.info("Secret key was stored to the vault, path: SECRET_KEY")
+    secret_vault.storeSecret("SECRET_KEY", SECRET_KEY)
+
 ALGORITHM = get_environment_variable("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = get_environment_variable_int(
     "ACCESS_TOKEN_EXPIRE_MINUTES", default=30
