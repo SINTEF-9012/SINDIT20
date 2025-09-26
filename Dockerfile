@@ -13,7 +13,6 @@ ENV APPNAME=SINDIT  \
     LOG_LEVEL='DEBUG' \
     USE_HASHICORP_VAULT='False' \
     FSVAULT_PATH='environment_and_configuration/vault.properties' \
-    SECRET_KEY='ce1cd8c0ba492a14d9dfeb2778946ea1a8c3d084042492455f223a1cbf8cc93d' \
     ALGORITHM='HS256' \
     ACCESS_TOKEN_EXPIRE_MINUTES=30 \
     POETRY_NO_INTERACTION=1 \
