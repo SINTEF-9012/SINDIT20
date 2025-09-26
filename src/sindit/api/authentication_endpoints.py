@@ -25,7 +25,9 @@ SECRET_KEY = get_environment_variable("SECRET_KEY", optional=True, default=None)
 if not SECRET_KEY:
     # Generate a random secret key
     SECRET_KEY = base64.urlsafe_b64encode(os.urandom(32)).decode("utf-8")
-    logger.info("Secret key not set for token generation, using random key: %s", SECRET_KEY)
+    logger.info(
+        "Secret key not set for token generation, using random key: %s", SECRET_KEY
+    )
     logger.info("Secret key was stored to the vault, path: SECRET_KEY")
     secret_vault.storeSecret("SECRET_KEY", SECRET_KEY)
 
