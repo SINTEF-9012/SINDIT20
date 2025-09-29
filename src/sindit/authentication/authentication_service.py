@@ -1,7 +1,7 @@
 from sindit.authentication.models import User
 
-class AuthService:
 
+class AuthService:
     def create_access_token(self, username: str, password: str) -> str:
         pass
 

@@ -4,7 +4,6 @@ from sindit.util.log import logger
 from sindit.initialize_vault import secret_vault
 from sindit.util.environment_and_configuration import (
     get_environment_variable,
-    get_environment_variable_int,
 )
 import base64
 from sindit.authentication.authentication_service import AuthService
@@ -15,16 +14,17 @@ from jwt.exceptions import InvalidTokenError
 from fastapi import HTTPException, status
 
 
-        
 class InMemoryAuthService(AuthService):
-    
     def __init__(self):
-        self.SECRET_KEY = get_environment_variable("SECRET_KEY", optional=True, default=None)
+        self.SECRET_KEY = get_environment_variable(
+            "SECRET_KEY", optional=True, default=None
+        )
         if not self.SECRET_KEY:
             # Generate a random secret key
             self.SECRET_KEY = base64.urlsafe_b64encode(os.urandom(32)).decode("utf-8")
             logger.info(
-                "Secret key not set for token generation, using random key: %s", self.SECRET_KEY
+                "Secret key not set for token generation, using random key: %s",
+                self.SECRET_KEY,
             )
             logger.info("Secret key was stored to the vault, path: SECRET_KEY")
             secret_vault.storeSecret("SECRET_KEY", self.SECRET_KEY)
@@ -37,32 +37,27 @@ class InMemoryAuthService(AuthService):
         # TODO: replace by real database
         self.fake_users_db = {
             "sindit": {
-            "username": "sindit",
-            "full_name": "SINDIT",
-            "email": "sindit@sintef.no",
-            "hashed_password": (
-                "$2b$12$dk94mGdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba"
-            ),
-            "disabled": False,
+                "username": "sindit",
+                "full_name": "SINDIT",
+                "email": "sindit@sintef.no",
+                "hashed_password": (
+                    "$2b$12$dk94mGdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba"
+                ),
+                "disabled": False,
             }
         }
-    
-    
+
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
 
-
     def get_password_hash(self, password):
         return self.pwd_context.hash(password)
-
 
     def get_user(self, db, username: str):
         if username in db:
             user_dict = db[username]
             return UserInDB(**user_dict)
-        
-        
-        
+
     # TODO: replace by real database
     def authenticate_user(self, fake_db, username: str, password: str):
         user = self.get_user(fake_db, username)
@@ -71,7 +66,6 @@ class InMemoryAuthService(AuthService):
         if not self.verify_password(password, user.hashed_password):
             return False
         return user
-
 
     def create_token(self, data: dict, expires_delta: timedelta | None = None):
         to_encode = data.copy()
@@ -83,8 +77,7 @@ class InMemoryAuthService(AuthService):
             to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_jwt
-    
-    
+
     def create_access_token(self, username: str, password: str) -> str:
         user = self.authenticate_user(self.fake_users_db, username, password)
         if not user:
@@ -98,7 +91,7 @@ class InMemoryAuthService(AuthService):
             data={"sub": user.username}, expires_delta=access_token_expires
         )
         return access_token
-    
+
     def verify_token(self, token: str) -> User:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

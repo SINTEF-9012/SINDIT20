@@ -5,10 +5,10 @@ from keycloak import KeycloakOpenID
 
 from sindit.authentication.authentication_service import AuthService
 from sindit.authentication.models import User
-from sindit.util.environment_and_configuration import get_environment_variable, get_environment_variable_bool
+from sindit.util.environment_and_configuration import get_environment_variable
+
 
 class KeycloakAuthService(AuthService):
-
     def __init__(self):
         self.keycloak_openid = KeycloakOpenID(
             server_url=get_environment_variable("KEYCLOAK_SERVER_URL"),
@@ -24,7 +24,7 @@ class KeycloakAuthService(AuthService):
         try:
             token = self.keycloak_openid.token(username, password)
             return token["access_token"]
-        except (KeycloakAuthenticationError, Exception) as e:
+        except (KeycloakAuthenticationError, Exception):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or password",
@@ -36,7 +36,7 @@ class KeycloakAuthService(AuthService):
         """
         try:
             user_info = self.keycloak_openid.userinfo(token)
-            print(user_info)
+            # print(user_info)
             if not user_info:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
@@ -46,7 +46,7 @@ class KeycloakAuthService(AuthService):
                 email=user_info.get("email"),
                 full_name=user_info.get("name"),
             )
-        except (KeycloakAuthenticationError, Exception) as e:
+        except (KeycloakAuthenticationError, Exception):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
