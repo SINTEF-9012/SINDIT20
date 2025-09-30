@@ -25,7 +25,7 @@ ENV USE_KEYCLOAK=False
 ENV KEYCLOAK_SERVER_URL="http://localhost:8080"
 ENV KEYCLOAK_REALM="sindit"
 ENV KEYCLOAK_CLIENT_ID="sindit"
-ENV KEYCLOAK_CLIENT_SECRET="AeHcDu55GTh3PkqaUwKqaRPUPWKqCH7C"
+ENV KEYCLOAK_CLIENT_SECRET="your_client_secret_here"
 
 # InMemory authentication configuration
 ENV USER_PATH='environment_and_configuration/user.json'
