@@ -34,18 +34,33 @@ class InMemoryAuthService(AuthService):
 
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-        # TODO: replace by real database
-        self.fake_users_db = {
-            "sindit": {
-                "username": "sindit",
-                "full_name": "SINDIT",
-                "email": "sindit@sintef.no",
-                "hashed_password": (
-                    "$2b$12$dk94mGdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba"
-                ),
-                "disabled": False,
-            }
-        }
+        self.USER_PATH = get_environment_variable(
+            "USER_PATH",
+            optional=True,
+            default="environment_and_configuration/user.json",
+        )
+        self.WORKSPACE_PATH = get_environment_variable(
+            "WORKSPACE_PATH",
+            optional=True,
+            default="environment_and_configuration/workspace.json",
+        )
+        # read users from file, create file if it does not exist
+        if os.path.exists(self.USER_PATH):
+            import json
+
+            with open(self.USER_PATH, "r") as f:
+                try:
+                    self.users_db = json.load(f)
+                except json.JSONDecodeError:
+                    logger.error("Error decoding JSON from %s", self.USER_PATH)
+                    self.users_db = {}
+        else:
+            logger.warning(
+                "User file %s does not exist, creating empty file", self.USER_PATH
+            )
+            with open(self.USER_PATH, "w") as f:
+                f.write("{}")
+            self.users_db = {}
 
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
@@ -79,7 +94,7 @@ class InMemoryAuthService(AuthService):
         return encoded_jwt
 
     def create_access_token(self, username: str, password: str) -> str:
-        user = self.authenticate_user(self.fake_users_db, username, password)
+        user = self.authenticate_user(self.users_db, username, password)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -106,7 +121,7 @@ class InMemoryAuthService(AuthService):
             token_data = TokenData(username=username)
         except InvalidTokenError:
             raise credentials_exception
-        user = self.get_user(self.fake_users_db, username=token_data.username)
+        user = self.get_user(self.users_db, username=token_data.username)
         if user is None:
             raise credentials_exception
         return user
