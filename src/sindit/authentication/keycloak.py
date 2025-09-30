@@ -4,7 +4,7 @@ from keycloak.exceptions import KeycloakAuthenticationError
 from keycloak import KeycloakOpenID
 
 from sindit.authentication.authentication_service import AuthService
-from sindit.authentication.models import User
+from sindit.authentication.models import Token, User
 from sindit.util.environment_and_configuration import get_environment_variable
 
 
@@ -23,7 +23,8 @@ class KeycloakAuthService(AuthService):
         """
         try:
             token = self.keycloak_openid.token(username, password)
-            return token["access_token"]
+            return Token(access_token=token["access_token"], token_type="bearer")
+
         except (KeycloakAuthenticationError, Exception):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

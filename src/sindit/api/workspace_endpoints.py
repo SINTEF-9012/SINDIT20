@@ -1,10 +1,12 @@
 from fastapi import HTTPException, Depends
+from sindit.authentication.models import Workspace
 from sindit.initialize_kg_connectors import sindit_kg_connector
 from sindit.api.authentication_endpoints import User, get_current_active_user
 
 from sindit.util.log import logger
 
 from sindit.api.api import app
+from sindit.initialize_authentication import workspaceService
 
 
 @app.get(
@@ -33,12 +35,13 @@ from sindit.api.api import app
 )
 async def get_workspace(
     current_user: User = Depends(get_current_active_user),
-):
+) -> Workspace:
     """
     Get the name (uri) of the current workspace.
     """
     try:
-        return {"workspace_uri": sindit_kg_connector.get_graph_uri()}
+        current_workspace = workspaceService.get_current_workspace(current_user)
+        return current_workspace
     except Exception as e:
         logger.error(f"Error getting workspace: {e}")
         raise HTTPException(status_code=404, detail=str(e))
@@ -72,12 +75,12 @@ async def get_workspace(
 )
 async def get_workspaces(
     current_user: User = Depends(get_current_active_user),
-):
+) -> list[Workspace]:
     """
     Get a list of all available workspaces.
     """
     try:
-        return sindit_kg_connector.get_graph_uris()
+        return workspaceService.list_workspaces(current_user)
     except Exception as e:
         logger.error(f"Error getting workspaces: {e}")
         raise HTTPException(status_code=404, detail=str(e))
@@ -108,16 +111,18 @@ async def get_workspaces(
     },
 )
 async def switch_workspace(
-    workspace_uri: str,
+    workspace_name: str,
     current_user: User = Depends(get_current_active_user),
 ):
     """
     Switch to a new workspace.
     """
     try:
-        graph_uri = sindit_kg_connector.set_graph_uri(workspace_uri.strip())
-        return {"workspace_uri": graph_uri}
-
+        # graph_uri = sindit_kg_connector.set_graph_uri(workspace_uri.strip())
+        # return {"workspace_uri": graph_uri}
+        new_workspace = workspaceService.create_workspace(current_user, workspace_name)
+        sindit_kg_connector.set_graph_uri(new_workspace.uri.strip())
+        return new_workspace
         # TODO: switching to a new workspace should also
         # stop/clean up all connections and properties
 

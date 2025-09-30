@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from sindit.authentication.models import TokenData, User, UserInDB
+from sindit.authentication.models import Token, TokenData, User, UserInDB
 from sindit.util.log import logger
 from sindit.initialize_vault import secret_vault
 from sindit.util.environment_and_configuration import (
@@ -12,6 +12,7 @@ import os
 from passlib.context import CryptContext
 from jwt.exceptions import InvalidTokenError
 from fastapi import HTTPException, status
+import json
 
 
 class InMemoryAuthService(AuthService):
@@ -46,8 +47,6 @@ class InMemoryAuthService(AuthService):
         )
         # read users from file, create file if it does not exist
         if os.path.exists(self.USER_PATH):
-            import json
-
             with open(self.USER_PATH, "r") as f:
                 try:
                     self.users_db = json.load(f)
@@ -105,7 +104,7 @@ class InMemoryAuthService(AuthService):
         access_token = self.create_token(
             data={"sub": user.username}, expires_delta=access_token_expires
         )
-        return access_token
+        return Token(access_token=access_token, token_type="bearer")
 
     def verify_token(self, token: str) -> User:
         credentials_exception = HTTPException(
