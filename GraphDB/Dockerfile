@@ -9,7 +9,8 @@ WORKDIR /opt/graphdb/home
 
 # Step 3: Copy the local GraphDB home directory (containing the indexed repository) to the container
 # Replace '/path/to/GraphDB/home' with the path to your local GraphDB home directory
-COPY . /opt/graphdb/home/
+COPY repo-config.ttl /opt/graphdb/home/
+COPY graph_model/ /opt/graphdb/home/graph_model/
 
 ENV GDB_JAVA_OPTS="-Xms2g -Xmx4g"
 

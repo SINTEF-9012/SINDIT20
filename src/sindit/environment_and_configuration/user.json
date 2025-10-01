@@ -1,0 +1,17 @@
+{
+    "sindit": {
+        "username": "sindit",
+        "full_name": "SINDIT",
+        "email": "sindit@sintef.no",
+        "hashed_password": "$2b$12$dk94mGdY3.EciS3oKQxJjOyIpoUNiFZxrON4SXt3wVrgSbE1gDMba",
+        "disabled": false
+    },
+
+    "quasar": {
+        "username": "quasar",
+        "full_name": "QUASAR",
+        "email": "quasar@sintef.no",
+        "hashed_password": "$2b$12$L0rwLgwboSVCC2rr/qn3K.VzkoxUx3KmoXWPvwDL2fb8nsa0vVpva",
+        "disabled": false
+    }
+}
