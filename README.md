@@ -13,7 +13,7 @@
 </div>
 
 <div align="center">
-    <img src="https://raw.githubusercontent.com/SINTEF-9012/SINDIT20/refs/heads/main/docs/img/sindit_logo.png" alt="SINDIT Logo" width="350">
+    <img src="https://raw.githubusercontent.com/SINTEF-9012/SINDIT20/refs/heads/main/src/sindit/docs/img/sindit_logo.png" alt="SINDIT Logo" width="350">
 </div>
 
 ## Run backend using Docker Compose
@@ -59,21 +59,20 @@ poetry run python run_sindit.py
 
 ```bash
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "cwd": "/Users/gorans/projects/monorepo/projects/sindit",
-            "justMyCode": false,
-            "envFile": "/Users/gorans/projects/monorepo/projects/sindit/environment_and_configuration/dev_environment_backend.env",
-
+            "cwd": "${workspaceFolder}/src/sindit",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": false
         }
     ]
 }
