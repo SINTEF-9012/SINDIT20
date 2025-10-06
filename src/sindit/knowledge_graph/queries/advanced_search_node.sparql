@@ -10,5 +10,8 @@ WHERE {
     [FILTER_BY_ATTRIBUTE]
 
   }
+  [TYPE_HIERARCHY_FILTER]
 }
 ORDER BY ?node
+OFFSET [offset]
+LIMIT [limit]

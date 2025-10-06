@@ -121,12 +121,16 @@ async def get_relationship_by_node(
         ]
     ],
 )
-async def get_all_relationships(current_user: User = Depends(get_current_active_user)):
+async def get_all_relationships(
+    current_user: User = Depends(get_current_active_user),
+    skip: int = 0,
+    limit: int = 10,
+) -> list:
     """
     Get all relationships.
     """
     try:
-        return sindit_kg_connector.get_all_relationships()
+        return sindit_kg_connector.get_all_relationships(skip=skip, limit=limit)
     except Exception as e:
         logger.error(f"Error getting all relationships: {e}")
         raise HTTPException(status_code=404, detail=str(e))

@@ -1,0 +1,14 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#>
+
+SELECT DISTINCT ?node
+WHERE {
+  GRAPH <[graph_uri]> {
+    VALUES ?cls { [class_uris] }
+    ?node a ?nodeType .
+  }
+  ?nodeType (<urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#extends>)* ?cls .
+}
+ORDER BY ?node
+OFFSET [offset]
+LIMIT [limit]

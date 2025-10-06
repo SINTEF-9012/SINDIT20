@@ -60,7 +60,7 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
     def is_connected(self) -> bool:
         return self.__connected
 
-    def graph_query(self, query: str, accept_content: str) -> any:
+    def graph_query_old(self, query: str, accept_content: str) -> any:
         params = {
             "query": query,
         }
@@ -73,6 +73,27 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
             auth=(self.__username, self.__password),
         )
         return response
+
+    def graph_query(self, query: str, accept_content: str) -> any:
+        data = {
+            "query": query,
+        }
+        headers = {
+            "Accept": accept_content,
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        response = self.__client_api.post(
+            "",
+            data=data,
+            headers=headers,
+            retries=5,
+            auth=(self.__username, self.__password),
+        )
+        # ClientAPI.post may return a requests.Response or a str; normalize to str
+        try:
+            return response.text  # type: ignore[attr-defined]
+        except AttributeError:
+            return response  # already a str
 
     def graph_update_old(self, update: str) -> bool:
         params = {
