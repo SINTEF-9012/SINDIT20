@@ -425,6 +425,9 @@ class SINDITKGConnector:
         is_value_uri: bool = False,
         filtering_condition: str = None,
         uri_class_mapping: dict = NodeURIClassMapping,
+        depth: int = 1,
+        skip: int = 0,
+        limit: int = 10,
     ) -> list:
         # check if either atribute_value or filtering_condition is provided
         # but not both
@@ -446,10 +449,17 @@ class SINDITKGConnector:
                 )
         if type_uri is not None:
             query_template = query_template.replace(
-                "[FILTER_BY_TYPE]", f"?node rdf:type <{type_uri}> ."
+                "[FILTER_BY_TYPE]", "?node rdf:type ?nodeType ."
+            ).replace(
+                "[TYPE_HIERARCHY_FILTER]",
+                f"?nodeType "
+                f"(<urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#extends>)* "
+                f"<{type_uri}> .",
             )
         else:
-            query_template = query_template.replace("[FILTER_BY_TYPE]", "")
+            query_template = query_template.replace("[FILTER_BY_TYPE]", "").replace(
+                "[TYPE_HIERARCHY_FILTER]", ""
+            )
 
         if attribute_uri is not None:
             if "label" in attribute_uri:
@@ -486,6 +496,10 @@ class SINDITKGConnector:
                 f"?node {new_attribute} ?value . FILTER({filtering_condition})",
             )
 
+        query_template = query_template.replace("[offset]", str(skip)).replace(
+            "[limit]", str(limit)
+        )
+
         query_result = self.__kg_service.graph_query(query_template, "text/csv")
         df = pd.read_csv(StringIO(query_result), sep=",")
         created_individuals = {}
@@ -509,7 +523,7 @@ class SINDITKGConnector:
         nodes = self._load_nodes_optimized(
             node_uris,
             None,
-            1,
+            depth=depth,
             created_individuals=created_individuals,
             uri_class_mapping=uri_class_mapping,
         )

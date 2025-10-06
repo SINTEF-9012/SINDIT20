@@ -586,6 +586,9 @@ async def advanced_search_node(
     attribute_value: str = None,
     is_value_uri: bool = False,
     filtering_condition: str = None,
+    depth: int = 1,
+    skip: int = 0,
+    limit: int = 10,
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -621,6 +624,9 @@ async def advanced_search_node(
             attribute_value=attribute_value,
             is_value_uri=is_value_uri,
             filtering_condition=filtering_condition,
+            depth=depth,
+            skip=skip,
+            limit=limit,
         )
     except Exception as e:
         logger.error(f"Error searching node: {e}")
