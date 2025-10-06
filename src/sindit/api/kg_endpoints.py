@@ -133,6 +133,7 @@ async def get_nodes_by_type(
 )
 async def get_all_nodes(
     current_user: User = Depends(get_current_active_user),
+    depth: int = 1,
     skip: int = 0,
     limit: int = 10,
 ) -> list:
@@ -140,7 +141,7 @@ async def get_all_nodes(
     Get all nodes from the knowledge graph.
     """
     try:
-        return sindit_kg_connector.load_all_nodes(skip=skip, limit=limit)
+        return sindit_kg_connector.load_all_nodes(depth=depth, skip=skip, limit=limit)
     except Exception as e:
         logger.error(f"Error getting all nodes: {e}")
         raise HTTPException(status_code=404, detail=str(e))

@@ -532,6 +532,7 @@ class SINDITKGConnector:
     def load_all_nodes(
         self,
         uri_class_mapping: dict = NodeURIClassMapping,
+        depth: int = 1,
         skip: int = 0,
         limit: int = 10,
     ) -> list:
@@ -568,7 +569,7 @@ class SINDITKGConnector:
         nodes = self._load_nodes_optimized(
             node_uris,
             None,
-            depth=1,
+            depth=depth,
             created_individuals=created_individuals,
             uri_class_mapping=uri_class_mapping,
         )
