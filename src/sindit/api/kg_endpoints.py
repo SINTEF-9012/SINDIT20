@@ -95,13 +95,17 @@ async def get_nodes_by_type(
     type_uri: str,
     depth: int = 1,
     current_user: User = Depends(get_current_active_user),
+    skip: int = 0,
+    limit: int = 10,
 ):
     """
     Get a node from the knowledge graph by its type.
     To get type uri, use the `/kg/node_types` endpoint.
     """
     try:
-        return sindit_kg_connector.load_nodes_by_class(type_uri, depth=depth)
+        return sindit_kg_connector.load_nodes_by_class(
+            type_uri, depth=depth, skip=skip, limit=limit
+        )
     except Exception as e:
         logger.error(f"Error getting node by type {type_uri}: {e}")
         raise HTTPException(status_code=404, detail=str(e))
@@ -127,12 +131,16 @@ async def get_nodes_by_type(
         ]
     ],
 )
-async def get_all_nodes(current_user: User = Depends(get_current_active_user)):
+async def get_all_nodes(
+    current_user: User = Depends(get_current_active_user),
+    skip: int = 0,
+    limit: int = 10,
+) -> list:
     """
     Get all nodes from the knowledge graph.
     """
     try:
-        return sindit_kg_connector.load_all_nodes()
+        return sindit_kg_connector.load_all_nodes(skip=skip, limit=limit)
     except Exception as e:
         logger.error(f"Error getting all nodes: {e}")
         raise HTTPException(status_code=404, detail=str(e))

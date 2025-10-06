@@ -28,6 +28,7 @@ insert_delete_data_query_file = "knowledge_graph/queries/insert_delete_data.spar
 get_uris_by_class_uri_query_file = (
     "knowledge_graph/queries/get_uris_by_class_uri.sparql"
 )
+get_uris_by_classes_query_file = "knowledge_graph/queries/get_uris_by_classes.sparql"
 get_class_uri_by_uri_query_file = "knowledge_graph/queries/get_class_uri_by_uri.sparql"
 list_named_graphs_query_file = "knowledge_graph/queries/list_named_graphs.sparql"
 search_unit_query_file = "knowledge_graph/queries/find_unit.sparql"
@@ -158,12 +159,69 @@ class SINDITKGConnector:
         node_class=None,
         depth: int = 1,
     ) -> RDFModel:
-        ret = self._load_node(node_uri, node_class, depth)
+        ret = self._load_node_optimized(node_uri, node_class, depth)
         node = ret[node_uri]
 
         # print(f"node uri: {node_uri}, depth: {depth}")
         # print(node)
         return node
+
+    def _load_node_optimized(
+        self,
+        node_uri: str,
+        node_class=None,
+        depth: int = 1,
+        created_individuals: dict = {},
+        uri_class_mapping: dict = NodeURIClassMapping,
+    ) -> RDFModel:
+        """Optimized version that fetches up to `depth` levels in a single
+        query using nested OPTIONAL blocks."""
+        if depth < 1:
+            depth = 1
+
+        # Build CONSTRUCT triples
+        construct_triples = ["?s0 ?p0 ?o0 ."]
+        for level in range(1, depth):
+            construct_triples.append(f"?o{level - 1} ?p{level} ?o{level} .")
+
+        # Build WHERE with properly nested OPTIONALs
+        where_lines = [
+            f"BIND(<{node_uri}> AS ?s0) .",
+            "?s0 ?p0 ?o0 .",
+        ]
+        open_blocks = 0
+        for level in range(1, depth):
+            where_lines.append("OPTIONAL {")
+            where_lines.append(f"  ?o{level - 1} ?p{level} ?o{level} .")
+            open_blocks += 1
+        # Close OPTIONAL blocks
+        where_lines.extend("}" for _ in range(open_blocks))
+
+        query = f"""
+        CONSTRUCT {{
+            {' '.join(construct_triples)}
+        }}
+        WHERE {{
+            GRAPH <{self.__graph_uri}> {{
+                {' '.join(where_lines)}
+            }}
+        }}
+        """
+
+        # Execute single query to get all data
+        query_result = self.__kg_service.graph_query(query, "application/x-trig")
+        full_graph = Graph()
+        full_graph.parse(data=query_result, format="trig")
+
+        # Deserialize the complete graph
+        ret = RDFModel.deserialize(
+            full_graph,
+            node_class,
+            URIRef(node_uri),
+            created_individuals=created_individuals,
+            uri_class_mapping=uri_class_mapping,
+        )
+        return ret
 
     def _load_node(
         self,
@@ -223,11 +281,99 @@ class SINDITKGConnector:
 
         return ret
 
+    def _load_nodes_optimized(
+        self,
+        node_uris: list[str],
+        node_class=None,
+        depth: int = 1,
+        created_individuals: dict = {},
+        uri_class_mapping: dict = NodeURIClassMapping,
+    ) -> list[RDFModel]:
+        """
+        Load multiple root nodes with up to `depth` hops in a single SPARQL query.
+
+        Args:
+            node_uris: List of root node URIs (strings).
+            node_class: Unused here (kept for parity).
+            depth: Number of hops to traverse (>=1).
+            uri_class_mapping: Mapping from class URI -> Python class.
+
+        Returns:
+            List of RDFModel instances for the
+            provided roots (order preserved, uniques).
+        """
+        if not node_uris:
+            return []
+
+        if depth < 1:
+            depth = 1
+
+        # Normalize and deduplicate while preserving order
+        seen = set()
+        roots: list[str] = []
+        for u in node_uris:
+            su = str(u)
+            if su not in seen:
+                seen.add(su)
+                roots.append(su)
+
+        values_str = " ".join(f"<{u}>" for u in roots)
+
+        # CONSTRUCT triples
+        construct_triples = ["?r ?p0 ?o0 ."]
+        for level in range(1, depth):
+            construct_triples.append(f"?o{level - 1} ?p{level} ?o{level} .")
+
+        # WHERE with properly nested OPTIONALs
+        where_lines = [
+            f"VALUES ?r {{ {values_str} }}",
+            "?r ?p0 ?o0 .",
+        ]
+        open_blocks = 0
+        for level in range(1, depth):
+            where_lines.append("OPTIONAL {")
+            where_lines.append(f"  ?o{level - 1} ?p{level} ?o{level} .")
+            open_blocks += 1
+        where_lines.extend("}" for _ in range(open_blocks))
+
+        query = f"""
+        CONSTRUCT {{
+            {' '.join(construct_triples)}
+        }}
+        WHERE {{
+            GRAPH <{self.__graph_uri}> {{
+                {' '.join(where_lines)}
+            }}
+        }}
+        """
+
+        # Execute single query
+        query_result = self.__kg_service.graph_query(query, "application/x-trig")
+        full_graph = Graph()
+        full_graph.parse(data=query_result, format="trig")
+
+        # Deserialize the whole subgraph once
+        ret_map = RDFModel.deserialize_graph(
+            full_graph,
+            created_individuals=created_individuals,
+            uri_class_mapping=uri_class_mapping,
+        )
+
+        # Return models for requested roots, preserving order and skipping missing
+        models: list[RDFModel] = []
+        for u in roots:
+            m = ret_map.get(u)
+            if m is not None:
+                models.append(m)
+        return models
+
     def load_nodes_by_class(
         self,
         class_uri: str,
         depth: int = 1,
         uri_class_mapping: dict = NodeURIClassMapping,
+        skip: int = 0,
+        limit: int = 10,
     ) -> list:
         with open(get_uris_by_class_uri_query_file, "r") as f:
             query_template = f.read()
@@ -236,12 +382,16 @@ class SINDITKGConnector:
                     "[graph_uri]", str(self.__graph_uri)
                 )
 
-        query = query_template.replace("[class_uri]", class_uri)
+        query = (
+            query_template.replace("[class_uri]", class_uri)
+            .replace("[offset]", str(skip))
+            .replace("[limit]", str(limit))
+        )
         query_result = self.__kg_service.graph_query(query, "text/csv")
         df = pd.read_csv(StringIO(query_result), sep=",")
         created_individuals = {}
         nodes = []
-        for uri in df["node"]:
+        """ for uri in df["node"]:
             ret = self._load_node(
                 uri,
                 None,
@@ -251,10 +401,20 @@ class SINDITKGConnector:
             )
             created_individuals.update(ret)
             node = ret[uri]
-            nodes.append(node)
+            nodes.append(node) """
+        # check if df is empty
+        if df.empty:
+            return []
 
-        # print(created_individuals)
-        # print(nodes)
+        node_uris = df["node"].tolist()
+        nodes = self._load_nodes_optimized(
+            node_uris,
+            None,
+            depth,
+            created_individuals=created_individuals,
+            uri_class_mapping=uri_class_mapping,
+        )
+
         return nodes
 
     def find_node_by_attribute(
@@ -330,7 +490,7 @@ class SINDITKGConnector:
         df = pd.read_csv(StringIO(query_result), sep=",")
         created_individuals = {}
         nodes = []
-        for uri in df["node"]:
+        """ for uri in df["node"]:
             ret = self._load_node(
                 uri,
                 None,
@@ -340,26 +500,66 @@ class SINDITKGConnector:
             )
             created_individuals.update(ret)
             node = ret[uri]
-            nodes.append(node)
+            nodes.append(node) """
+        # check if df is empty
+        if df.empty:
+            return []
+
+        node_uris = df["node"].tolist()
+        nodes = self._load_nodes_optimized(
+            node_uris,
+            None,
+            1,
+            created_individuals=created_individuals,
+            uri_class_mapping=uri_class_mapping,
+        )
         return nodes
 
     def load_all_nodes(
         self,
         uri_class_mapping: dict = NodeURIClassMapping,
+        skip: int = 0,
+        limit: int = 10,
     ) -> list:
-        nodes = []
-        for class_uri in uri_class_mapping.keys():
-            nodes += self.load_nodes_by_class(
-                class_uri, depth=1, uri_class_mapping=uri_class_mapping
-            )
+        """
+        Page across nodes from all classes in
+        uri_class_mapping using a single SELECT with OFFSET/LIMIT,
+        then hydrate them in one batch with _load_nodes_optimized.
+        """
+        # Build class VALUES list
+        class_uris = " ".join(f"<{uri}>" for uri in uri_class_mapping.keys())
 
-        node_uris = []
-        return_nodes = []
-        for node in nodes:
-            if node.uri not in node_uris:
-                return_nodes.append(node)
-                node_uris.append(node.uri)
-        return return_nodes
+        # Read and fill the multi-class query
+        with open(get_uris_by_classes_query_file, "r") as f:
+            query_template = f.read()
+
+        query = (
+            query_template.replace("[graph_uri]", str(self.__graph_uri))
+            .replace("[class_uris]", class_uris)
+            .replace("[offset]", str(skip))
+            .replace("[limit]", str(limit))
+        )
+
+        # Execute and read URIs
+        query_result = self.__kg_service.graph_query(query, "text/csv")
+        df = pd.read_csv(StringIO(query_result), sep=",")
+
+        if df.empty:
+            return []
+
+        node_uris = df["node"].tolist()
+
+        # Hydrate in a single roundtrip
+        created_individuals = {}
+        nodes = self._load_nodes_optimized(
+            node_uris,
+            None,
+            depth=1,
+            created_individuals=created_individuals,
+            uri_class_mapping=uri_class_mapping,
+        )
+
+        return nodes
 
     def delete_node(self, node_uri: str) -> bool:
         """Delete a node from the knowledge graph."""
@@ -653,12 +853,17 @@ class SINDITKGConnector:
                 raise Exception(f"Failed to get all node types. Reason: {e}")
 
     def get_all_relationships(
-        self, uri_class_mapping: dict = RelationshipURIClassMapping
+        self,
+        uri_class_mapping: dict = RelationshipURIClassMapping,
+        skip: int = 0,
+        limit: int = 10,
     ):
         return self.load_nodes_by_class(
             "urn:samm:sindit.sintef.no:1.0.0#AbstractRelationship",
             1,
             uri_class_mapping=uri_class_mapping,
+            skip=skip,
+            limit=limit,
         )
 
     def get_relationships_by_node(
@@ -693,8 +898,11 @@ class SINDITKGConnector:
         )
 
     def get_all_dataspace_nodes(
-        self, uri_class_mapping: dict = DataspaceURIClassMapping
+        self,
+        uri_class_mapping: dict = DataspaceURIClassMapping,
+        skip: int = 0,
+        limit: int = 10,
     ) -> list:
         return self.load_all_nodes(
-            uri_class_mapping=uri_class_mapping,
+            uri_class_mapping=uri_class_mapping, skip=skip, limit=limit
         )

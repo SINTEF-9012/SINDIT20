@@ -26,12 +26,14 @@ async def get_all_dataspace_node_types(
 @app.get("/dataspace", tags=["Dataspace"])
 async def get_all_dataspace_nodes(
     current_user: User = Depends(get_current_active_user),
+    skip: int = 0,
+    limit: int = 10,
 ) -> List[DataspaceManagement]:
     """
     Get all dataspace nodes.
     """
     try:
-        return sindit_kg_connector.get_all_dataspace_nodes()
+        return sindit_kg_connector.get_all_dataspace_nodes(skip=skip, limit=limit)
     except Exception as e:
         logger.error(f"Error getting dataspace nodes: {e}")
         raise HTTPException(status_code=404, detail=str(e))
