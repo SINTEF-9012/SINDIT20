@@ -272,11 +272,34 @@ def update_connection_node(node: Connection, replace: bool = True) -> Connector:
     return None
 
 
+def _iter_nodes_by_class(class_uri: str, batch_size: int = 50):
+    """Yield all nodes of a class by paging with skip/limit."""
+    skip = 0
+    seen = set()
+    while True:
+        batch = sindit_kg_connector.load_nodes_by_class(
+            class_uri, skip=skip, limit=batch_size
+        )
+        if not batch:
+            break
+
+        for node in batch:
+            node_uri = str(getattr(node, "uri", ""))
+            if node_uri and node_uri not in seen:
+                seen.add(node_uri)
+                yield node
+
+        got = len(batch)
+        if got < batch_size:
+            break
+        skip += got
+
+
 def initialize_connections_and_properties(replace: bool = True):
-    for node in sindit_kg_connector.load_nodes_by_class(Connection.CLASS_URI):
+    # First initialize all connections
+    for node in _iter_nodes_by_class(Connection.CLASS_URI, batch_size=50):
         update_connection_node(node, replace=replace)
 
-    for node in sindit_kg_connector.load_nodes_by_class(
-        AbstractAssetProperty.CLASS_URI
-    ):
+    # Then initialize all properties
+    for node in _iter_nodes_by_class(AbstractAssetProperty.CLASS_URI, batch_size=50):
         update_propery_node(node, replace=replace)
