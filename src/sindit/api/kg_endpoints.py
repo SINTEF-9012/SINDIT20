@@ -10,6 +10,7 @@ from sindit.connectors.setup_connectors import (
     update_connection_node,
     update_propery_node,
 )
+from fastapi import BackgroundTasks
 
 from sindit.knowledge_graph.graph_model import (
     SINDITKG,
@@ -217,7 +218,9 @@ async def create_asset(
 
 @app.post("/kg/connection", tags=["Knowledge Graph"])
 async def create_connection(
-    node: Connection, current_user: User = Depends(get_current_active_user)
+    node: Connection,
+    current_user: User = Depends(get_current_active_user),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ) -> dict:
     """
     Create or save a connection node to the knowledge graph.
@@ -231,7 +234,8 @@ async def create_connection(
     try:
         result = sindit_kg_connector.save_node(node)
         if result:
-            update_connection_node(node)
+            # update_connection_node(node)
+            background_tasks.add_task(update_connection_node, node, True)
 
         return {"result": result}
     except Exception as e:
