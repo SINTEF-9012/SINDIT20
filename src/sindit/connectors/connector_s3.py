@@ -44,7 +44,10 @@ class S3Connector(Connector):
         self.thread = None
         self._stop_event = threading.Event()
         self.region_name = region_name
-        self.endpoint_url = f"{host}:{port}"
+        if port is None or port == 0:
+            self.endpoint_url = f"{host}"
+        else:
+            self.endpoint_url = f"{host}:{port}"
         self.kg_connector = kg_connector
         if access_key_id is None:
             self.__access_key_id = "minioadmin"
