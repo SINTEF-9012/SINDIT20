@@ -10,6 +10,7 @@ from sindit.connectors.connector import Property
 from sindit.util.log import logger
 
 from sindit.connectors.connector_factory import connector_factory, property_factory
+from concurrent.futures import ThreadPoolExecutor
 
 # TODO: This is a workaround to avoid circular imports
 import sindit.connectors.connector_mqtt  # noqa: F401, E402
@@ -24,6 +25,9 @@ import sindit.connectors.property_s3  # noqa: F401, E402
 
 connections = {}
 properties = {}
+
+# Thread pool for async connection starts
+_connection_pool = ThreadPoolExecutor(max_workers=10, thread_name_prefix="conn_init")
 
 
 def update_propery_node(node: AbstractAssetProperty, replace: bool = True) -> Property:
@@ -227,7 +231,20 @@ def create_connector(node: Connection) -> Connector:
     return connector
 
 
-def update_connection_node(node: Connection, replace: bool = True) -> Connector:
+def update_connection_node(
+    node: Connection, replace: bool = True, async_start: bool = False
+) -> Connector:
+    """
+    Update or create a connection node.
+
+    Args:
+        node: The connection node to update
+        replace: If True, stop and replace existing connection
+        async_start: If True, start the connector in a background thread
+
+    Returns:
+        The connector instance (may not be started yet if async_start=True)
+    """
     try:
         node_uri = str(node.uri)
 
@@ -236,12 +253,10 @@ def update_connection_node(node: Connection, replace: bool = True) -> Connector:
         if node_uri in connections and not replace:
             connector: Connector = connections[node_uri]
             if connector is not None and not connector.is_connected:
-                try:
-                    connector.stop()
-                except Exception:
-                    pass
-
-                connector.start()
+                if async_start:
+                    _start_connector_async(connector, node)
+                else:
+                    _start_connector_sync(connector, node)
             return connector
 
         connector = create_connector(node)
@@ -258,7 +273,11 @@ def update_connection_node(node: Connection, replace: bool = True) -> Connector:
                 del old_connector
 
             connections[node_uri] = connector
-            connector.start()
+
+            if async_start:
+                _start_connector_async(connector, node)
+            else:
+                _start_connector_sync(connector, node)
 
             return connector
     except Exception as e:
@@ -270,6 +289,35 @@ def update_connection_node(node: Connection, replace: bool = True) -> Connector:
             sindit_kg_connector.save_node(node)
 
     return None
+
+
+def _start_connector_sync(connector: Connector, node: Connection):
+    """Start connector synchronously."""
+    try:
+        connector.start()
+    except Exception as e:
+        logger.error(f"Error starting connector {connector.uri}: {e}")
+        node.isConnected = False
+        sindit_kg_connector.save_node(node)
+
+
+def _start_connector_async(connector: Connector, node: Connection):
+    """Start connector in a background thread."""
+
+    def _start():
+        try:
+            logger.info(f"Starting connector {connector.uri} in background...")
+            connector.start()
+            logger.info(f"Connector {connector.uri} started successfully")
+        except Exception as e:
+            logger.error(f"Error starting connector {connector.uri}: {e}")
+            try:
+                node.isConnected = False
+                sindit_kg_connector.save_node(node)
+            except Exception:
+                pass
+
+    _connection_pool.submit(_start)
 
 
 def _iter_nodes_by_class(class_uri: str, batch_size: int = 50):
@@ -295,11 +343,21 @@ def _iter_nodes_by_class(class_uri: str, batch_size: int = 50):
         skip += got
 
 
-def initialize_connections_and_properties(replace: bool = True):
+def initialize_connections_and_properties(
+    replace: bool = True, batch_size: int = 50, async_start: bool = False
+):
+    """
+    Initialize all connections and properties.
+
+    Args:
+        replace: If True, replace existing connections
+        batch_size: Number of nodes to fetch per batch
+        async_start: If True, start connections asynchronously
+    """
     # First initialize all connections
-    for node in _iter_nodes_by_class(Connection.CLASS_URI, batch_size=50):
-        update_connection_node(node, replace=replace)
+    for node in _iter_nodes_by_class(Connection.CLASS_URI, batch_size):
+        update_connection_node(node, replace=replace, async_start=async_start)
 
     # Then initialize all properties
-    for node in _iter_nodes_by_class(AbstractAssetProperty.CLASS_URI, batch_size=50):
+    for node in _iter_nodes_by_class(AbstractAssetProperty.CLASS_URI, batch_size):
         update_propery_node(node, replace=replace)

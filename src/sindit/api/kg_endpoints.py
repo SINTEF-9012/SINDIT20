@@ -28,6 +28,14 @@ from sindit.util.log import logger
 
 from sindit.api.api import app
 
+import threading
+from typing import Set
+
+# Global task tracker (not BackgroundTasks!)
+_running_connection_tasks: Set[str] = set()
+# _running_property_tasks: Set[str] = set()
+_tasks_lock = threading.Lock()
+
 
 @app.get("/kg/node_types", tags=["Knowledge Graph"])
 async def get_all_node_types(
@@ -225,6 +233,10 @@ async def create_connection(
     """
     Create or save a connection node to the knowledge graph.
 
+    The connection will be started asynchronously in a background thread.
+    The API returns immediately. Check the node's isConnected property
+    to see status.
+
     **Important**: All existing information related to this node will be
     completely removed before adding the new node.
 
@@ -234,8 +246,25 @@ async def create_connection(
     try:
         result = sindit_kg_connector.save_node(node)
         if result:
-            # update_connection_node(node)
-            background_tasks.add_task(update_connection_node, node, True)
+            node_uri = str(node.uri)
+
+            with _tasks_lock:
+                if node_uri in _running_connection_tasks:
+                    return {
+                        "result": result,
+                        "status": "connection_already_starting",
+                    }
+                _running_connection_tasks.add(node_uri)
+
+            def start_connection_with_cleanup():
+                try:
+                    update_connection_node(node, True, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_connection_tasks.discard(node_uri)
+
+            background_tasks.add_task(start_connection_with_cleanup)
+            return {"result": result, "status": "connection_starting"}
 
         return {"result": result}
     except Exception as e:
