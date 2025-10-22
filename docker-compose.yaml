@@ -20,6 +20,8 @@ services:
       - graphdb
     ports:
       - "9017:9017"
+    volumes:
+      - ./data_sindit:/app/data  # Persist workspace and vault data to local folder
 
   postgres_keycloak:
     image: postgres:17
