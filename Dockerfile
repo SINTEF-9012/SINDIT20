@@ -12,7 +12,7 @@ ENV APPNAME=SINDIT  \
     GRPAPHDB_REPOSITORY='SINDIT' \
     LOG_LEVEL='DEBUG' \
     USE_HASHICORP_VAULT='False' \
-    FSVAULT_PATH='environment_and_configuration/vault.properties' \
+    FSVAULT_PATH='/app/data/vault.properties' \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
@@ -28,8 +28,8 @@ ENV KEYCLOAK_CLIENT_ID="sindit"
 ENV KEYCLOAK_CLIENT_SECRET="your_client_secret_here"
 
 # InMemory authentication configuration
-ENV USER_PATH='environment_and_configuration/user.json'
-ENV WORKSPACE_PATH='environment_and_configuration/workspace.json'
+ENV USER_PATH='/app/data/user.json'
+ENV WORKSPACE_PATH='/app/data/workspace.json'
 
 # Set the working directory in the container
 WORKDIR /app
@@ -52,12 +52,19 @@ COPY pyproject.toml /app/
 # Install any needed packages specified in requirements.txt
 RUN poetry install
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose port
 EXPOSE 9017
 
 WORKDIR /app/sindit
 #Set PYTHONPATH to /app, so that sindit package can be found
 ENV PYTHONPATH="/app:${PYTHONPATH}"
+
+# Use entrypoint script to initialize data directory
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Run run_sindit.py when the container launches
 CMD ["poetry", "run", "python", "run_sindit.py"]
