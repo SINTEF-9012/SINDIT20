@@ -4,7 +4,6 @@ from sindit.knowledge_graph.kg_connector import SINDITKGConnector
 from sindit.util.log import logger
 import boto3
 from botocore.exceptions import ClientError
-import time
 import threading
 
 
@@ -109,7 +108,8 @@ class S3Connector(Connector):
         """
         Stop the S3 client.
         """
-        self.client.stop()
+        if self.client is not None:
+            self.client.stop()
         self._set_connection_status(False, **kwargs)
         if self.thread is not None:
             self._stop_event.set()
@@ -247,7 +247,7 @@ class S3Connector(Connector):
                 self.notify()
             except Exception as e:
                 logger.error(f"Error updating property: {e}")
-            time.sleep(self.expiration)
+            self._stop_event.wait(self.expiration)
 
 
 class S3ConnectorBuilder(ObjectBuilder):

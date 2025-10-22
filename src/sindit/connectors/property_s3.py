@@ -46,7 +46,7 @@ class S3Property(Property):
             self.expiration = 3600
 
     def __del__(self):
-        self.stop_thread()
+        self._stop_thread()
 
     def _value_has_expired(self) -> bool:
         """
@@ -143,7 +143,7 @@ class S3Property(Property):
             # 2. update kg values accordingly
             self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
             # 3. await for the refresh_download_url time
-            time.sleep(self.refresh_download_url)
+            time.sleep(self.refresh_download_url * 60)
             # 4 Check if the key exists.
             if self._key_exists(connector):
                 self.create_download_url = False
@@ -199,32 +199,42 @@ class S3Property(Property):
         logger.debug(f"Updating S3 property value {self.uri}")
         if self.connector is None:
             logger.error("No connector attached to the property")
+            return
+
+        s3_connector: S3Connector = connector
+
+        # Check if client is ready (connector might still be starting)
+        if not hasattr(s3_connector, "client") or s3_connector.client is None:
+            logger.warning(
+                f"S3 connector {s3_connector.uri} not ready yet, "
+                f"skipping property update for {self.uri}"
+            )
+            return
+
+        if not self._bucket_exists(s3_connector):
+            logger.debug(f"Bucket does not exist, creating bucket for {self.uri}")
+            s3_connector.create_bucket(self.bucket)
+        if not self._key_exists(s3_connector):
+            logger.debug(f"Key does not exist, creating key for {self.uri}")
+            self.create_download_url = True
+            self.thread = threading.Thread(
+                target=self._update_value_upload_url,
+                args=(s3_connector,),
+                name="property_s3_upload_url_thread",
+            )
+            self.thread.daemon = True
+            self.thread.start()
+            logger.debug(f"Started upload URL thread for {self.uri}")
         else:
-            s3_connector: S3Connector = connector
-            if not self._bucket_exists(s3_connector):
-                logger.debug(f"Bucket does not exist, creating bucket for {self.uri}")
-                s3_connector.create_bucket(self.bucket)
-            if not self._key_exists(s3_connector):
-                logger.debug(f"Key does not exist, creating key for {self.uri}")
-                self.create_download_url = True
-                self.thread = threading.Thread(
-                    target=self._update_value_upload_url,
-                    args=(s3_connector,),
-                    name="property_s3_upload_url_thread",
-                )
-                self.thread.daemon = True
-                self.thread.start()
-                logger.debug(f"Started upload URL thread for {self.uri}")
-            else:
-                logger.debug(f"Key exist, creating download url for {self.uri}")
-                self.thread = threading.Thread(
-                    target=self._update_value_download_url,
-                    args=(s3_connector,),
-                    name="property_s3_download_url_thread",
-                )
-                self.thread.daemon = True
-                self.thread.start()
-                logger.debug(f"Started download URL thread for {self.uri}")
+            logger.debug(f"Key exist, creating download url for {self.uri}")
+            self.thread = threading.Thread(
+                target=self._update_value_download_url,
+                args=(s3_connector,),
+                name="property_s3_download_url_thread",
+            )
+            self.thread.daemon = True
+            self.thread.start()
+            logger.debug(f"Started download URL thread for {self.uri}")
 
 
 class S3PropertyBuilder(ObjectBuilder):
