@@ -34,7 +34,7 @@ tags_metadata = [
 ]
 
 
-api_version = get_configuration(ConfigGroups.API, "api_version")
+api_version = get_configuration(ConfigGroups.GENERIC, "sindit_version")
 app = fastapi.FastAPI(
     title="SINDIT API",
     description=description,
