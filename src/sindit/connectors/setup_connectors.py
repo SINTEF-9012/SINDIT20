@@ -294,6 +294,14 @@ def update_connection_node(
 def _start_connector_sync(connector: Connector, node: Connection):
     """Start connector synchronously."""
     try:
+        # Stop the connector first to ensure a fresh start
+        try:
+            connector.stop(no_update_connection_status=True)
+        except Exception as e:
+            logger.debug(
+                f"Could not stop connector {connector.uri} " f"before starting: {e}"
+            )
+
         connector.start()
     except Exception as e:
         logger.error(f"Error starting connector {connector.uri}: {e}")
@@ -307,6 +315,15 @@ def _start_connector_async(connector: Connector, node: Connection):
     def _start():
         try:
             logger.info(f"Starting connector {connector.uri} in background...")
+
+            # Stop the connector first to ensure a fresh start
+            try:
+                connector.stop(no_update_connection_status=True)
+            except Exception as e:
+                logger.debug(
+                    f"Could not stop connector {connector.uri} " f"before starting: {e}"
+                )
+
             connector.start()
             logger.info(f"Connector {connector.uri} started successfully")
         except Exception as e:
