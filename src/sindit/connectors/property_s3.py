@@ -133,8 +133,35 @@ class S3Property(Property):
         else:
             self.expiration = 3600
 
+    def cleanup(self, delete_s3_object: bool = True):
+        """
+        Cleanup resources when property is detached.
+        Unregisters from the upload poller.
+
+        Args:
+            delete_s3_object: If True, also delete the S3 object from storage
+                            (default: True)
+        """
+        logger.debug(f"Cleaning up S3 property {self.uri}")
+        _upload_poller.unregister(self.uri)
+        self.create_download_url = False
+
+        # Optionally delete the S3 object
+        if delete_s3_object and self.connector is not None:
+            try:
+                logger.info(f"Deleting S3 object {self.bucket}/{self.key}")
+                self.connector.delete_object(bucket=self.bucket, key=self.key)
+            except Exception as e:
+                logger.error(
+                    f"Failed to delete S3 object {self.bucket}/{self.key}: {e}"
+                )
+
     def __del__(self):
-        # Unregister from shared poller if registered
+        """
+        Destructor to cleanup resources during garbage collection.
+        Only unregisters from poller - does NOT delete S3 object.
+        S3 object deletion should be explicit via cleanup() or detach().
+        """
         _upload_poller.unregister(self.uri)
 
     def _bucket_exists(self, connector: S3Connector) -> bool:
