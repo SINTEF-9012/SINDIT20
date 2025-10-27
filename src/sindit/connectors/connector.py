@@ -46,6 +46,8 @@ class Connector:
         self.observers_lock.acquire()
         try:
             if self._observers is not None and property.uri in self._observers:
+                # Call cleanup on the property before detaching
+                property.cleanup()
                 del self._observers[property.uri]
         finally:
             self.observers_lock.release()
@@ -82,6 +84,13 @@ class Connector:
         """
         pass
 
+    @abstractmethod
+    def cleanup(self, **kwargs) -> any:
+        """
+        Cleanup resources used by the connector.
+        """
+        pass
+
     def update_connection_status(self, is_connected: bool) -> None:
         """
         Update the connection status of the connector in the knowledge graph.
@@ -113,6 +122,13 @@ class Property(ABC):
     def attach(self, connector: Connector) -> None:
         """
         Attach a property to the connector.
+        """
+        pass
+
+    @abstractmethod
+    def cleanup(self) -> None:
+        """
+        Cleanup resources when detaching the property.
         """
         pass
 
