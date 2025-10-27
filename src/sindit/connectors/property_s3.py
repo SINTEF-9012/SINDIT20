@@ -4,10 +4,101 @@ from sindit.connectors.connector_factory import property_factory
 from sindit.knowledge_graph.graph_model import S3ObjectProperty
 from sindit.knowledge_graph.kg_connector import SINDITKGConnector
 from sindit.connectors.connector_s3 import S3Connector
-from sindit.util.datetime_util import get_current_local_time, add_seconds_to_timestamp
+from sindit.util.datetime_util import get_current_local_time
 from sindit.util.log import logger
 import threading
-import time
+
+
+# Shared upload polling mechanism
+class S3UploadPoller:
+    """
+    Singleton class to poll for S3 uploads across all S3 properties.
+    Uses a single thread to check all properties waiting for uploads.
+    """
+
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        self._properties = {}  # {uri: S3Property}
+        self._thread = None
+        self._stop_event = threading.Event()
+        self._poll_interval = 10  # seconds
+
+    def register(self, property_obj):
+        """Register a property for upload polling."""
+        with self._lock:
+            self._properties[property_obj.uri] = property_obj
+            if self._thread is None or not self._thread.is_alive():
+                self._start_polling()
+
+    def unregister(self, property_uri):
+        """Unregister a property from upload polling."""
+        with self._lock:
+            if property_uri in self._properties:
+                del self._properties[property_uri]
+            # Stop thread if no properties to monitor
+            if not self._properties and self._thread is not None:
+                self._stop_event.set()
+
+    def _start_polling(self):
+        """Start the polling thread."""
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._poll_loop, name="s3_upload_poller", daemon=True
+        )
+        self._thread.start()
+        logger.info("Started shared S3 upload polling thread")
+
+    def _poll_loop(self):
+        """Main polling loop."""
+        while not self._stop_event.is_set():
+            self._check_uploads()
+            self._stop_event.wait(self._poll_interval)
+
+    def _check_uploads(self):
+        """Check all registered properties for upload completion."""
+        with self._lock:
+            properties_to_check = list(self._properties.values())
+
+        if properties_to_check:
+            logger.debug(
+                f"Polling {len(properties_to_check)} S3 properties "
+                f"for upload completion"
+            )
+
+        for prop in properties_to_check:
+            try:
+                if prop.connector is None:
+                    continue
+
+                logger.debug(f"Checking upload status for {prop.bucket}/{prop.key}")
+
+                if prop._key_exists(prop.connector):
+                    logger.info(
+                        f"Upload detected for {prop.bucket}/{prop.key}, "
+                        f"switching to download mode"
+                    )
+                    prop.create_download_url = False
+                    prop._generate_download_url(prop.connector)
+                    self.unregister(prop.uri)
+            except Exception as e:
+                logger.error(f"Error checking upload for {prop.uri}: {e}")
+
+
+# Global poller instance
+_upload_poller = S3UploadPoller()
 
 
 class S3Property(Property):
@@ -36,39 +127,15 @@ class S3Property(Property):
         self.timestamp = None
         self.value = None
         self.kg_connector = kg_connector
-        self.thread = None
-        self._stop_thread_flag = threading.Event()
         self.create_download_url = None
-        self.refresh_download_url = 5
         if expiration is not None:
             self.expiration = expiration
         else:
             self.expiration = 3600
 
     def __del__(self):
-        self._stop_thread()
-
-    def _value_has_expired(self) -> bool:
-        """
-        Check if S3 value (presigned download url) has expired.
-        If timestamp does not exist, the value has never been created before;
-        then return True.
-        If timestamp does exist. Check the expiration of the presigned url.
-        """
-        if self.timestamp is None:
-            return True
-        else:
-            expiration_time = self._get_expiration_time()
-            if get_current_local_time() > expiration_time:
-                return True
-            else:
-                return False
-
-    def _get_expiration_time(self) -> str:
-        expiration_time = add_seconds_to_timestamp(
-            timestamp=self.timestamp, seconds=self.expiration
-        )
-        return expiration_time
+        # Unregister from shared poller if registered
+        _upload_poller.unregister(self.uri)
 
     def _bucket_exists(self, connector: S3Connector) -> bool:
         """
@@ -104,15 +171,6 @@ class S3Property(Property):
                 logger.debug("Bucket does probably not exist")
                 return False
 
-    def _stop_thread(self):
-        """
-        Stop the thread gracefully.
-        """
-        if self.thread is not None:
-            self._stop_thread_flag.set()
-            self.thread.join()
-            self.thread = None
-
     def attach(self, connector: S3Connector) -> None:
         """
         Attach the property to S3Connector
@@ -128,73 +186,39 @@ class S3Property(Property):
         )
         self.update_value(connector)
 
-    def _update_value_upload_url(self, connector: S3Connector) -> None:
+    def _generate_upload_url(self, connector: S3Connector) -> None:
         """
-        Update the upload url in a separate thread until it becomes a download url!
+        Generate a presigned upload URL.
+        Uses the same expiration time as download URLs.
         """
-        upload_url_expires = self.refresh_download_url * 60
-        while self.create_download_url and not self._stop_thread_flag.is_set():
-            # 1. Create the presigned url for upload
-            logger.debug("Creating presigned url for upload")
-            self.value = connector.create_presigned_url_for_upload_object(
-                bucket=self.bucket, key=self.key, expiration=upload_url_expires
-            )
-            self.timestamp = get_current_local_time()
-            # 2. update kg values accordingly
-            self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
-            # 3. await for the refresh_download_url time
-            time.sleep(self.refresh_download_url * 60)
-            # 4 Check if the key exists.
-            if self._key_exists(connector):
-                self.create_download_url = False
-                logger.debug("Key exists. Break the loop")
-                break
-            else:
-                logger.debug("Key does not exist. Continue refreshing presigned url")
-                continue
-
-        if self.create_download_url is False:
-            logger.debug("Key exists. Update value to a download url")
-            # stop the thread and call update_value to create a download url
-            self._stop_thread()
-            self.update_value(connector)
-
-    def _update_value_download_url(self, connector: S3Connector) -> None:
-        """
-        Infinately Update the download url in the property.
-        Update every expiration time.
-        Unless expiration time is less than 60 seconds. Then update every 60 seconds.
-        """
-        sleep_time = self.expiration
-        if sleep_time < 60:
-            sleep_time = 60
-        next_refresh = add_seconds_to_timestamp(
-            timestamp=get_current_local_time(), seconds=sleep_time
+        logger.debug(f"Creating presigned upload URL for {self.uri}")
+        self.value = connector.create_presigned_url_for_upload_object(
+            bucket=self.bucket, key=self.key, expiration=self.expiration
         )
-        while not self._stop_thread_flag.is_set():
-            logger.debug(
-                f"""Updating S3 property download url {self.uri}.
-                Next update at {next_refresh}"""
-            )
-            self.value = connector.create_presigned_url_for_download_object(
-                bucket=self.bucket, key=self.key, expiration=self.expiration
-            )
-            self.timestamp = get_current_local_time()
-            self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
-            next_refresh = self._get_expiration_time()
-            time.sleep(sleep_time)
+        self.timestamp = get_current_local_time()
+        self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
+
+    def _generate_download_url(self, connector: S3Connector) -> None:
+        """
+        Generate a presigned download URL.
+        """
+        logger.debug(f"Creating presigned download URL for {self.uri}")
+        self.value = connector.create_presigned_url_for_download_object(
+            bucket=self.bucket, key=self.key, expiration=self.expiration
+        )
+        self.timestamp = get_current_local_time()
+        self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
 
     def update_value(self, connector: S3Connector, **kwargs) -> None:
         """
-        Update the property value and timestamp
+        Update the property value and timestamp.
 
-        1) Checks if the bucket exists. if not creates the bucket
-        2) Checks if the key exists. If not creates the key, and
-        2.1) Creates a thread that first creates a presigned url for upload.
-             Then when the key exists, it creates a presigned url for download.
-        3) If the key exists, creates a thread that creates a
-            presigned url for download. Then updates the value and
-            timestamp regularly in the KG.
+        This method is called periodically by the connector's notify().
+        It generates fresh presigned URLs when needed.
+
+        1) Checks if the bucket exists, if not creates it
+        2) If key doesn't exist: generates upload URL and starts polling thread
+        3) If key exists: generates download URL
         """
         logger.debug(f"Updating S3 property value {self.uri}")
         if self.connector is None:
@@ -211,30 +235,32 @@ class S3Property(Property):
             )
             return
 
+        # Ensure bucket exists
         if not self._bucket_exists(s3_connector):
             logger.debug(f"Bucket does not exist, creating bucket for {self.uri}")
             s3_connector.create_bucket(self.bucket)
+
+        # Check if file exists
         if not self._key_exists(s3_connector):
-            logger.debug(f"Key does not exist, creating key for {self.uri}")
-            self.create_download_url = True
-            self.thread = threading.Thread(
-                target=self._update_value_upload_url,
-                args=(s3_connector,),
-                name="property_s3_upload_url_thread",
-            )
-            self.thread.daemon = True
-            self.thread.start()
-            logger.debug(f"Started upload URL thread for {self.uri}")
+            # File not uploaded yet - generate upload URL
+            logger.debug(f"Key does not exist, generating upload URL for {self.uri}")
+            self._generate_upload_url(s3_connector)
+
+            # Register with shared poller if not already registered
+            if self.create_download_url is None:
+                self.create_download_url = True
+                _upload_poller.register(self)
+                logger.debug(f"Registered {self.uri} with shared upload poller")
         else:
-            logger.debug(f"Key exist, creating download url for {self.uri}")
-            self.thread = threading.Thread(
-                target=self._update_value_download_url,
-                args=(s3_connector,),
-                name="property_s3_download_url_thread",
-            )
-            self.thread.daemon = True
-            self.thread.start()
-            logger.debug(f"Started download URL thread for {self.uri}")
+            # File exists - generate download URL
+            logger.debug(f"Key exists, generating download URL for {self.uri}")
+            self._generate_download_url(s3_connector)
+
+            # Unregister from poller if registered
+            if self.create_download_url:
+                _upload_poller.unregister(self.uri)
+                self.create_download_url = False
+                logger.debug(f"Unregistered {self.uri} from upload poller")
 
 
 class S3PropertyBuilder(ObjectBuilder):
@@ -252,7 +278,7 @@ class S3PropertyBuilder(ObjectBuilder):
             return new_property
         else:
             logger.error(
-                f"Node {uri} is not a S3ObjectProperty, cannot create S3Property"
+                f"Node {uri} is not a S3ObjectProperty, " f"cannot create S3Property"
             )
             return None
 
