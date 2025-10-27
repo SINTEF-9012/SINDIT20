@@ -84,6 +84,13 @@ class Connector:
         """
         pass
 
+    @abstractmethod
+    def cleanup(self, **kwargs) -> any:
+        """
+        Cleanup resources used by the connector.
+        """
+        pass
+
     def update_connection_status(self, is_connected: bool) -> None:
         """
         Update the connection status of the connector in the knowledge graph.

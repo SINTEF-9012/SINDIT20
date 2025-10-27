@@ -109,7 +109,7 @@ class S3Connector(Connector):
         Stop the S3 client.
         """
         if self.client is not None:
-            self.client.stop()
+            self.client.close()
         self._set_connection_status(False, **kwargs)
         if self.thread is not None:
             self._stop_event.set()

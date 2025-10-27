@@ -91,6 +91,7 @@ def remove_connection_node(node: Connection):
             connection.observers_lock.release()
 
         connection.stop()
+        connection.cleanup()
         del connections[node_uri]
         return True
     return False
