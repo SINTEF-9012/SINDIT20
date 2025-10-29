@@ -33,7 +33,7 @@ from typing import Set
 
 # Global task tracker (not BackgroundTasks!)
 _running_connection_tasks: Set[str] = set()
-# _running_property_tasks: Set[str] = set()
+_running_property_tasks: Set[str] = set()
 _tasks_lock = threading.Lock()
 
 
@@ -275,7 +275,9 @@ async def create_connection(
 # AbstractAssetProperty
 @app.post("/kg/asset_property", tags=["Knowledge Graph"])
 async def create_asset_property(
-    node: AbstractAssetProperty, current_user: User = Depends(get_current_active_user)
+    node: AbstractAssetProperty,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """
     Create or save an abstract asset property node to the knowledge graph.
@@ -288,10 +290,25 @@ async def create_asset_property(
     """
     try:
         result = sindit_kg_connector.save_node(node)
-
         if result:
-            update_propery_node(node)
+            node_uri = str(node.uri)
 
+            with _tasks_lock:
+                if node_uri in _running_property_tasks:
+                    return {
+                        "result": result,
+                        "status": "property_already_updating",
+                    }
+                _running_property_tasks.add(node_uri)
+
+            def update_property_with_cleanup():
+                try:
+                    update_propery_node(node, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_property_tasks.discard(node_uri)
+
+            background_tasks.add_task(update_property_with_cleanup)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -301,7 +318,9 @@ async def create_asset_property(
 # DatabaseProperty
 @app.post("/kg/database_property", tags=["Knowledge Graph"])
 async def create_database_property(
-    node: DatabaseProperty, current_user: User = Depends(get_current_active_user)
+    node: DatabaseProperty,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """
     Create or save a database property node to the knowledge graph.
@@ -314,10 +333,25 @@ async def create_database_property(
     """
     try:
         result = sindit_kg_connector.save_node(node)
-
         if result:
-            update_propery_node(node)
+            node_uri = str(node.uri)
 
+            with _tasks_lock:
+                if node_uri in _running_property_tasks:
+                    return {
+                        "result": result,
+                        "status": "property_already_updating",
+                    }
+                _running_property_tasks.add(node_uri)
+
+            def update_property_with_cleanup():
+                try:
+                    update_propery_node(node, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_property_tasks.discard(node_uri)
+
+            background_tasks.add_task(update_property_with_cleanup)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -327,7 +361,9 @@ async def create_database_property(
 # StreamingProperty
 @app.post("/kg/streaming_property", tags=["Knowledge Graph"])
 async def create_streaming_property(
-    node: StreamingProperty, current_user: User = Depends(get_current_active_user)
+    node: StreamingProperty,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """
     Create or save a streaming property node to the knowledge graph.
@@ -340,10 +376,25 @@ async def create_streaming_property(
     """
     try:
         result = sindit_kg_connector.save_node(node)
-
         if result:
-            update_propery_node(node)
+            node_uri = str(node.uri)
 
+            with _tasks_lock:
+                if node_uri in _running_property_tasks:
+                    return {
+                        "result": result,
+                        "status": "property_already_updating",
+                    }
+                _running_property_tasks.add(node_uri)
+
+            def update_property_with_cleanup():
+                try:
+                    update_propery_node(node, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_property_tasks.discard(node_uri)
+
+            background_tasks.add_task(update_property_with_cleanup)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -353,7 +404,9 @@ async def create_streaming_property(
 # TimeseriesProperty
 @app.post("/kg/timeseries_property", tags=["Knowledge Graph"])
 async def create_timeseries_property(
-    node: TimeseriesProperty, current_user: User = Depends(get_current_active_user)
+    node: TimeseriesProperty,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """
     Create or save a timeseries property node to the knowledge graph.
@@ -366,10 +419,25 @@ async def create_timeseries_property(
     """
     try:
         result = sindit_kg_connector.save_node(node)
-
         if result:
-            update_propery_node(node)
+            node_uri = str(node.uri)
 
+            with _tasks_lock:
+                if node_uri in _running_property_tasks:
+                    return {
+                        "result": result,
+                        "status": "property_already_updating",
+                    }
+                _running_property_tasks.add(node_uri)
+
+            def update_property_with_cleanup():
+                try:
+                    update_propery_node(node, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_property_tasks.discard(node_uri)
+
+            background_tasks.add_task(update_property_with_cleanup)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -379,7 +447,9 @@ async def create_timeseries_property(
 # File
 @app.post("/kg/file", tags=["Knowledge Graph"], deprecated=True)
 async def create_file(
-    node: File, current_user: User = Depends(get_current_active_user)
+    node: File,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """
     Create or save a file node to the knowledge graph.
@@ -395,10 +465,25 @@ async def create_file(
     """
     try:
         result = sindit_kg_connector.save_node(node)
-
         if result:
-            update_propery_node(node)
+            node_uri = str(node.uri)
 
+            with _tasks_lock:
+                if node_uri in _running_property_tasks:
+                    return {
+                        "result": result,
+                        "status": "property_already_updating",
+                    }
+                _running_property_tasks.add(node_uri)
+
+            def update_property_with_cleanup():
+                try:
+                    update_propery_node(node, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_property_tasks.discard(node_uri)
+
+            background_tasks.add_task(update_property_with_cleanup)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -408,7 +493,9 @@ async def create_file(
 # S3 File object
 @app.post("/kg/s3_object", tags=["Knowledge Graph"])
 async def create_s3_object(
-    node: S3ObjectProperty, current_user: User = Depends(get_current_active_user)
+    node: S3ObjectProperty,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """
     Create new or add existing S3 object node to the knowledge graph.
@@ -422,10 +509,25 @@ async def create_s3_object(
     """
     try:
         result = sindit_kg_connector.save_node(node)
-
         if result:
-            update_propery_node(node)
+            node_uri = str(node.uri)
 
+            with _tasks_lock:
+                if node_uri in _running_property_tasks:
+                    return {
+                        "result": result,
+                        "status": "property_already_updating",
+                    }
+                _running_property_tasks.add(node_uri)
+
+            def update_property_with_cleanup():
+                try:
+                    update_propery_node(node, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_property_tasks.discard(node_uri)
+
+            background_tasks.add_task(update_property_with_cleanup)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -434,7 +536,9 @@ async def create_s3_object(
 
 @app.post("/kg/property_collection", tags=["Knowledge Graph"])
 async def create_property_collection(
-    node: PropertyCollection, current_user: User = Depends(get_current_active_user)
+    node: PropertyCollection,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """
     Create or save a property collection node to the knowledge graph.
@@ -447,12 +551,27 @@ async def create_property_collection(
     """
     try:
         result = sindit_kg_connector.save_node(node)
-
         if result:
-            for prop in node.collectionProperties:
-                if isinstance(prop, AbstractAssetProperty):
-                    update_propery_node(prop)
+            node_uri = str(node.uri)
 
+            with _tasks_lock:
+                if node_uri in _running_property_tasks:
+                    return {
+                        "result": result,
+                        "status": "property_collection_already_updating",
+                    }
+                _running_property_tasks.add(node_uri)
+
+            def update_collection_properties():
+                try:
+                    for prop in node.collectionProperties:
+                        if isinstance(prop, AbstractAssetProperty):
+                            update_propery_node(prop, async_start=True)
+                finally:
+                    with _tasks_lock:
+                        _running_property_tasks.discard(node_uri)
+
+            background_tasks.add_task(update_collection_properties)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
