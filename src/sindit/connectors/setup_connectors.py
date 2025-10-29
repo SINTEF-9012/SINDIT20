@@ -30,7 +30,32 @@ properties = {}
 _connection_pool = ThreadPoolExecutor(max_workers=10, thread_name_prefix="conn_init")
 
 
-def update_propery_node(node: AbstractAssetProperty, replace: bool = True) -> Property:
+def update_propery_node(
+    node: AbstractAssetProperty, replace: bool = True, async_start: bool = False
+) -> Property:
+    """
+    Update or create a property node.
+
+    Args:
+        node: The property node to update
+        replace: If True, replace existing property
+        async_start: If True, start property operations asynchronously
+
+    Returns:
+        The property instance
+    """
+    if async_start:
+        return _update_property_async(node, replace)
+    else:
+        return _update_property_sync(node, replace)
+
+
+def _update_property_sync(
+    node: AbstractAssetProperty, replace: bool = True
+) -> Property:
+    """
+    Update property synchronously.
+    """
     # Warning: connection has to be created before the property.
     # Otherwise, the property will not be attached to the connection
     # or call intialize_connections_and_properties() again
@@ -63,6 +88,26 @@ def update_propery_node(node: AbstractAssetProperty, replace: bool = True) -> Pr
                 return new_property
 
         return old_property
+
+
+def _update_property_async(
+    node: AbstractAssetProperty, replace: bool = True
+) -> Property:
+    """
+    Update property asynchronously in a background thread.
+    """
+
+    def _update():
+        try:
+            logger.info(f"Updating property {node.uri} in background...")
+            _update_property_sync(node, replace)
+            logger.info(f"Property {node.uri} updated successfully")
+        except Exception as e:
+            logger.error(f"Error updating property {node.uri}: {e}")
+
+    # Submit to the connection pool (reusing for properties too)
+    _connection_pool.submit(_update)
+    return None  # Async operations don't return the property immediately
 
 
 def remove_property_node(node: AbstractAssetProperty):
@@ -370,7 +415,7 @@ def initialize_connections_and_properties(
     Args:
         replace: If True, replace existing connections
         batch_size: Number of nodes to fetch per batch
-        async_start: If True, start connections asynchronously
+        async_start: If True, start connections and properties asynchronously
     """
     # First initialize all connections
     for node in _iter_nodes_by_class(Connection.CLASS_URI, batch_size):
@@ -378,4 +423,4 @@ def initialize_connections_and_properties(
 
     # Then initialize all properties
     for node in _iter_nodes_by_class(AbstractAssetProperty.CLASS_URI, batch_size):
-        update_propery_node(node, replace=replace)
+        update_propery_node(node, replace=replace, async_start=async_start)
