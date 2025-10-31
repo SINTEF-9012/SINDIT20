@@ -1,8 +1,8 @@
 import asyncio
 
 import pytest
-from ruuvitag.ruuvitag_datacollector import get_data_async
-from ruuvitag.ruuvitag_discoverer import discover_sensors
+from ruuvitag_datacollector import get_data_async
+from ruuvitag_discoverer import discover_sensors
 
 
 # Create a mock args object
@@ -12,7 +12,7 @@ class Args:
     no_print_data = True
 
 
-@pytest.mark.gitlab_exempt
+@pytest.mark.gitlab_exempt(reason="not working in gitlab ci/cd pipeline")
 @pytest.mark.ble
 @pytest.mark.asyncio
 async def test_discover_sensors(mocker):
@@ -31,9 +31,9 @@ async def test_discover_sensors(mocker):
     await discover_sensors(args)
 
 
-@pytest.mark.gitlab_exempt
 @pytest.mark.ble
 @pytest.mark.asyncio
+@pytest.mark.gitlab_exempt(reason="not working in gitlab ci/cd pipeline")
 async def test_ruuvitag_datacollector(mocker):
     # Mock asyncio.sleep to avoid the RuntimeWarning
     mocker.patch("asyncio.sleep", return_value=asyncio.Future())
