@@ -1,8 +1,8 @@
 import asyncio
 
 import pytest
-from ruuvitag.ruuvitag_datacollector import get_data_async
-from ruuvitag.ruuvitag_discoverer import discover_sensors
+from ruuvitag_datacollector import get_data_async
+from ruuvitag_discoverer import discover_sensors
 
 
 # Create a mock args object
