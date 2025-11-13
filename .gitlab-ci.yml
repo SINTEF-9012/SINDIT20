@@ -1,6 +1,5 @@
-image: python:3.11
-
 stages:
+  - check
   - test
   - analysis
   - build
@@ -35,9 +34,18 @@ variables:
     # Run if on a branch and not a merge request
     - if: $CI_COMMIT_BRANCH
 
+
+check:
+  stage: check
+  extends: .base-rules
+  image: alpine:latest
+  script:
+    - echo "This step always passes."
+
 pytest:
   stage: test
   extends: .base-rules
+  image: python:3.11
   before_script:
     - cd projects/$PROJECT_NAME
     - pip install poetry
@@ -56,6 +64,7 @@ pytest:
 coverage:
   stage: test
   extends: .base-rules
+  image: python:3.11
   before_script:
     - cd projects/$PROJECT_NAME
     - pip install poetry
