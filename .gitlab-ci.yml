@@ -135,6 +135,7 @@ docker-build-sindit:
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
       --label "git-commit-title=$CI_COMMIT_TITLE"
+      --label "git-tag=$CI_COMMIT_TAG"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_TAG
       -t $IMAGE_PATH/$IMAGE_NAME:latest .
@@ -170,6 +171,7 @@ docker-build-graphdb:
       --label "git-commit-branch=$CI_COMMIT_BRANCH"
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
       --label "git-commit-title=$CI_COMMIT_TITLE"
+      --label "git-tag=$CI_COMMIT_TAG"
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -t $IMAGE_PATH/$IMAGE_NAME:$CI_COMMIT_TAG
       -t $IMAGE_PATH/$IMAGE_NAME:latest
