@@ -18,7 +18,7 @@ authors = ["An Lam <an.lam@sintef.no>", "Gøran Brekke Svaland <goran.svaland@si
 description = "SINTEF Digital Twin Framework"
 license = "MIT"
 readme = "README.md"
-package-mode = false
+package-mode = true
 homepage = "https://github.com/SINTEF-9012/SINDIT20"
 repository = "https://github.com/SINTEF-9012/SINDIT20"
 keywords = ["digital-twin", "framework", "sintef"]
@@ -57,6 +57,7 @@ bcrypt = "4.0.1"
 passlib = { version = "1.7.4", extras = ["bcrypt"] }
 python-multipart = "0.0.20"
 python-keycloak = "^5.8.1"
+minio = "^7.2.20"
 
 
 [tool.poetry.group.test.dependencies]

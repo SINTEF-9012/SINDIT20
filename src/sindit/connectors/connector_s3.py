@@ -22,6 +22,7 @@ class S3Connector(Connector):
         access_key_id: str: S3 access key id
         secret_access_key: str: S3 secret access key
         region_name: str: S3 region name (optional)
+        secure: bool: Use HTTPS if True, HTTP if False (default: False)
         expiration: int: Expiration time in seconds for the presigned url
         uri: str: URI of the connector (identifier for the connector instance)
     """
@@ -35,6 +36,7 @@ class S3Connector(Connector):
         access_key_id: str = "minioadmin",
         secret_access_key: str = "minioadmin",
         region_name: str = None,
+        secure: bool = False,
         expiration: int = 3600,
         uri: str = None,
         kg_connector: SINDITKGConnector = None,
@@ -43,10 +45,23 @@ class S3Connector(Connector):
         self.thread = None
         self._stop_event = threading.Event()
         self.region_name = region_name
-        if port is None or port == 0:
-            self.endpoint_url = f"{host}"
+        self.secure = secure
+
+        # Convert port to int if it's a string
+        if isinstance(port, str):
+            try:
+                port = int(port) if port else 0
+            except ValueError:
+                port = 0
+
+        # Construct endpoint URL with proper protocol scheme
+        protocol = "https" if secure else "http"
+        # Omit port if it's the default port for the protocol or 0/None
+        default_port = 443 if secure else 80
+        if port is None or port == 0 or port == default_port:
+            self.endpoint_url = f"{protocol}://{host}"
         else:
-            self.endpoint_url = f"{host}:{port}"
+            self.endpoint_url = f"{protocol}://{host}:{port}"
         self.kg_connector = kg_connector
         if access_key_id is None:
             self.__access_key_id = "minioadmin"
@@ -85,12 +100,17 @@ class S3Connector(Connector):
         Start the S3 client.
         """
         logger.debug("Starting s3 connector client...")
+        logger.debug(f"Endpoint URL: {self.endpoint_url}")
+        logger.debug(f"Region: {self.region_name}")
+        logger.debug(f"Secure: {self.secure}")
+
         self.client = boto3.client(
             "s3",
             endpoint_url=self.endpoint_url,
             aws_access_key_id=self.__access_key_id,
             aws_secret_access_key=self.__secret_access_key,
             region_name=self.region_name,
+            verify=True,  # SSL certificate verification
         )
         try:
             self.client.list_buckets()
@@ -267,10 +287,13 @@ class S3ConnectorBuilder(ObjectBuilder):
         **kwargs,
     ) -> S3Connector:
         region_name = None
+        secure = False
         expiration = 3600
         if configuration is not None:
             if "region_name" in configuration:
                 region_name = configuration.get("region_name")
+            if "secure" in configuration:
+                secure = configuration.get("secure") in [True, "true", "True", "1", 1]
             if "expiration" in configuration:
                 try:
                     expiration = int(configuration.get("expiration"))
@@ -283,6 +306,7 @@ class S3ConnectorBuilder(ObjectBuilder):
             access_key_id=username,
             secret_access_key=password,
             region_name=region_name,
+            secure=secure,
             expiration=expiration,
             uri=uri,
             kg_connector=kg_connector,
