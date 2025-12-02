@@ -136,8 +136,8 @@ class Property(ABC):
             node = None
             try:
                 node = self.kg_connector.load_node_by_uri(uri)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to load node {uri}: {e}")
 
             if node is not None:
                 data_type = node.propertyDataType
@@ -160,7 +160,14 @@ class Property(ABC):
 
                 node.propertyValue = value
                 node.propertyValueTimestamp = timestamp
-                self.kg_connector.save_node(node)
+
+                try:
+                    self.kg_connector.save_node(node)
+                    logger.debug(
+                        f"Property {uri} saved to KG with value type: {type(value)}"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to save node {uri} to KG: {e}")
 
             logger.debug(
                 f"Property {uri} updated with value {value}, " f"timestamp {timestamp}"
