@@ -226,35 +226,43 @@ class S3Connector(Connector):
         self,
         bucket: str,
         key: str,
+        expiration: int = 3600,
+        use_post: bool = False,
         fields: dict = None,
         conditions: list = None,
-        expiration: int = 3600,
     ):
-        """Generate a presigned URL to POST request for upload a file to S3 bucket
+        """Generate a presigned URL for uploading a file to S3 bucket
 
         :param bucket: string
         :param key: string
-        :param fields: Dictionary of prefilled form fields
-        :param conditions: List of conditions to include in the policy
         :param expiration: Time in seconds for the presigned URL to remain valid
-        :return: Dictionary with the following keys:
-            url: URL to post to
-            fields: Dictionary of form fields and values to submit with the POST
+        :param use_post: If True, use POST (multipart), if False use PUT (simpler)
+        :param fields: Dictionary of prefilled form fields (POST only)
+        :param conditions: List of conditions to include in the policy (POST only)
+        :return: For PUT: string URL. For POST: Dictionary with 'url' and 'fields'
         :return: None if error.
         """
         try:
-            response = self.client.generate_presigned_post(
-                bucket,
-                key,
-                Fields=fields,
-                Conditions=conditions,
-                ExpiresIn=expiration,
-            )
+            if use_post:
+                # Use POST for multipart uploads (more complex)
+                response = self.client.generate_presigned_post(
+                    bucket,
+                    key,
+                    Fields=fields,
+                    Conditions=conditions,
+                    ExpiresIn=expiration,
+                )
+            else:
+                # Use PUT for simple uploads (recommended)
+                response = self.client.generate_presigned_url(
+                    "put_object",
+                    Params={"Bucket": bucket, "Key": key},
+                    ExpiresIn=expiration,
+                )
         except ClientError as e:
             logger.error(e)
             return None
 
-        # The response contains the presigned URL and required fields
         return response
 
     def update_property(self):
