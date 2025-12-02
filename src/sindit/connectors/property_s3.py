@@ -216,11 +216,16 @@ class S3Property(Property):
     def _generate_upload_url(self, connector: S3Connector) -> None:
         """
         Generate a presigned upload URL.
-        Uses the same expiration time as download URLs.
+        Uses PUT method which is simpler than POST (no form fields policy issues).
         """
         logger.debug(f"Creating presigned upload URL for {self.uri}")
+
+        # Use PUT method (use_post=False) for simpler uploads
         self.value = connector.create_presigned_url_for_upload_object(
-            bucket=self.bucket, key=self.key, expiration=self.expiration
+            bucket=self.bucket,
+            key=self.key,
+            expiration=self.expiration,
+            use_post=False,  # Use PUT instead of POST
         )
         self.timestamp = get_current_local_time()
         self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
