@@ -57,14 +57,32 @@ class S3Connector(Connector):
         # if port is 443 set secure to True.
         secure = True if port == 443 else False
         # Construct endpoint URL with proper protocol scheme
-        protocol = "https" if secure else "http"
-        # Omit port if it's the default port for the protocol or 0/None
-        default_port = 443 if secure else 80
-        # Set the endpoint_url
-        if port is None or port == 0 or port == default_port:
-            self.endpoint_url = f"{protocol}://{host}"
+        # Check if host already contains protocol
+        if host.startswith("http://") or host.startswith("https://"):
+            # Host already has protocol, use it as-is
+            # Determine default port based on protocol in host
+            is_https = host.startswith("https://")
+            default_port = 443 if is_https else 80
+
+            if port is None or port == 0 or port == default_port:
+                # Omit port if it's default or not specified
+                self.endpoint_url = host
+            else:
+                # Check if port is already in the host
+                if f":{port}" in host:
+                    self.endpoint_url = host
+                else:
+                    self.endpoint_url = f"{host}:{port}"
         else:
-            self.endpoint_url = f"{protocol}://{host}:{port}"
+            # Host doesn't have protocol, add it
+            protocol = "https" if secure else "http"
+            # Omit port if it's the default port for the protocol or 0/None
+            default_port = 443 if secure else 80
+            # Set the endpoint_url
+            if port is None or port == 0 or port == default_port:
+                self.endpoint_url = f"{protocol}://{host}"
+            else:
+                self.endpoint_url = f"{protocol}://{host}:{port}"
         # Set the s3 connection secrets
         if access_key_id is None:
             self.__access_key_id = "minioadmin"

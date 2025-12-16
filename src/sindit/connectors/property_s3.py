@@ -213,6 +213,25 @@ class S3Property(Property):
         )
         self.update_value(connector)
 
+    def _update_url_mode(self, mode: str) -> None:
+        """
+        Update the urlMode field in the knowledge graph.
+
+        Args:
+            mode: Either "upload" or "download"
+        """
+        if self.kg_connector is None:
+            return
+
+        try:
+            node = self.kg_connector.load_node_by_uri(self.uri)
+            if node is not None:
+                node.urlMode = mode
+                self.kg_connector.save_node(node)
+                logger.debug(f"Updated urlMode to '{mode}' for {self.uri}")
+        except Exception as e:
+            logger.error(f"Failed to update urlMode for {self.uri}: {e}")
+
     def _generate_upload_url(self, connector: S3Connector) -> None:
         """
         Generate a presigned upload URL.
@@ -229,6 +248,7 @@ class S3Property(Property):
         )
         self.timestamp = get_current_local_time()
         self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
+        self._update_url_mode("upload")
 
     def _generate_download_url(self, connector: S3Connector) -> None:
         """
@@ -240,6 +260,7 @@ class S3Property(Property):
         )
         self.timestamp = get_current_local_time()
         self.update_property_value_to_kg(self.uri, self.value, self.timestamp)
+        self._update_url_mode("download")
 
     def update_value(self, connector: S3Connector, **kwargs) -> None:
         """
