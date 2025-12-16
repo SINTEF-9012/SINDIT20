@@ -46,7 +46,7 @@ class S3Connector(Connector):
         self._stop_event = threading.Event()
         self.region_name = region_name
         self.secure = secure
-
+        self.kg_connector = kg_connector
         # Convert port to int if it's a string
         if isinstance(port, str):
             try:
@@ -54,15 +54,18 @@ class S3Connector(Connector):
             except ValueError:
                 port = 0
 
+        # if port is 443 set secure to True.
+        secure = True if port == 443 else False
         # Construct endpoint URL with proper protocol scheme
         protocol = "https" if secure else "http"
         # Omit port if it's the default port for the protocol or 0/None
         default_port = 443 if secure else 80
+        # Set the endpoint_url
         if port is None or port == 0 or port == default_port:
             self.endpoint_url = f"{protocol}://{host}"
         else:
             self.endpoint_url = f"{protocol}://{host}:{port}"
-        self.kg_connector = kg_connector
+        # Set the s3 connection secrets
         if access_key_id is None:
             self.__access_key_id = "minioadmin"
         else:
@@ -71,10 +74,12 @@ class S3Connector(Connector):
             self.__secret_access_key = "minioadmin"
         else:
             self.__secret_access_key = secret_access_key
+        # Set the URI of this instance of the connector
         if uri is not None:
             self.uri = uri
         else:
             self.uri = f"s3://{host}:{port}"
+        # Set the S3 connection expiration time
         if expiration is not None:
             self.expiration = expiration
         else:

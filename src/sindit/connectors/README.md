@@ -81,3 +81,38 @@ http_response = requests.get(response)
 # stop the client
 s3.stop(no_update_connection_status=True)
 ```
+
+### Configuration examples
+
+Minimal configuration for a s3 service running locally on http protocol:
+```json
+{
+  "uri": "http://example.com/connection/s3/minio-local",
+  "label": "MinIO Local",
+  "type": "s3",
+  "host": "localhost",
+  "port": 9000,
+  "username": "minioadmin",
+  "passwordPath": "minio_local_secret",
+  "connectionDescription": "Local MinIO development server"
+}
+```
+
+Example configuration for a s3 service running on https (secure is true if port = 443):
+```json
+{
+  "uri": "http://example.com/connection/s3/minio-cloud",
+  "label": "MinIO Cloud",
+  "type": "s3",
+  "host": "minio.sintef.cloud",
+  "port": 443,
+  "username": "sintef",
+  "passwordPath": "minio_secret",
+  "connectionDescription": "Production MinIO cloud server",
+  "configuration": {
+    "secure": "True",
+    "region_name": "eu-west-1",
+    "expiration": 7200
+  }
+}
+```
