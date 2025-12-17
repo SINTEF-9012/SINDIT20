@@ -2,7 +2,8 @@ import fastapi
 from sindit.util.environment_and_configuration import ConfigGroups, get_configuration
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-
+import tomli
+from pathlib import Path
 
 description = """This is the API for the SINDIT project.
 It provides access to the knowledge graph and the data stored in it."""
@@ -35,7 +36,31 @@ tags_metadata = [
 ]
 
 
-api_version = get_configuration(ConfigGroups.GENERIC, "sindit_version")
+def get_version_from_pyproject():
+    """Read version from pyproject.toml file."""
+    try:
+        # Get the path to pyproject.toml (assuming it's in the project root)
+        current_file = Path(__file__)
+        project_root = current_file.parent.parent.parent.parent
+        pyproject_path = project_root / "pyproject.toml"
+
+        if pyproject_path.exists():
+            with open(pyproject_path, "rb") as f:
+                pyproject_data = tomli.load(f)
+                return (
+                    pyproject_data.get("tool", {})
+                    .get("poetry", {})
+                    .get("version", "unknown")
+                )
+    except Exception as e:
+        print(f"Failed to read version from pyproject.toml: {e}")
+
+    # Fallback to configuration
+    return get_configuration(ConfigGroups.GENERIC, "sindit_version")
+
+
+api_version = get_version_from_pyproject()
+
 app = fastapi.FastAPI(
     title="SINDIT API",
     description=description,
