@@ -127,6 +127,7 @@ docker-build-sindit:
       -u $CI_REGISTRY_USER --password-stdin
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - docker buildx create --name mybuilder --use
+    - export VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
   script:
     docker buildx build
       --push
@@ -137,10 +138,10 @@ docker-build-sindit:
       --label "git-commit-timestamp=$CI_COMMIT_TIMESTAMP"
       --label "git-commit-title=$CI_COMMIT_TITLE"
       -t $IMAGE_PATH/$IMAGE_NAME:sha-$CI_COMMIT_SHORT_SHA
+      -t $IMAGE_PATH/$IMAGE_NAME:$VERSION
       -t $IMAGE_PATH/$IMAGE_NAME:latest .
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
-    - if: $CI_COMMIT_BRANCH == "main"
 
 docker-build-graphdb:
   stage: build
@@ -176,7 +177,6 @@ docker-build-graphdb:
       ./GraphDB
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
-    - if: $CI_COMMIT_BRANCH == "main"
 
 push-to-github:
   stage: build
