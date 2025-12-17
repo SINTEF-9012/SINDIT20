@@ -173,7 +173,8 @@ def verify_upload(token):
                     return True
                 else:
                     print(
-                        f"⚠ Still shows upload URL (mode: {url_mode}), file may not be detected yet..."
+                        f"⚠ Still shows upload URL (mode: {url_mode}), "
+                        f"file may not be detected yet..."
                     )
         except Exception as e:
             print(f"✗ Error verifying: {e}")
