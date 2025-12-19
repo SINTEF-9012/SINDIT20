@@ -45,7 +45,6 @@ class S3Connector(Connector):
         self.thread = None
         self._stop_event = threading.Event()
         self.region_name = region_name
-        self.secure = secure
         self.kg_connector = kg_connector
         # Convert port to int if it's a string
         if isinstance(port, str):
@@ -55,7 +54,8 @@ class S3Connector(Connector):
                 port = 0
 
         # if port is 443 set secure to True.
-        secure = True if port == 443 else False
+        secure = True if port == 443 or host.startswith("https://") else False
+        self.secure = secure
         # Construct endpoint URL with proper protocol scheme
         # Check if host already contains protocol
         if host.startswith("http://") or host.startswith("https://"):
