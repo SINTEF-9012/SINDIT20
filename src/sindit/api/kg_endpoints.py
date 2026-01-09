@@ -8,7 +8,7 @@ from sindit.connectors.setup_connectors import (
     remove_connection_node,
     remove_property_node,
     update_connection_node,
-    update_propery_node,
+    update_property_node,
 )
 from fastapi import BackgroundTasks
 
@@ -259,6 +259,11 @@ async def create_connection(
             def start_connection_with_cleanup():
                 try:
                     update_connection_node(node, True, async_start=True)
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for connection {node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_connection_tasks.discard(node_uri)
@@ -303,10 +308,21 @@ async def create_asset_property(
 
             def update_property_with_cleanup():
                 try:
-                    update_propery_node(node, async_start=True)
+                    if node.propertyConnection is not None:
+                        logger.debug(f"Starting property update for {node_uri}")
+                        update_connection_node(
+                            node.propertyConnection, True, async_start=True
+                        )
+                    logger.debug(f"Completed property update for {node_uri}")
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for property {node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_property_tasks.discard(node_uri)
+                    logger.debug(f"Cleaned up background task for {node_uri}")
 
             background_tasks.add_task(update_property_with_cleanup)
         return {"result": result}
@@ -346,7 +362,12 @@ async def create_database_property(
 
             def update_property_with_cleanup():
                 try:
-                    update_propery_node(node, async_start=True)
+                    update_property_node(node, async_start=True)
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for property {node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_property_tasks.discard(node_uri)
@@ -389,7 +410,12 @@ async def create_streaming_property(
 
             def update_property_with_cleanup():
                 try:
-                    update_propery_node(node, async_start=True)
+                    update_property_node(node, async_start=True)
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for property {node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_property_tasks.discard(node_uri)
@@ -432,7 +458,12 @@ async def create_timeseries_property(
 
             def update_property_with_cleanup():
                 try:
-                    update_propery_node(node, async_start=True)
+                    update_property_node(node, async_start=True)
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for property {node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_property_tasks.discard(node_uri)
@@ -478,7 +509,12 @@ async def create_file(
 
             def update_property_with_cleanup():
                 try:
-                    update_propery_node(node, async_start=True)
+                    update_property_node(node, async_start=True)
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for property {node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_property_tasks.discard(node_uri)
@@ -522,7 +558,12 @@ async def create_s3_object(
 
             def update_property_with_cleanup():
                 try:
-                    update_propery_node(node, async_start=True)
+                    update_property_node(node, async_start=True)
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for property {node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_property_tasks.discard(node_uri)
@@ -566,7 +607,13 @@ async def create_property_collection(
                 try:
                     for prop in node.collectionProperties:
                         if isinstance(prop, AbstractAssetProperty):
-                            update_propery_node(prop, async_start=True)
+                            update_property_node(prop, async_start=True)
+                except Exception as e:
+                    logger.error(
+                        f"Error in background task for property collection "
+                        f"{node_uri}: {e}",
+                        exc_info=True,
+                    )
                 finally:
                     with _tasks_lock:
                         _running_property_tasks.discard(node_uri)
