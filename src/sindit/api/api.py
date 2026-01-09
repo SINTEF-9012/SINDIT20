@@ -1,5 +1,9 @@
 import fastapi
-from sindit.util.environment_and_configuration import ConfigGroups, get_configuration
+from sindit.util.environment_and_configuration import (
+    ConfigGroups,
+    get_configuration,
+    get_environment_variable_bool,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import tomli
@@ -39,9 +43,21 @@ tags_metadata = [
 def get_version_from_pyproject():
     """Read version from pyproject.toml file."""
     try:
-        # Get the path to pyproject.toml (assuming it's in the project root)
+        # Get the path to pyproject.toml
         current_file = Path(__file__)
-        project_root = current_file.parent.parent.parent.parent
+
+        # Check if running in Docker environment
+        is_docker = get_environment_variable_bool(
+            "DOCKER_ENV", optional=True, default="False"
+        )
+
+        if is_docker:
+            # In Docker: /app/sindit/api/api.py -> /app/pyproject.toml
+            project_root = current_file.parent.parent.parent
+        else:
+            # Local: .../src/sindit/api/api.py -> .../pyproject.toml
+            project_root = current_file.parent.parent.parent.parent
+
         pyproject_path = project_root / "pyproject.toml"
 
         if pyproject_path.exists():
