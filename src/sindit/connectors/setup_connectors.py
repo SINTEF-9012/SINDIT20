@@ -30,7 +30,7 @@ properties = {}
 _connection_pool = ThreadPoolExecutor(max_workers=10, thread_name_prefix="conn_init")
 
 
-def update_propery_node(
+def update_property_node(
     node: AbstractAssetProperty, replace: bool = True, async_start: bool = False
 ) -> Property:
     """
@@ -173,44 +173,6 @@ def create_property(node: AbstractAssetProperty) -> Property:
                 else:
                     connection = connections[connection_uri]
                 if connection is not None:
-                    """if isinstance(node, StreamingProperty):
-                        # Create an MQTT property
-                        if connection_node.type.lower() == MQTTConnector.id.lower():
-                            new_property = MQTTProperty(
-                                uri=node_uri,
-                                topic=node.streamingTopic,
-                                path_or_code=node.streamingPath,
-                                kg_connector=sindit_kg_connector,
-                            )
-
-                            connection.attach(new_property)
-                    elif isinstance(node, TimeseriesProperty):
-                        # Create an InfuxDB property
-                        if connection_node.type.lower() == InfluxDBConnector.id.lower():
-                            tags = node.timeseriesTags
-                            identifiers = node.timeseriesIdentifiers
-                            if identifiers is not None and isinstance(
-                                identifiers, dict
-                            ):
-                                if "measurement" in identifiers:
-                                    measurement = identifiers["measurement"]
-                                if "field" in identifiers:
-                                    field = identifiers["field"]
-                                if "org" in identifiers:
-                                    org = identifiers["org"]
-                                if "bucket" in identifiers:
-                                    bucket = identifiers["bucket"]
-
-                                new_property = InfluxDBProperty(
-                                    uri=node_uri,
-                                    field=field,
-                                    measurement=measurement,
-                                    org=org,
-                                    bucket=bucket,
-                                    tags=tags,
-                                    kg_connector=sindit_kg_connector,
-                                )
-                                connection.attach(new_property)"""
                     new_property = property_factory.create(
                         key=str(connection_node.type).lower(),
                         uri=node_uri,
@@ -423,4 +385,4 @@ def initialize_connections_and_properties(
 
     # Then initialize all properties
     for node in _iter_nodes_by_class(AbstractAssetProperty.CLASS_URI, batch_size):
-        update_propery_node(node, replace=replace, async_start=async_start)
+        update_property_node(node, replace=replace, async_start=async_start)
