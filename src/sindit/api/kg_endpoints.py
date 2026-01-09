@@ -308,11 +308,8 @@ async def create_asset_property(
 
             def update_property_with_cleanup():
                 try:
-                    if node.propertyConnection is not None:
-                        logger.debug(f"Starting property update for {node_uri}")
-                        update_connection_node(
-                            node.propertyConnection, True, async_start=True
-                        )
+                    logger.debug(f"Starting property update for {node_uri}")
+                    update_property_node(node, async_start=True)
                     logger.debug(f"Completed property update for {node_uri}")
                 except Exception as e:
                     logger.error(
