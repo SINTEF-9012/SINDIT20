@@ -13,7 +13,7 @@ line_length = 88
 
 [tool.poetry]
 name = "sindit"
-version = "2.0.10"
+version = "2.0.11"
 authors = ["An Lam <an.lam@sintef.no>", "Gøran Brekke Svaland <goran.svaland@sintef.no>"]
 description = "SINTEF Digital Twin Framework"
 license = "MIT"
