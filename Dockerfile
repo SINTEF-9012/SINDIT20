@@ -1,7 +1,41 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim AS build
 
-# Environment variables
+# Environment variables for Poetry
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Install system dependencies in one layer
+RUN apt-get update \
+    && apt-get -y install libpq-dev gcc \
+    && pip install poetry==1.8.2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only dependency files first (for better caching)
+COPY pyproject.toml poetry.lock* /app/
+
+# Install dependencies only (cached if pyproject.toml doesn't change)
+RUN poetry install --no-root --no-directory && rm -rf $POETRY_CACHE_DIR
+
+# Now copy the application code (changes frequently, but deps are cached)
+COPY src/sindit /app/sindit/
+
+# Install the project itself
+RUN poetry install --only-root
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Runtime stage (smaller image)
+FROM python:3.11-slim
+
+# Runtime environment variables
 ENV APPNAME=SINDIT  \
     FAST_API_HOST='0.0.0.0' \
     FAST_API_PORT='9017' \
@@ -13,58 +47,37 @@ ENV APPNAME=SINDIT  \
     LOG_LEVEL='DEBUG' \
     USE_HASHICORP_VAULT='False' \
     FSVAULT_PATH='/app/data/vault.properties' \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+    DOCKER_ENV=True \
+    USE_KEYCLOAK=False \
+    KEYCLOAK_SERVER_URL="http://localhost:8080" \
+    KEYCLOAK_REALM="sindit" \
+    KEYCLOAK_CLIENT_ID="sindit" \
+    KEYCLOAK_CLIENT_SECRET="your_client_secret_here" \
+    USER_PATH='/app/data/user.json' \
+    WORKSPACE_PATH='/app/data/workspace.json' \
+    PYTHONPATH="/app:${PYTHONPATH}"
 
-ENV DOCKER_ENV=True
+# Install only runtime dependencies (not gcc)
+RUN apt-get update \
+    && apt-get -y install libpq5 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Keycloak configuration
-ENV USE_KEYCLOAK=False
-ENV KEYCLOAK_SERVER_URL="http://localhost:8080"
-ENV KEYCLOAK_REALM="sindit"
-ENV KEYCLOAK_CLIENT_ID="sindit"
-ENV KEYCLOAK_CLIENT_SECRET="your_client_secret_here"
-
-# InMemory authentication configuration
-ENV USER_PATH='/app/data/user.json'
-ENV WORKSPACE_PATH='/app/data/workspace.json'
-
-# Set the working directory in the container
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get -y install libpq-dev gcc \
-    && pip install poetry==1.8.2
+# Copy virtual environment from build stage
+COPY --from=build /app/.venv /app/.venv
+COPY --from=build /app/sindit /app/sindit
+COPY --from=build /usr/local/bin/docker-entrypoint.sh /usr/local/bin/
 
-# Copy the current directory contents into the container at /app
-#COPY src/sindit/api /app/sindit/api
-#COPY src/sindit/util /app/sindit/util
-#COPY src/sindit/common /app/sindit/common
-#COPY src/sindit/connectors /app/sindit/connectors
-#COPY src/sindit/knowledge_graph /app/sindit/knowledge_graph
-#COPY src/sindit/environment_and_configuration /app/sindit/environment_and_configuration
-#COPY src/sindit/run_sindit.py src/sindit/initialize_kg_connectors.py src/sindit/initialize_vault.py /app/sindit/
-COPY src/sindit /app/sindit/
-COPY pyproject.toml /app/
-
-# Install any needed packages specified in requirements.txt
-RUN poetry install
-
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Expose port
 EXPOSE 9017
 
 WORKDIR /app/sindit
-#Set PYTHONPATH to /app, so that sindit package can be found
-ENV PYTHONPATH="/app:${PYTHONPATH}"
 
 # Use entrypoint script to initialize data directory
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Run run_sindit.py when the container launches
-CMD ["poetry", "run", "python", "run_sindit.py"]
+CMD ["python", "run_sindit.py"]

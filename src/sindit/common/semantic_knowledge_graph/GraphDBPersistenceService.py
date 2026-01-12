@@ -17,8 +17,26 @@ class GraphDBPersistenceService(SemanticKGPersistenceService):
         username: str = "",
         password: str = "",
     ):
-        # self.__api_endpoint = f"http://{host}:{port}"
-        self.__sparql_endpoint = f"http://{host}:{port}/repositories/{repository}"
+        # Validate inputs
+        if not host:
+            raise ValueError("Host cannot be empty")
+        if not repository:
+            raise ValueError("Repository cannot be empty")
+
+        # Construct base URL with proper scheme and port handling
+        if host.startswith("http://") or host.startswith("https://"):
+            # Host already has scheme
+            base_url = host.rstrip("/")
+        else:
+            # Add http:// scheme
+            base_url = f"http://{host}"
+
+        # Add port if provided and not already in host
+        if port and ":" not in host.split("//")[-1]:
+            base_url = f"{base_url}:{port}"
+
+        # Construct SPARQL endpoint
+        self.__sparql_endpoint = f"{base_url}/repositories/{repository}"
         self.__repository = repository
         self.__username = username
         self.__password = password
