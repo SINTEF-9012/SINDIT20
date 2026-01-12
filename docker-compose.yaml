@@ -8,7 +8,8 @@ services:
     ports:
       - "7200:7200"
     volumes:
-      - data_graphdb:/opt/graphdb/home  # Persist data between container restarts
+      # Mount only the data directory to persist repositories
+      - ./GraphDB/home/data:/opt/graphdb/dist/data/
 
   sindit:
     build:
@@ -69,6 +70,5 @@ services:
       - pgadmin_data:/var/lib/pgadmin
 
 volumes:
-  data_graphdb:
   data_postgres:
   pgadmin_data:
