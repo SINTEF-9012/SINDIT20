@@ -68,6 +68,7 @@ WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
 COPY --from=build /app/sindit /app/sindit
 COPY --from=build /usr/local/bin/docker-entrypoint.sh /usr/local/bin/
+COPY --from=build /app/pyproject.toml /app/pyproject.toml
 
 ENV PATH="/app/.venv/bin:$PATH"
 
