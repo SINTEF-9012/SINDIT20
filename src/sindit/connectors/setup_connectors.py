@@ -105,42 +105,37 @@ def _update_property_async(
     """
     node_uri = str(node.uri)
 
+    # Skip update if property has no connection - check BEFORE creating thread
+    if not hasattr(node, "propertyConnection") or node.propertyConnection is None:
+        logger.debug(f"Skipping property update for {node_uri} - no connection defined")
+        return None
+
     # Check if already running
     with _tasks_lock:
         if node_uri in _running_property_tasks:
-            logger.info(f"Property update already running for {node_uri}")
+            logger.debug(f"Property update already running for {node_uri}")
             return None
         _running_property_tasks.add(node_uri)
 
     def _update():
         try:
-            logger.info(
+            logger.debug(
                 f"Starting background update for property {node_uri}, "
                 f"class={node.__class__.__name__}"
             )
 
-            # Skip update if property has no connection
-            if (
-                not hasattr(node, "propertyConnection")
-                or node.propertyConnection is None
-            ):
-                logger.info(
-                    f"Skipping property update for {node_uri} - no connection defined"
-                )
-                return
-
             _update_property_sync(node, replace)
             logger.info(f"Property {node_uri} updated successfully")
         except AttributeError as ae:
-            logger.error(
+            logger.debug(
                 f"AttributeError updating property {node_uri}: {ae}", exc_info=True
             )
         except Exception as e:
-            logger.error(f"Error updating property {node_uri}: {e}", exc_info=True)
+            logger.debug(f"Error updating property {node_uri}: {e}", exc_info=True)
         finally:
             with _tasks_lock:
                 _running_property_tasks.discard(node_uri)
-            logger.info(f"Cleaned up background task for {node_uri}")
+            logger.debug(f"Cleaned up background task for {node_uri}")
 
     # Submit to the connection pool (reusing for properties too)
     _connection_pool.submit(_update)
