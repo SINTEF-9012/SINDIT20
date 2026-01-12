@@ -18,8 +18,16 @@ RUN mkdir -p tmp
 RUN importrdf preload --force --recursive -q .tmp/ -c ./repo-config.ttl ./graph_model
 RUN rm -rf ./tmp
 
+# Copy preloaded data to a safe location before volume mount
+RUN mkdir -p /opt/graphdb/preload && \
+    cp -r /opt/graphdb/dist/data /opt/graphdb/preload/
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /opt/graphdb/docker-entrypoint.sh
+RUN chmod +x /opt/graphdb/docker-entrypoint.sh
+
 # Step 4: Expose the necessary ports (GraphDB runs on port 7200 by default)
 EXPOSE 7200
 
-# Step 5: Start the GraphDB server
-CMD ["../bin/graphdb"]
+# Step 5: Start the GraphDB server with entrypoint
+ENTRYPOINT ["/opt/graphdb/docker-entrypoint.sh"]
