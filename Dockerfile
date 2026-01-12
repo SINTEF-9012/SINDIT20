@@ -64,7 +64,7 @@ WORKDIR /app/sindit
 ENV PYTHONPATH="/app:${PYTHONPATH}"
 
 # Use entrypoint script to initialize data directory
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Run run_sindit.py when the container launches
 CMD ["poetry", "run", "python", "run_sindit.py"]

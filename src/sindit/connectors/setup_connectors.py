@@ -1,3 +1,6 @@
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 from sindit.knowledge_graph.graph_model import (
     AbstractAssetProperty,
     Connection,
@@ -10,7 +13,6 @@ from sindit.connectors.connector import Property
 from sindit.util.log import logger
 
 from sindit.connectors.connector_factory import connector_factory, property_factory
-from concurrent.futures import ThreadPoolExecutor
 
 # TODO: This is a workaround to avoid circular imports
 import sindit.connectors.connector_mqtt  # noqa: F401, E402
@@ -28,6 +30,11 @@ properties = {}
 
 # Thread pool for async connection starts
 _connection_pool = ThreadPoolExecutor(max_workers=10, thread_name_prefix="conn_init")
+
+# Global task trackers to prevent duplicate background tasks
+_running_connection_tasks = set()
+_running_property_tasks = set()
+_tasks_lock = threading.Lock()
 
 
 def update_property_node(
@@ -96,14 +103,44 @@ def _update_property_async(
     """
     Update property asynchronously in a background thread.
     """
+    node_uri = str(node.uri)
+
+    # Check if already running
+    with _tasks_lock:
+        if node_uri in _running_property_tasks:
+            logger.info(f"Property update already running for {node_uri}")
+            return None
+        _running_property_tasks.add(node_uri)
 
     def _update():
         try:
-            logger.info(f"Updating property {node.uri} in background...")
+            logger.info(
+                f"Starting background update for property {node_uri}, "
+                f"class={node.__class__.__name__}"
+            )
+
+            # Skip update if property has no connection
+            if (
+                not hasattr(node, "propertyConnection")
+                or node.propertyConnection is None
+            ):
+                logger.info(
+                    f"Skipping property update for {node_uri} - no connection defined"
+                )
+                return
+
             _update_property_sync(node, replace)
-            logger.info(f"Property {node.uri} updated successfully")
+            logger.info(f"Property {node_uri} updated successfully")
+        except AttributeError as ae:
+            logger.error(
+                f"AttributeError updating property {node_uri}: {ae}", exc_info=True
+            )
         except Exception as e:
-            logger.error(f"Error updating property {node.uri}: {e}")
+            logger.error(f"Error updating property {node_uri}: {e}", exc_info=True)
+        finally:
+            with _tasks_lock:
+                _running_property_tasks.discard(node_uri)
+            logger.info(f"Cleaned up background task for {node_uri}")
 
     # Submit to the connection pool (reusing for properties too)
     _connection_pool.submit(_update)
@@ -319,28 +356,42 @@ def _start_connector_sync(connector: Connector, node: Connection):
 
 def _start_connector_async(connector: Connector, node: Connection):
     """Start connector in a background thread."""
+    connector_uri = str(connector.uri)
+
+    # Check if already running
+    with _tasks_lock:
+        if connector_uri in _running_connection_tasks:
+            logger.info(f"Connection start already running for {connector_uri}")
+            return
+        _running_connection_tasks.add(connector_uri)
 
     def _start():
         try:
-            logger.info(f"Starting connector {connector.uri} in background...")
+            logger.info(f"Starting connector {connector_uri} in background...")
 
             # Stop the connector first to ensure a fresh start
             try:
                 connector.stop(no_update_connection_status=True)
             except Exception as e:
                 logger.debug(
-                    f"Could not stop connector {connector.uri} " f"before starting: {e}"
+                    f"Could not stop connector {connector_uri} " f"before starting: {e}"
                 )
 
             connector.start()
-            logger.info(f"Connector {connector.uri} started successfully")
+            logger.info(f"Connector {connector_uri} started successfully")
         except Exception as e:
-            logger.error(f"Error starting connector {connector.uri}: {e}")
+            logger.error(
+                f"Error starting connector {connector_uri}: {e}", exc_info=True
+            )
             try:
                 node.isConnected = False
                 sindit_kg_connector.save_node(node)
             except Exception:
                 pass
+        finally:
+            with _tasks_lock:
+                _running_connection_tasks.discard(connector_uri)
+            logger.info(f"Cleaned up connection start task for {connector_uri}")
 
     _connection_pool.submit(_start)
 
