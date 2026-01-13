@@ -19,7 +19,8 @@ class ClientAPI:
         logger.info("API not available!")
         logger.info(f"Tried to connect to {self.api_uri}")
 
-        sleep_time = 1 * (2**retry_number)
+        # sleep_time = 1 * (2**retry_number)
+        sleep_time = min(60, 1 * (2**retry_number))
 
         logger.info(f"Retrying in {sleep_time} seconds...")
         time.sleep(sleep_time)
