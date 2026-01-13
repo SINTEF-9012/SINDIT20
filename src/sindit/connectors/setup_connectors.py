@@ -432,3 +432,35 @@ def initialize_connections_and_properties(
     # Then initialize all properties
     for node in _iter_nodes_by_class(AbstractAssetProperty.CLASS_URI, batch_size):
         update_property_node(node, replace=replace, async_start=async_start)
+
+
+def refresh_connection(
+    connection_uri: str, replace: bool = True, async_start: bool = False
+):
+    """
+    Refresh a specific connection by its URI.
+
+    Args:
+        connection_uri: The URI of the connection to refresh
+        replace: If True, replace existing connection
+        async_start: If True, start the connection asynchronously
+    """
+    node: Connection = sindit_kg_connector.load_node_by_uri(connection_uri)
+    if node is not None:
+        update_connection_node(node, replace=replace, async_start=async_start)
+
+
+def refresh_property(
+    property_uri: str, replace: bool = True, async_start: bool = False
+):
+    """
+    Refresh a specific property by its URI.
+
+    Args:
+        property_uri: The URI of the property to refresh
+        replace: If True, replace existing property
+        async_start: If True, start the property asynchronously
+    """
+    node: AbstractAssetProperty = sindit_kg_connector.load_node_by_uri(property_uri)
+    if node is not None:
+        update_property_node(node, replace=replace, async_start=async_start)
