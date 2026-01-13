@@ -64,6 +64,14 @@ Repository = "https://github.com/SINTEF-9012/SINDIT20"
 [tool.hatch.build.targets.wheel]
 packages = ["src/sindit"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
+
 
 [project.optional-dependencies]
 test = [
