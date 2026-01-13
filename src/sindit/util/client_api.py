@@ -19,7 +19,7 @@ class ClientAPI:
         logger.info("API not available!")
         logger.info(f"Tried to connect to {self.api_uri}")
 
-        sleep_time = 5 * (2**retry_number)
+        sleep_time = 1 * (2**retry_number)
 
         logger.info(f"Retrying in {sleep_time} seconds...")
         time.sleep(sleep_time)
@@ -42,9 +42,14 @@ class ClientAPI:
         range_limit = retries + 1 if retries >= 0 else 9 * 10**23
         for i in range(range_limit):
             try:
-                resp_dict = requests.get(
+                response = requests.get(
                     self.api_uri + relative_path, timeout=timeout, **kwargs
-                ).json()
+                )
+
+                if response.ok is False:
+                    return response
+
+                resp_dict = response.json()
 
                 if result_class is not None:
                     resp_dict = result_class.from_json(str(resp_dict))
@@ -91,9 +96,14 @@ class ClientAPI:
         range_limit = retries + 1 if retries >= 0 else 9 * 10**23
         for i in range(range_limit):
             try:
-                return requests.get(
+                response = requests.get(
                     self.api_uri + relative_path, timeout=30, **kwargs
-                ).text
+                )
+                if response.ok is False:
+                    return response
+                else:
+                    return response.text
+
             except ReqExc:
                 self._handle_request_exception(i)
 
@@ -108,11 +118,14 @@ class ClientAPI:
         range_limit = retries + 1 if retries >= 0 else 9 * 10**23
         for i in range(range_limit):
             try:
-                return int(
-                    requests.get(
-                        self.api_uri + relative_path, timeout=30, **kwargs
-                    ).text
+                response = requests.get(
+                    self.api_uri + relative_path, timeout=30, **kwargs
                 )
+                if response.ok is False:
+                    return response
+                else:
+                    return int(response.text)
+
             except ReqExc:
                 self._handle_request_exception(i)
 
@@ -127,11 +140,13 @@ class ClientAPI:
         range_limit = retries + 1 if retries >= 0 else 9 * 10**23
         for i in range(range_limit):
             try:
-                return float(
-                    requests.get(
-                        self.api_uri + relative_path, timeout=30, **kwargs
-                    ).text
+                response = requests.get(
+                    self.api_uri + relative_path, timeout=30, **kwargs
                 )
+                if response.ok is False:
+                    return response
+                else:
+                    return float(response.text)
             except ReqExc:
                 self._handle_request_exception(i)
 
