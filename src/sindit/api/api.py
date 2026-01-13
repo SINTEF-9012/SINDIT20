@@ -63,10 +63,7 @@ def get_version_from_pyproject():
         if pyproject_path.exists():
             with open(pyproject_path, "rb") as f:
                 pyproject_data = tomli.load(f)
-                return (
-                    pyproject_data.get("project", {})
-                    .get("version", "unknown")
-                )
+                return pyproject_data.get("project", {}).get("version", "unknown")
     except Exception as e:
         print(f"Failed to read version from pyproject.toml: {e}")
 
