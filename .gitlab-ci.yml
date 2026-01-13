@@ -49,8 +49,7 @@ pytest:
   image: python:3.11
   before_script:
     - cd projects/$PROJECT_NAME
-    - curl -LsSf https://astral.sh/uv/install.sh | sh
-    - export PATH="$HOME/.cargo/bin:$PATH"
+    - pip install uv
     - uv pip install -e .
   script:
     - uv pip install junit-xml
@@ -69,8 +68,7 @@ coverage:
   image: python:3.11
   before_script:
     - cd projects/$PROJECT_NAME
-    - curl -LsSf https://astral.sh/uv/install.sh | sh
-    - export PATH="$HOME/.cargo/bin:$PATH"
+    - pip install uv
     - uv pip install -e .
   dependencies:
     - pytest
