@@ -34,6 +34,7 @@ from sindit.api import metamodel_endpoints  # noqa: F401, E402
 from sindit.api import kg_relationship_endpoints  # noqa: F401, E402
 from sindit.api import authentication_endpoints  # noqa: F401, E402
 from sindit.api import dataspace_endpoints  # noqa: F401, E402
+from sindit.api import health_endpoints  # noqa: F401, E402
 
 
 # from connectors.setup_connectors import initialize_connections_and_properties
