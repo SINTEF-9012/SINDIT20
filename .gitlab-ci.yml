@@ -50,9 +50,9 @@ pytest:
   before_script:
     - cd projects/$PROJECT_NAME
     - pip install uv
-    - uv pip install -e .
+    - uv pip install --system -e .
   script:
-    - uv pip install junit-xml
+    - uv pip install --system junit-xml
     - pytest --junitxml=junit.xml -m "not slow and not gitlab_exempt"
   artifacts:
     when: always
@@ -69,11 +69,11 @@ coverage:
   before_script:
     - cd projects/$PROJECT_NAME
     - pip install uv
-    - uv pip install -e .
+    - uv pip install --system -e .
   dependencies:
     - pytest
   script:
-    - uv pip install coverage coverage-badge
+    - uv pip install --system coverage coverage-badge
     - coverage run -m pytest -m "not slow and not gitlab_exempt"
     - coverage report
     - coverage xml -o coverage.xml
