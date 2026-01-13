@@ -64,8 +64,7 @@ def get_version_from_pyproject():
             with open(pyproject_path, "rb") as f:
                 pyproject_data = tomli.load(f)
                 return (
-                    pyproject_data.get("tool", {})
-                    .get("poetry", {})
+                    pyproject_data.get("project", {})
                     .get("version", "unknown")
                 )
     except Exception as e:

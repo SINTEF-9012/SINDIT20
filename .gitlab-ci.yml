@@ -49,11 +49,12 @@ pytest:
   image: python:3.11
   before_script:
     - cd projects/$PROJECT_NAME
-    - pip install poetry
-    - poetry install
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - export PATH="$HOME/.cargo/bin:$PATH"
+    - uv pip install -e .
   script:
-    - pip install junit-xml
-    - poetry run pytest --junitxml=junit.xml -m "not slow and not gitlab_exempt"
+    - uv pip install junit-xml
+    - pytest --junitxml=junit.xml -m "not slow and not gitlab_exempt"
   artifacts:
     when: always
     expire_in: 1 weeks
@@ -68,14 +69,14 @@ coverage:
   image: python:3.11
   before_script:
     - cd projects/$PROJECT_NAME
-    - pip install poetry
-    - poetry install
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - export PATH="$HOME/.cargo/bin:$PATH"
+    - uv pip install -e .
   dependencies:
     - pytest
   script:
-    - pip install coverage
-    - pip install coverage-badge
-    - poetry run coverage run -m pytest -m "not slow and not gitlab_exempt"
+    - uv pip install coverage coverage-badge
+    - coverage run -m pytest -m "not slow and not gitlab_exempt"
     - coverage report
     - coverage xml -o coverage.xml
     - coverage-badge -o coverage.svg

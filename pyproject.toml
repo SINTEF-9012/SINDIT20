@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.isort]
 multi_line_output = 3
@@ -11,64 +11,70 @@ profile = "black"
 [tool.black]
 line_length = 88
 
-[tool.poetry]
+[project]
 name = "sindit"
-version = "2.0.16"
-authors = ["An Lam <an.lam@sintef.no>", "Gøran Brekke Svaland <goran.svaland@sintef.no>"]
+version = "2.0.17"
+authors = [
+    {name = "An Lam", email = "an.lam@sintef.no"},
+    {name = "Gøran Brekke Svaland", email = "goran.svaland@sintef.no"}
+]
 description = "SINTEF Digital Twin Framework"
-license = "MIT"
 readme = "README.md"
-package-mode = true
-homepage = "https://github.com/SINTEF-9012/SINDIT20"
-repository = "https://github.com/SINTEF-9012/SINDIT20"
+license = {text = "MIT"}
+requires-python = ">=3.11,<3.13"
 keywords = ["digital-twin", "framework", "sintef"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-[[tool.poetry.packages]]
-include = "sindit"
-from = "src"
+dependencies = [
+    "requests>=2.31.0",
+    "httpx>=0.26.0",
+    "mkdocs>=1.5.3",
+    "fastapi==0.110.1",
+    "uvicorn>=0.29.0",
+    "rdflib==7.0.0",
+    "jproperties==2.1.1",
+    "hvac==2.2.0",
+    "pandas==2.2.2",
+    "tqdm>=4.66.4",
+    "pytest-mock>=3.14.0",
+    "pytest-asyncio>=0.23.8",
+    "ruuvitag-sensor>=2.3.1",
+    "bleak>=0.22.2",
+    "influxdb-client>=1.44.0",
+    "paho-mqtt>=2.1.0",
+    "python-dotenv>=1.0.1",
+    "psycopg2-binary>=2.9.10",
+    "boto3>=1.35.54",
+    "PyJWT==2.10.1",
+    "bcrypt==4.0.1",
+    "passlib[bcrypt]==1.7.4",
+    "python-multipart==0.0.20",
+    "python-keycloak>=5.8.1",
+    "minio>=7.2.20",
+    "tomli>=2.3.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.11,<3.13"
-requests = "^2.31.0"
-httpx = "^0.26.0"
-mkdocs = "^1.5.3"
-fastapi = "0.110.1"
-uvicorn = "^0.29.0"
-rdflib = "7.0.0"
-jproperties = "2.1.1"
-hvac = "2.2.0"
-pandas ="2.2.2"
-tqdm = "^4.66.4"
-pytest-mock = "^3.14.0"
-pytest-asyncio = "^0.23.8"
-ruuvitag-sensor = "^2.3.1"
-bleak = "^0.22.2"
-influxdb-client = "^1.44.0"
-paho-mqtt = "^2.1.0"
-python-dotenv = "^1.0.1"
-psycopg2-binary = "^2.9.10"
-boto3 = "^1.35.54"
-PyJWT = "2.10.1"
-bcrypt = "4.0.1"
-passlib = { version = "1.7.4", extras = ["bcrypt"] }
-python-multipart = "0.0.20"
-python-keycloak = "^5.8.1"
-minio = "^7.2.20"
-tomli = "^2.3.0"
+[project.urls]
+Homepage = "https://github.com/SINTEF-9012/SINDIT20"
+Repository = "https://github.com/SINTEF-9012/SINDIT20"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sindit"]
 
 
-[tool.poetry.group.test.dependencies]
-pytest = "^7.4.3"
-coverage = "^7.3.2"
-coverage-badge = "^1.1.0"
-
-[tool.poetry.group.dev.dependencies]
-ipykernel = "^6.29.4"
-isort = "^5.13.2"
+[project.optional-dependencies]
+test = [
+    "pytest>=7.4.3",
+    "coverage>=7.3.2",
+    "coverage-badge>=1.1.0",
+]
+dev = [
+    "ipykernel>=6.29.4",
+    "isort>=5.13.2",
+]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

@@ -1,32 +1,24 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim AS build
 
-# Environment variables for Poetry
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
-
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies in one layer
+# Install system dependencies and uv via pip
 RUN apt-get update \
     && apt-get -y install libpq-dev gcc \
-    && pip install poetry==1.8.2 \
+    && pip install --no-cache-dir uv \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only dependency files first (for better caching)
-COPY pyproject.toml poetry.lock* /app/
+COPY pyproject.toml README.md /app/
 
-# Install dependencies only (cached if pyproject.toml doesn't change)
-RUN poetry install --no-root --no-directory && rm -rf $POETRY_CACHE_DIR
+# Create virtual environment and install dependencies
+RUN uv venv /app/.venv \
+    && uv pip install --python /app/.venv/bin/python -e .
 
-# Now copy the application code (changes frequently, but deps are cached)
+# Now copy the application code
 COPY src/sindit /app/sindit/
-
-# Install the project itself
-RUN poetry install --only-root
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/

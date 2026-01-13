@@ -43,15 +43,21 @@ bash graphdb_start.sh
 
 To test your graphbd connection run from your base folder (/sindit):
 ```bash
-poetry run python run_test.py
+python run_test.py
 ```
 
 Go to localhost:7200 to configure graphdb
 
 ### API uvicorn server
+
+First, ensure dependencies are installed:
+```bash
+uv pip install -e .
+```
+
 To start the FastAPI server, run:
 ```bash
-poetry run python run_sindit.py
+python run_sindit.py
 ```
 
 
