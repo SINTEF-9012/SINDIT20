@@ -7,8 +7,8 @@ import time
 import json
 
 # Configuration
-API_BASE_URL = "http://localhost:9017"  # Adjust to your API URL
-NODE_URI = "http://sindit.sintef.no/quasar-plim-test/s3/test-node"
+API_BASE_URL = "https://sindit2-api.sintef.cloud/"  # Adjust to your API URL
+NODE_URI = "http://sindit.sintef.no/quasar-plim-test/s3-object/fabd3332-8b44-4968-8f9c-7b501f023024/attachments/image_01"
 USERNAME = "quasar"  # Adjust to your username
 PASSWORD = "quasar"  # Adjust to your password
 
