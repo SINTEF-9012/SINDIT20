@@ -61,6 +61,8 @@ pytest:
       - $ROOTDIR/junit.xml
     reports:
       junit: $ROOTDIR/junit.xml
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
 
 coverage:
   stage: test
@@ -91,6 +93,8 @@ coverage:
       coverage_report:
         coverage_format: cobertura
         path: $ROOTDIR/coverage.xml
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
 
 sonarqube:
   stage: analysis
@@ -114,6 +118,8 @@ sonarqube:
     - ls -la
     - sonar-scanner
   allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "sindit"
 
 # Build SINDIT Docker image on sindit branch
 # Remember to update version in pyproject.toml
