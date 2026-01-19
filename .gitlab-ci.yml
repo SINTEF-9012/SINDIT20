@@ -1,5 +1,4 @@
 stages:
-  - check
   - test
   - analysis
   - build
@@ -35,13 +34,6 @@ variables:
     # Run if on a branch and not a merge request
     - if: $CI_COMMIT_BRANCH
 
-
-check:
-  stage: check
-  extends: .base-rules
-  image: alpine:latest
-  script:
-    - echo "This step always passes."
 
 pytest:
   stage: test
