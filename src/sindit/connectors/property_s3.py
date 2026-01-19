@@ -83,7 +83,8 @@ class S3UploadPoller:
                 if prop.connector is None:
                     continue
 
-                logger.debug(f"Checking upload status for {prop.bucket}/{prop.key}")
+                logger.debug(f"Checking upload status for {prop.uri}")
+                logger.debug(f"{prop.bucket}/{prop.key}")
 
                 if prop._key_exists(prop.connector):
                     logger.info(

@@ -153,10 +153,10 @@ docker-build-sindit:
   rules:
     - if: $CI_COMMIT_BRANCH == "sindit"
 
-# Build GraphDB Docker image only when a tag is created
+# Build GraphDB Docker image only when a tag starting with "graphdb-" is created
 # To trigger from sindit branch:
 #   git checkout sindit && git pull
-#   git tag v2.0.17 && git push origin v2.0.17
+#   git tag graphdb-2.0.17 && git push origin graphdb-2.0.17
 # The build will use the commit that the tag points to
 docker-build-graphdb:
   stage: build
@@ -178,7 +178,7 @@ docker-build-graphdb:
       -u $CI_REGISTRY_USER --password-stdin
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - docker buildx create --name mybuilder --use
-    - export VERSION=$(echo $CI_COMMIT_TAG | sed 's/^v//')
+    - export VERSION=$(echo $CI_COMMIT_TAG | sed 's/^graphdb-//')
   script:
     docker buildx build
       --push
@@ -192,7 +192,7 @@ docker-build-graphdb:
       -t $IMAGE_PATH/$IMAGE_NAME:latest
       ./GraphDB
   rules:
-    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_TAG =~ /^graphdb-/
 
 push-to-github:
   stage: build
