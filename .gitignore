@@ -1,2 +1,43 @@
 # Data directory for persistent storage
 data_sindit/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Unit test / coverage reports
+.coverage
+.coverage.*
+coverage.xml
+coverage.svg
+htmlcov/
+.pytest_cache/
+junit.xml
+
+# SonarQube
+.sonar/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
