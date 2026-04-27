@@ -54,6 +54,10 @@ First, ensure dependencies are installed:
 ```bash
 uv pip install -e .
 ```
+or 
+```bash
+uv sync
+```
 
 To start the FastAPI server, run:
 ```bash

@@ -9,8 +9,13 @@ from sindit.util.log import logger  # noqa: E402
 # if not running in docker, load environment variables from dev .env file
 if not get_environment_variable_bool("DOCKER_ENV", optional=True, default=False):
     from dotenv import load_dotenv
+    import os
 
-    load_dotenv("environment_and_configuration/dev_environment_backend.env")
+    _env_path = os.path.join(
+        os.path.dirname(__file__),
+        "environment_and_configuration/dev_environment_backend.env",
+    )
+    load_dotenv(_env_path)
     logger.setLevel(
         get_environment_variable("LOG_LEVEL", optional=True, default="INFO")
     )

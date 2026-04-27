@@ -12,10 +12,16 @@ from sindit.knowledge_graph.graph_model import (
 
 class WorkspaceService:
     def __init__(self):
-        self.WORKSPACE_PATH = get_environment_variable(
+        _workspace_path = get_environment_variable(
             "WORKSPACE_PATH",
             optional=True,
             default="environment_and_configuration/workspace.json",
+        )
+        _base = os.path.dirname(os.path.dirname(__file__))
+        self.WORKSPACE_PATH = (
+            _workspace_path
+            if os.path.isabs(_workspace_path)
+            else os.path.join(_base, _workspace_path)
         )
 
         if os.path.exists(self.WORKSPACE_PATH):
