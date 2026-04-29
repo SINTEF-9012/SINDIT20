@@ -159,6 +159,34 @@ class ClientAPI:
             except ReqExc:
                 self._handle_request_exception(i)
 
+    def put(
+        self,
+        relative_path: str,
+        data: Dict = None,
+        json: Dict = None,
+        retries: int = -1,
+        **kwargs,
+    ):
+        """Put request. Returns the response object.
+
+        Args:
+        relative_path (str): _description_
+        retries: how often to retry if the call failed.
+            Negative numbers mean (about) unlimited.
+            data (Dict, optional): _description_. Defaults to None.
+            json (Dict, optional): _description_. Defaults to None.
+
+        Returns: Complete response object
+        """
+        range_limit = retries + 1 if retries >= 0 else 9 * 10**23
+        for i in range(range_limit):
+            try:
+                return requests.put(
+                    self.api_uri + relative_path, data=data, json=json, **kwargs
+                )
+            except ReqExc:
+                self._handle_request_exception(i)
+
     def post(
         self,
         relative_path: str,
