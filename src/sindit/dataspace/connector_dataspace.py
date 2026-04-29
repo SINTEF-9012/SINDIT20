@@ -62,7 +62,6 @@ class DataspaceConnector(Connector):
         auth_key: str | None = None,
         sindit_api_base_url: str | None = None,
         sindit_service_user: str | None = None,
-        sindit_service_user_password: str | None = None,
         secret_name: str = SINDIT_BEARER_SECRET_NAME,
         uri: str | None = None,
         kg_connector: SINDITKGConnector | None = None,
@@ -75,8 +74,11 @@ class DataspaceConnector(Connector):
         self.uri = uri or endpoint
         self.kg_connector = kg_connector
         self.sindit_api_base_url = sindit_api_base_url.rstrip("/")
+        # Username SINDIT will impersonate when the EDC data plane calls back
+        # into ``/kg/node``. The connector mints a fresh bearer for this user
+        # via ``AuthService.mint_service_token`` on every refresh; no password
+        # is ever stored.
         self.__sindit_service_user = sindit_service_user
-        self.__sindit_service_user_password = sindit_service_user_password
         # Kept for backward compatibility; current implementation inlines the
         # bearer as ``authCode`` and does not push to the EDC vault.
         self.secret_name = secret_name
@@ -172,15 +174,18 @@ class DataspaceConnector(Connector):
     def _fetch_sindit_bearer(self) -> str | None:
         """Mint a SINDIT JWT for the configured service user, in-process.
 
-        We deliberately avoid HTTP-calling SINDIT's own ``/token`` endpoint:
-        SINDIT runs uvicorn with ``workers=1`` and this method is invoked from
-        within a request handler, so a sync HTTP call back into ourselves
-        would deadlock until the request times out. Instead we call the
-        configured ``AuthService`` directly.
+        Calls :meth:`AuthService.mint_service_token` directly, which signs a
+        JWT for ``self.__sindit_service_user`` with the AuthService's own
+        signing key - no password is required because the call originates
+        from inside the SINDIT server. We deliberately avoid HTTP-calling
+        SINDIT's own ``/token`` endpoint: SINDIT runs uvicorn with
+        ``workers=1`` and this method is invoked from within a request
+        handler, so a sync HTTP call back into ourselves would deadlock.
 
         Returns the full ``Authorization`` header value (``"Bearer <jwt>"``)
-        ready to be stored in the EDC vault, or None if no service user is
-        configured / authentication failed.
+        or ``None`` if no service user is configured, the user no longer
+        exists, or the AuthService implementation cannot mint tokens
+        in-process (e.g. Keycloak-backed deployments).
         """
         if not self.__sindit_service_user:
             logger.warning(
@@ -193,15 +198,23 @@ class DataspaceConnector(Connector):
             # Imported lazily to avoid a circular import at module load.
             from sindit.initialize_authentication import authService
 
-            token = authService.create_access_token(
-                username=self.__sindit_service_user,
-                password=self.__sindit_service_user_password or "",
+            token = authService.mint_service_token(
+                username=self.__sindit_service_user
             )
         except Exception as e:  # noqa: BLE001
             logger.error(
                 "Failed to mint SINDIT token for service user %s: %s",
                 self.__sindit_service_user,
                 e,
+            )
+            return None
+
+        if token is None:
+            logger.error(
+                "AuthService refused to mint a service token for '%s'; the "
+                "dataspace connector for %s cannot authenticate to SINDIT",
+                self.__sindit_service_user,
+                self.uri,
             )
             return None
 
@@ -409,7 +422,6 @@ class DataspaceConnectorBuilder(ObjectBuilder):
         auth_key: str | None = None,
         sindit_api_base_url: str | None = None,
         sindit_service_user: str | None = None,
-        sindit_service_user_password: str | None = None,
         secret_name: str = SINDIT_BEARER_SECRET_NAME,
         uri: str | None = None,
         kg_connector: SINDITKGConnector | None = None,
@@ -421,7 +433,6 @@ class DataspaceConnectorBuilder(ObjectBuilder):
             auth_key=auth_key,
             sindit_api_base_url=sindit_api_base_url,
             sindit_service_user=sindit_service_user,
-            sindit_service_user_password=sindit_service_user_password,
             secret_name=secret_name,
             uri=uri,
             kg_connector=kg_connector,

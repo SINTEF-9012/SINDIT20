@@ -115,6 +115,30 @@ class InMemoryAuthService(AuthService):
         )
         return Token(access_token=access_token, token_type="bearer")
 
+    def mint_service_token(
+        self, username: str, ttl_minutes: int | None = None
+    ) -> Token | None:
+        """Mint a JWT for ``username`` directly, bypassing password check.
+
+        Used by the dataspace connector to obtain a long-lived bearer for an
+        already-authenticated SINDIT user without forcing operators to store
+        a service-user password in the vault. Refuses to mint tokens for
+        unknown usernames so a stale ``DataspaceManagement.sinditServiceUser``
+        cannot keep producing valid tokens after a user is removed.
+        """
+        user = self.get_user(self.users_db, username)
+        if not user:
+            logger.warning(
+                "Cannot mint service token: user '%s' not found in users db",
+                username,
+            )
+            return None
+        ttl = ttl_minutes if ttl_minutes is not None else self.ACCESS_TOKEN_EXPIRE_MINUTES
+        access_token = self.create_token(
+            data={"sub": user.username}, expires_delta=timedelta(minutes=ttl)
+        )
+        return Token(access_token=access_token, token_type="bearer")
+
     def verify_token(self, token: str) -> User:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

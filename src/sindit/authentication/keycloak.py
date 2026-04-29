@@ -31,6 +31,30 @@ class KeycloakAuthService(AuthService):
                 detail="Invalid username or password",
             )
 
+    def mint_service_token(
+        self, username: str, ttl_minutes: int | None = None
+    ) -> Token | None:
+        """Keycloak-issued JWTs cannot be minted in-process.
+
+        Returning ``None`` signals to the caller (typically the dataspace
+        connector) that no bearer can be auto-minted for this user. To make
+        the dataspace integration work with Keycloak you need to either:
+
+        - configure a Keycloak service account with the client_credentials
+          grant and replace this implementation, or
+        - keep the legacy ``sinditServiceUserPasswordPath`` flow alive in a
+          separate code path.
+        """
+        from sindit.util.log import logger
+
+        logger.warning(
+            "Keycloak auth service cannot mint a service token for '%s' "
+            "in-process; configure a Keycloak service account if you need "
+            "the dataspace connector to call SINDIT under that identity.",
+            username,
+        )
+        return None
+
     def verify_token(self, token: str) -> User:
         """
         Verify the given token and return user information.

@@ -16,7 +16,7 @@
 
 :DataspaceManagement a samm:Entity ;
    samm:description "A node representing the Dataspace Management protocol"@en ;
-   samm:properties ( :isActive :authenticationKeyPath :authenticationType :endpoint :dataspaceDescription :sinditApiBaseUrl :sinditServiceUser :sinditServiceUserPasswordPath :dataspaceAssets ) .
+   samm:properties ( :isActive :authenticationKeyPath :authenticationType :endpoint :dataspaceDescription :sinditApiBaseUrl :sinditServiceUser :dataspaceAssets ) .
 
 :dataspaceAssets a samm:Property ;
    samm:description "List of SINDIT KG node URIs (assets/asset properties) currently published into this dataspace's EDC catalog"@en ;
@@ -45,9 +45,5 @@
    samm:exampleValue "http://sindit:9017" .
 
 :sinditServiceUser a samm:Property ;
-   samm:description "SINDIT service user used to mint the bearer token consumed by the EDC data plane"@en ;
-   samm:characteristic samm-c:Text .
-
-:sinditServiceUserPasswordPath a samm:Property ;
-   samm:description "Path to the vault entry holding the password for sinditServiceUser"@en ;
+   samm:description "SINDIT username impersonated when the EDC data plane calls back into /kg/node. Auto-set to the calling user when the dataspace node is created via the API; no password is required because the bearer is minted in-process via AuthService.mint_service_token."@en ;
    samm:characteristic samm-c:Text .

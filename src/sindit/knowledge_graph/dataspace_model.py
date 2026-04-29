@@ -21,7 +21,6 @@ class DataspaceManagement(RDFModel):
         "dataspaceDescription": GRAPH_MODEL.dataspaceDescription,
         "sinditApiBaseUrl": GRAPH_MODEL.sinditApiBaseUrl,
         "sinditServiceUser": GRAPH_MODEL.sinditServiceUser,
-        "sinditServiceUserPasswordPath": GRAPH_MODEL.sinditServiceUserPasswordPath,
         "dataspaceAssets": GRAPH_MODEL.dataspaceAssets,
     }
 
@@ -44,12 +43,14 @@ class DataspaceManagement(RDFModel):
     # Used to build the ``baseUrl`` of every published HTTP asset's data
     # address (e.g. ``http://sindit:9017``).
     sinditApiBaseUrl: Literal | str = None
-    # Service-user credentials used by this dataspace connector to mint a
-    # bearer token via SINDIT's own ``POST /token`` endpoint. The bearer is
-    # then stored in the EDC vault and referenced from each asset's
-    # ``DataAddress`` via ``secretName``.
+    # SINDIT username the dataspace connector will impersonate when the EDC
+    # data plane calls back into ``/kg/node``. A bearer JWT is minted
+    # in-process via :meth:`AuthService.mint_service_token` and inlined into
+    # each published asset's ``DataAddress`` as ``authCode``; no password is
+    # stored on the node or in the vault. ``POST /dataspace/management``
+    # auto-fills this with the calling user's username when omitted, so most
+    # callers never need to set it explicitly.
     sinditServiceUser: Literal | str = None
-    sinditServiceUserPasswordPath: Literal | str = None
     dataspaceAssets: List[
         Union[URIRefNode, AbstractAssetProperty, AbstractAsset]
     ] = None

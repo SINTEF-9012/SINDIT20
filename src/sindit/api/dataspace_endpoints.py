@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 from fastapi import HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sindit.initialize_kg_connectors import sindit_kg_connector
 from sindit.api.authentication_endpoints import User, get_current_active_user
 from sindit.dataspace.setup_dataspace import (
@@ -18,6 +18,59 @@ from sindit.api.api import app
 
 class DataspacePublishRequest(BaseModel):
     node_uris: List[str]
+
+
+class DataspaceManagementInput(BaseModel):
+    """Public request schema for ``POST /dataspace/management``.
+
+    Mirrors the user-settable subset of :class:`DataspaceManagement` and
+    intentionally excludes:
+
+    - ``sinditServiceUser``: derived from the calling user's JWT so the
+      EDC data plane cannot be made to impersonate an arbitrary user just
+      by tweaking a request body.
+    - ``isActive``: system-maintained status mirror of EDC reachability.
+    - ``dataspaceAssets``: managed via ``/dataspace/publish`` and
+      ``/dataspace/sync``.
+    """
+
+    uri: Optional[str] = Field(
+        default=None,
+        description=(
+            "Stable URI of the DataspaceManagement node. Pass the same value "
+            "on subsequent POSTs to update an existing node; omit to let the "
+            "KG layer assign one."
+        ),
+    )
+    endpoint: Optional[str] = Field(
+        default=None,
+        description="EDC Management API base URL, e.g. http://localhost:19193/management",
+    )
+    authenticationType: Optional[str] = Field(
+        default=None, description="e.g. 'tokenbased'"
+    )
+    authenticationKeyPath: Optional[str] = Field(
+        default=None,
+        description="Vault path of the EDC Management API key used by SINDIT to call the EDC.",
+    )
+    dataspaceDescription: Optional[str] = None
+    sinditApiBaseUrl: Optional[str] = Field(
+        default=None,
+        description=(
+            "Public URL of the SINDIT API as seen from the EDC data plane "
+            "(e.g. http://host.docker.internal:9017 when SINDIT runs on the "
+            "docker host and the EDC runs in a container)."
+        ),
+    )
+
+    def to_node(self, *, service_user: str) -> DataspaceManagement:
+        """Materialize a :class:`DataspaceManagement` with server-set fields."""
+        data = self.model_dump(exclude_none=True)
+        # ``sinditServiceUser`` is *always* set by the server here; if a
+        # client somehow submitted one in an extra field, Pydantic's
+        # default ``ignore`` extra policy already discarded it.
+        data["sinditServiceUser"] = service_user
+        return DataspaceManagement(**data)
 
 
 def _get_dataspace_node_or_404(uri: str) -> DataspaceManagement:
@@ -70,19 +123,28 @@ async def get_all_dataspace_nodes(
 
 @app.post("/dataspace/management", tags=["Dataspace"])
 async def create_dataspace_management(
-    node: DataspaceManagement,
+    payload: DataspaceManagementInput,
     current_user: User = Depends(get_current_active_user),
 ) -> dict:
-    """
-    Create or update a DataspaceManagement node and (re)start its connector.
+    """Create or update a DataspaceManagement node and (re)start its connector.
 
-    The corresponding EDC connector is always started immediately, then
-    ``isActive`` on the saved node is updated to reflect whether the EDC
-    Management API is reachable. ``isActive`` is therefore a
-    system-maintained status field; users should not rely on toggling it
-    to enable/disable a dataspace (delete the node to disable it).
+    The service user impersonated by the EDC data plane is **always** the
+    caller's identity (``current_user.username``); it cannot be overridden
+    via the request body. This guarantees:
+
+    - the dataspace cannot be made to impersonate an arbitrary user simply
+      by editing a JSON payload,
+    - actions taken through the EDC are auditable back to the SINDIT user
+      who created the dataspace.
+
+    The EDC connector is started immediately and ``isActive`` is updated
+    to reflect whether the EDC Management API is reachable. ``isActive``
+    and ``dataspaceAssets`` are also system-managed and are not part of
+    the request body (use ``/dataspace/publish`` to manage assets, and
+    delete the node to disable a dataspace).
     """
     try:
+        node = payload.to_node(service_user=current_user.username)
         result = sindit_kg_connector.save_node(node)
         if result:
             # Always (re)start the connector; isActive is a system-maintained
