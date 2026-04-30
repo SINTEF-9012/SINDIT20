@@ -1,0 +1,9 @@
+title = "SINDIT Gitleaks Config"
+
+[allowlist]
+  description = "SINDIT Stuff"
+  files = [
+    "README.md",
+    "src/sindit/environment_and_configuration/dev_environment_backend.env",
+    "src/sindit/environment_and_configuration/docker_environment_backend.env",
+  ]
