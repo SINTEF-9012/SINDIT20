@@ -21,8 +21,6 @@ class DataspacePublishRequest(BaseModel):
     node_uris: List[str]
 
 
-
-
 def _get_dataspace_node_or_404(uri: str) -> DataspaceManagement:
     # ``DataspaceManagement`` is not part of ``NodeURIClassMapping``
     # (which is what ``load_node_by_uri`` uses by default), so we go through
@@ -100,7 +98,9 @@ async def create_dataspace_management(
         payload.dataspaceAssets = None
         # Workspace URI: use client-supplied value or fall back to caller's workspace.
         if not payload.sinditWorkspaceUri:
-            payload.sinditWorkspaceUri = str(workspaceService.get_current_workspace(current_user).uri)
+            payload.sinditWorkspaceUri = str(
+                workspaceService.get_current_workspace(current_user).uri
+            )
         result = sindit_kg_connector.save_node(payload)
         if result:
             # Always (re)start the connector; isActive is a system-maintained

@@ -8,6 +8,7 @@ from sindit.authentication.models import Token, User
 from sindit.util.environment_and_configuration import get_environment_variable
 from sindit.util.log import logger
 
+
 class KeycloakAuthService(AuthService):
     def __init__(self):
         self.keycloak_openid = KeycloakOpenID(

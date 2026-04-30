@@ -7,5 +7,3 @@ class AuthService:
 
     def verify_token(self, token: str) -> User:
         pass
-
-

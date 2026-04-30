@@ -169,6 +169,7 @@ class DataspaceConnector(Connector):
         Raises :class:`ValueError` if no callback key is configured.
         """
         import hmac
+
         if not self.__sindit_callback_key:
             raise ValueError(
                 f"No sinditCallbackKeyPath configured for dataspace {self.uri}"

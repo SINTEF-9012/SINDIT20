@@ -54,7 +54,7 @@ First, ensure dependencies are installed:
 ```bash
 uv pip install -e .
 ```
-or 
+or
 ```bash
 uv sync
 ```
