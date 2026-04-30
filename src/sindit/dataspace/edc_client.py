@@ -222,9 +222,82 @@ class EDCManagementClient:
 
     def delete_asset(self, asset_id: str) -> bool:
         response = self._request(
-            "DELETE", f"/v3/assets/{asset_id}", ok_statuses=(200, 204, 404)
+            "DELETE", f"/v3/assets/{asset_id}", ok_statuses=(200, 204, 404, 409)
         )
+        if response.status_code == 409:
+            # Asset is locked by one or more contract agreements. Delete them
+            # first, then retry.
+            agreements = self.list_agreements_for_asset(asset_id)
+            if not agreements:
+                logger.warning(
+                    "EDC asset %s blocked by agreement(s) but none found via query; "
+                    "asset will remain.",
+                    asset_id,
+                )
+                return False
+            for agreement in agreements:
+                agreement_id = agreement.get("@id")
+                if agreement_id:
+                    self.delete_agreement(agreement_id)
+            # Retry deletion now that agreements are gone.
+            retry = self._request(
+                "DELETE", f"/v3/assets/{asset_id}", ok_statuses=(200, 204, 404, 409)
+            )
+            if retry.status_code not in (200, 204):
+                logger.warning(
+                    "EDC asset %s still could not be deleted after removing %d "
+                    "agreement(s): %s",
+                    asset_id,
+                    len(agreements),
+                    retry.text,
+                )
+                return False
+            return True
         return response.status_code in (200, 204)
+
+    # -------------------------------------------------------- contract agreements
+
+    def list_agreements_for_asset(self, asset_id: str) -> list[dict]:
+        """Return all contract agreements whose ``assetId`` matches ``asset_id``."""
+        body = {
+            "@context": dict(self.DEFAULT_CONTEXT),
+            "@type": "QuerySpec",
+            "filterExpression": [
+                {
+                    "@type": "Criterion",
+                    "operandLeft": "assetId",
+                    "operator": "=",
+                    "operandRight": asset_id,
+                }
+            ],
+        }
+        try:
+            response = self._request(
+                "POST",
+                "/v3/contractagreements/request",
+                json_body=body,
+                ok_statuses=(200,),
+            )
+            if response.status_code != 200:
+                return []
+            data = response.json()
+            return data if isinstance(data, list) else data.get("@graph", []) or []
+        except EDCManagementClientError as e:
+            logger.warning("Failed to list agreements for asset %s: %s", asset_id, e)
+            return []
+
+    def delete_agreement(self, agreement_id: str) -> bool:
+        """Delete a contract agreement by id. Returns True on success."""
+        try:
+            response = self._request(
+                "DELETE",
+                f"/v3/contractagreements/{agreement_id}",
+                ok_statuses=(200, 204, 404),
+            )
+            return response.status_code in (200, 204)
+        except EDCManagementClientError as e:
+            logger.warning("Failed to delete agreement %s: %s", agreement_id, e)
+            return False
 
     # --------------------------------------------------------------- policies
 

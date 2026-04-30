@@ -12,8 +12,6 @@ from sindit.authentication.models import User, Token
 
 
 from sindit.initialize_kg_connectors import sindit_kg_connector
-
-
 from sindit.initialize_authentication import authService, workspaceService
 
 

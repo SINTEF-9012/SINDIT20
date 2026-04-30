@@ -1,20 +1,28 @@
 from typing import Any, List
-from fastapi import Header, HTTPException, Depends
+
+from fastapi import Depends, Header, HTTPException
 from pydantic import BaseModel
-from sindit.initialize_kg_connectors import sindit_kg_connector
-from sindit.initialize_authentication import workspaceService
+
+from sindit.api.api import app
 from sindit.api.authentication_endpoints import User, get_current_active_user
+from sindit.common.semantic_knowledge_graph.rdf_model import URIRefNode
 from sindit.dataspace.setup_dataspace import (
+    _connector_key,
     dataspace_connectors,
+    load_dataspaces_for_current_graph,
     remove_dataspace_node,
     update_dataspace_node,
 )
-from sindit.common.semantic_knowledge_graph.rdf_model import URIRefNode
-
+from sindit.initialize_authentication import workspaceService
+from sindit.initialize_kg_connectors import sindit_kg_connector
 from sindit.knowledge_graph.dataspace_model import DataspaceManagement
 from sindit.util.log import logger
 
-from sindit.api.api import app
+
+def _load_dataspaces(current_user: User = Depends(get_current_active_user)) -> User:
+    """Dependency: ensures dataspace connectors are loaded for the current graph."""
+    load_dataspaces_for_current_graph()
+    return current_user
 
 
 class DataspacePublishRequest(BaseModel):
@@ -41,7 +49,7 @@ def _get_dataspace_node_or_404(uri: str) -> DataspaceManagement:
 
 @app.get("/dataspace/types", tags=["Dataspace"])
 async def get_all_dataspace_node_types(
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> list:
     """
     Get all dataspace node types.
@@ -55,7 +63,7 @@ async def get_all_dataspace_node_types(
 
 @app.get("/dataspace", tags=["Dataspace"])
 async def get_all_dataspace_nodes(
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
     skip: int = 0,
     limit: int = 10,
 ) -> List[DataspaceManagement]:
@@ -72,7 +80,7 @@ async def get_all_dataspace_nodes(
 @app.post("/dataspace/management", tags=["Dataspace"])
 async def create_dataspace_management(
     payload: DataspaceManagement,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> dict:
     """Create or update a DataspaceManagement node and (re)start its connector.
 
@@ -115,7 +123,7 @@ async def create_dataspace_management(
 @app.delete("/dataspace/management", tags=["Dataspace"])
 async def delete_dataspace_management(
     uri: str,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> dict:
     """Delete a DataspaceManagement node.
 
@@ -153,7 +161,8 @@ async def delete_dataspace_management(
             logger.warning("Catalog cleanup for dataspace %s failed: %s", node_uri, e)
 
     # 2) Stop the in-process connector and remove it from the registry.
-    remove_dataspace_node(node_uri)
+    workspace_uri = str(workspaceService.get_current_workspace(current_user).uri)
+    remove_dataspace_node(node_uri, workspace_uri=workspace_uri)
 
     # 3) Delete the KG node.
     try:
@@ -167,7 +176,7 @@ async def delete_dataspace_management(
 @app.post("/dataspace/test_connection", tags=["Dataspace"])
 async def test_dataspace_connection(
     uri: str,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> dict:
     """Health-check the EDC Management API and persist the result onto isActive."""
     node = _get_dataspace_node_or_404(uri)
@@ -189,7 +198,7 @@ async def test_dataspace_connection(
 async def publish_nodes_to_dataspace(
     uri: str,
     payload: DataspacePublishRequest,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> dict:
     """Add nodes to ``dataspaceAssets`` and push them to the EDC.
 
@@ -213,7 +222,8 @@ async def publish_nodes_to_dataspace(
         ds_node.dataspaceAssets = existing
         sindit_kg_connector.save_node(ds_node)
 
-        connector = dataspace_connectors.get(str(ds_node.uri))
+        _key = _connector_key(sindit_kg_connector.get_graph_uri(), str(ds_node.uri))
+        connector = dataspace_connectors.get(_key)
         connector_was_built_now = False
         if connector is None:
             connector = update_dataspace_node(ds_node, replace=False)
@@ -245,7 +255,7 @@ async def publish_nodes_to_dataspace(
 async def unpublish_nodes_from_dataspace(
     uri: str,
     payload: DataspacePublishRequest,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> dict:
     """Remove nodes from ``dataspaceAssets`` and unpublish from EDC."""
     ds_node = _get_dataspace_node_or_404(uri)
@@ -258,7 +268,8 @@ async def unpublish_nodes_from_dataspace(
         ]
         sindit_kg_connector.save_node(ds_node)
 
-        connector = dataspace_connectors.get(str(ds_node.uri))
+        _key = _connector_key(sindit_kg_connector.get_graph_uri(), str(ds_node.uri))
+        connector = dataspace_connectors.get(_key)
         unpublished: list[str] = []
         if connector is not None:
             for node_uri in payload.node_uris:
@@ -273,12 +284,13 @@ async def unpublish_nodes_from_dataspace(
 @app.post("/dataspace/sync", tags=["Dataspace"])
 async def sync_dataspace(
     uri: str,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> dict:
     """Reconcile the EDC catalog with this dataspace's ``dataspaceAssets``."""
     ds_node = _get_dataspace_node_or_404(uri)
     try:
-        connector = dataspace_connectors.get(str(ds_node.uri))
+        _key = _connector_key(sindit_kg_connector.get_graph_uri(), str(ds_node.uri))
+        connector = dataspace_connectors.get(_key)
         if connector is None:
             connector = update_dataspace_node(ds_node, replace=False)
         if connector is None:
@@ -296,11 +308,12 @@ async def sync_dataspace(
 @app.get("/dataspace/catalog", tags=["Dataspace"])
 async def get_dataspace_catalog(
     uri: str,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(_load_dataspaces),
 ) -> list:
     """Return the SINDIT-published assets currently registered in the EDC."""
     ds_node = _get_dataspace_node_or_404(uri)
-    connector = dataspace_connectors.get(str(ds_node.uri))
+    _key = _connector_key(sindit_kg_connector.get_graph_uri(), str(ds_node.uri))
+    connector = dataspace_connectors.get(_key)
     if connector is None:
         connector = update_dataspace_node(ds_node, replace=False)
     if connector is None:
@@ -324,6 +337,7 @@ async def dataspace_node_callback(
     dataspace_uri: str,
     node_uri: str,
     depth: int = 1,
+    workspace_uri: str | None = None,
     x_api_key: str = Header(None, alias="X-Api-Key"),
 ) -> Any:
     """Dedicated callback endpoint for the EDC data plane.
@@ -333,13 +347,24 @@ async def dataspace_node_callback(
     header whose value is stored in the SINDIT vault at the path given by
     ``sinditCallbackKeyPath`` on the :class:`DataspaceManagement` node.
 
-    The workspace named graph is resolved from the in-memory connector
-    registry (populated at ``POST /dataspace/management`` time from the
-    calling user's current workspace), so no user token or identity mapping
-    is required and the response is always scoped to the correct graph
-    regardless of user workspace changes.
+    ``workspace_uri`` is required for reliable multi-workspace disambiguation:
+    X-Api-Key is user-defined and therefore not guaranteed to be unique across
+    workspaces, so it cannot be used as the sole lookup key.
     """
-    connector = dataspace_connectors.get(dataspace_uri)
+    if workspace_uri:
+        key = _connector_key(workspace_uri, dataspace_uri)
+        connector = dataspace_connectors.get(key)
+    else:
+        # No workspace supplied — fall back to scanning by dataspace URI.
+        # Works for single-workspace deployments and is kept for compatibility.
+        connector = next(
+            (
+                c
+                for k, c in dataspace_connectors.items()
+                if k.endswith(f"::{dataspace_uri}")
+            ),
+            None,
+        )
     if connector is None:
         raise HTTPException(
             status_code=404,
@@ -354,12 +379,6 @@ async def dataspace_node_callback(
 
     if not valid:
         raise HTTPException(status_code=401, detail="Invalid or missing X-Api-Key")
-
-    if not connector.sindit_workspace_uri:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Dataspace {dataspace_uri!r} has no workspace URI configured",
-        )
 
     sindit_kg_connector.set_graph_uri(connector.sindit_workspace_uri)
     try:

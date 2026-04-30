@@ -42,24 +42,8 @@ from sindit.api import dataspace_endpoints  # noqa: F401, E402
 from sindit.api import health_endpoints  # noqa: F401, E402
 
 
-# from connectors.setup_connectors import initialize_connections_and_properties
-
-# logger.info("Starting connections and properties...")
-# initialize_connections_and_properties()
-
-from sindit.dataspace.setup_dataspace import initialize_dataspaces  # noqa: E402
-
-
 if __name__ == "__main__":
     logger.info("Starting SINDIT")
-
-    # Initialize dataspace connectors (publishes existing
-    # ``DataspaceManagement`` nodes flagged as active to their EDC).
-    try:
-        logger.info("Initializing dataspace connectors...")
-        initialize_dataspaces()
-    except Exception as e:
-        logger.error(f"Failed to initialize dataspaces: {e}")
 
     # Run fast API
     logger.info("Running FastAPI...")
