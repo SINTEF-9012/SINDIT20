@@ -56,26 +56,33 @@ def contract_definition_id_for(asset_id: str) -> str:
 def build_http_asset(
     node: Any,
     sindit_api_base_url: str,
-    bearer_header: str | None = None,
+    dataspace_uri: str,
+    callback_api_key: str | None = None,
 ) -> dict:
     """Build the EDC 0.17 JSON-LD payload for an HTTP asset backed by SINDIT.
 
     Parameters:
         node: A SINDIT KG node (typically ``AbstractAsset`` or
-            ``AbstractAssetProperty``). Only ``uri`` is required; class name
-            and label are picked up if present.
+            ``AbstractAssetProperty``). Only ``uri`` is required.
         sindit_api_base_url: Public base URL where SINDIT's REST API is
             reachable from the EDC data plane (e.g. ``http://sindit:9017``).
-        bearer_header: Full ``Authorization`` header value (e.g.
-            ``"Bearer eyJ..."``) inlined into the data address as
-            ``authCode``. Pass ``None`` to omit auth (useful only when SINDIT
-            exposes an unauthenticated proxy route).
+        dataspace_uri: URI of the ``DataspaceManagement`` node that published
+            this asset.  Embedded as a query parameter so the callback endpoint
+            can look up the workspace without any user-identity assumptions.
+        callback_api_key: Static API key inlined into the data address as
+            ``authCode``; sent by the EDC data plane as ``X-Api-Key``.
+            Pass ``None`` to omit auth.
     """
     node_uri = str(getattr(node, "uri", node))
     asset_id = sindit_uri_to_edc_asset_id(node_uri)
 
-    base_url = sindit_api_base_url.rstrip("/") + "/kg/node"
-    query_params = f"node_uri={quote(node_uri, safe='')}&depth=1"
+    # Point to the dedicated callback endpoint that resolves the workspace
+    # from the DataspaceManagement node rather than from a user token.
+    base_url = sindit_api_base_url.rstrip("/") + "/dataspace/node"
+    query_params = (
+        f"dataspace_uri={quote(dataspace_uri, safe='')}"
+        f"&node_uri={quote(node_uri, safe='')}&depth=1"
+    )
 
     # Plain, unprefixed property keys to match the canonical seed payload
     # (``deployment/requests/create-asset.json``). With ``@vocab=edc`` they
@@ -108,9 +115,9 @@ def build_http_asset(
         "proxyPath": "false",
         "proxyMethod": "false",
     }
-    if bearer_header:
-        data_address["authKey"] = "Authorization"
-        data_address["authCode"] = bearer_header
+    if callback_api_key:
+        data_address["authKey"] = "X-Api-Key"
+        data_address["authCode"] = callback_api_key
 
     # No top-level ``@type: Asset`` either - matches the seed payload.
     #

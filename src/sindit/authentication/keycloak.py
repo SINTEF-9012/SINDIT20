@@ -6,7 +6,7 @@ from keycloak import KeycloakOpenID
 from sindit.authentication.authentication_service import AuthService
 from sindit.authentication.models import Token, User
 from sindit.util.environment_and_configuration import get_environment_variable
-
+from sindit.util.log import logger
 
 class KeycloakAuthService(AuthService):
     def __init__(self):
@@ -25,35 +25,12 @@ class KeycloakAuthService(AuthService):
             token = self.keycloak_openid.token(username, password)
             return Token(access_token=token["access_token"], token_type="bearer")
 
-        except (KeycloakAuthenticationError, Exception):
+        except (KeycloakAuthenticationError, Exception) as e:
+            logger.error("Authentication failed for user '%s': %s", username, e)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
+                detail="Authentication failed: " + str(e),
             )
-
-    def mint_service_token(
-        self, username: str, ttl_minutes: int | None = None
-    ) -> Token | None:
-        """Keycloak-issued JWTs cannot be minted in-process.
-
-        Returning ``None`` signals to the caller (typically the dataspace
-        connector) that no bearer can be auto-minted for this user. To make
-        the dataspace integration work with Keycloak you need to either:
-
-        - configure a Keycloak service account with the client_credentials
-          grant and replace this implementation, or
-        - keep the legacy ``sinditServiceUserPasswordPath`` flow alive in a
-          separate code path.
-        """
-        from sindit.util.log import logger
-
-        logger.warning(
-            "Keycloak auth service cannot mint a service token for '%s' "
-            "in-process; configure a Keycloak service account if you need "
-            "the dataspace connector to call SINDIT under that identity.",
-            username,
-        )
-        return None
 
     def verify_token(self, token: str) -> User:
         """
@@ -71,8 +48,8 @@ class KeycloakAuthService(AuthService):
                 email=user_info.get("email"),
                 full_name=user_info.get("name"),
             )
-        except (KeycloakAuthenticationError, Exception):
+        except (KeycloakAuthenticationError, Exception) as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
+                detail="Could not validate credentials: " + str(e),
             )

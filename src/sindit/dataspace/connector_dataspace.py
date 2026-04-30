@@ -61,7 +61,8 @@ class DataspaceConnector(Connector):
         auth_type: str | None = "tokenbased",
         auth_key: str | None = None,
         sindit_api_base_url: str | None = None,
-        sindit_service_user: str | None = None,
+        sindit_workspace_uri: str | None = None,
+        sindit_callback_key: str | None = None,
         secret_name: str = SINDIT_BEARER_SECRET_NAME,
         uri: str | None = None,
         kg_connector: SINDITKGConnector | None = None,
@@ -74,18 +75,13 @@ class DataspaceConnector(Connector):
         self.uri = uri or endpoint
         self.kg_connector = kg_connector
         self.sindit_api_base_url = sindit_api_base_url.rstrip("/")
-        # Username SINDIT will impersonate when the EDC data plane calls back
-        # into ``/kg/node``. The connector mints a fresh bearer for this user
-        # via ``AuthService.mint_service_token`` on every refresh; no password
-        # is ever stored.
-        self.__sindit_service_user = sindit_service_user
-        # Kept for backward compatibility; current implementation inlines the
-        # bearer as ``authCode`` and does not push to the EDC vault.
+        # Named-graph URI for the workspace whose nodes are published here.
+        # Stored on the connector so the callback endpoint can look it up
+        # from the in-memory registry without touching the KG.
+        self.sindit_workspace_uri = sindit_workspace_uri
+        # Static API key sent by the EDC data plane as ``X-Api-Key``.
+        self.__sindit_callback_key = sindit_callback_key
         self.secret_name = secret_name
-        # Cached ``Authorization: Bearer <jwt>`` header value injected into
-        # every published asset's data address. Refreshed via
-        # ``refresh_backend_token`` and rotated by ``sync``.
-        self._bearer_header: str | None = None
         self.client = EDCManagementClient(
             endpoint=endpoint,
             auth_type=auth_type,
@@ -136,7 +132,7 @@ class DataspaceConnector(Connector):
     # --------------------------------------------------------------- lifecycle
 
     def start(self, **kwargs) -> None:
-        """Verify EDC reachability, mint the SINDIT bearer, ensure policy."""
+        """Verify EDC reachability and ensure the public policy exists."""
         no_status = kwargs.get("no_update_connection_status", False)
         try:
             healthy = self.client.health_check()
@@ -146,11 +142,6 @@ class DataspaceConnector(Connector):
                     self.update_connection_status(False)
                 return
 
-            # Mint a fresh SINDIT bearer and cache it in memory; it will be
-            # inlined into each asset's data address when published.
-            self.refresh_backend_token()
-
-            # Make sure the public policy exists.
             self.client.create_policy_definition(build_default_public_policy())
 
             self.is_connected = True
@@ -171,108 +162,35 @@ class DataspaceConnector(Connector):
 
     # --------------------------------------------------------------- auth/token
 
-    def _fetch_sindit_bearer(self) -> str | None:
-        """Mint a SINDIT JWT for the configured service user, in-process.
+    def validate_callback_key(self, key: str | None) -> bool:
+        """Return True if ``key`` matches the configured callback API key.
 
-        Calls :meth:`AuthService.mint_service_token` directly, which signs a
-        JWT for ``self.__sindit_service_user`` with the AuthService's own
-        signing key - no password is required because the call originates
-        from inside the SINDIT server. We deliberately avoid HTTP-calling
-        SINDIT's own ``/token`` endpoint: SINDIT runs uvicorn with
-        ``workers=1`` and this method is invoked from within a request
-        handler, so a sync HTTP call back into ourselves would deadlock.
-
-        Returns the full ``Authorization`` header value (``"Bearer <jwt>"``)
-        or ``None`` if no service user is configured, the user no longer
-        exists, or the AuthService implementation cannot mint tokens
-        in-process (e.g. Keycloak-backed deployments).
+        Uses a constant-time comparison to prevent timing attacks.
+        Raises :class:`ValueError` if no callback key is configured.
         """
-        if not self.__sindit_service_user:
-            logger.warning(
-                "No SINDIT service user configured for dataspace %s; "
-                "EDC will not be able to authenticate to SINDIT",
-                self.uri,
+        import hmac
+        if not self.__sindit_callback_key:
+            raise ValueError(
+                f"No sinditCallbackKeyPath configured for dataspace {self.uri}"
             )
-            return None
-        try:
-            # Imported lazily to avoid a circular import at module load.
-            from sindit.initialize_authentication import authService
-
-            token = authService.mint_service_token(
-                username=self.__sindit_service_user
-            )
-        except Exception as e:  # noqa: BLE001
-            logger.error(
-                "Failed to mint SINDIT token for service user %s: %s",
-                self.__sindit_service_user,
-                e,
-            )
-            return None
-
-        if token is None:
-            logger.error(
-                "AuthService refused to mint a service token for '%s'; the "
-                "dataspace connector for %s cannot authenticate to SINDIT",
-                self.__sindit_service_user,
-                self.uri,
-            )
-            return None
-
-        access_token = getattr(token, "access_token", None) or (
-            token.get("access_token") if isinstance(token, dict) else None
-        )
-        if not access_token:
-            logger.error("AuthService returned no access_token")
-            return None
-        return f"Bearer {access_token}"
-
-    def refresh_backend_token(self) -> bool:
-        """Mint a fresh SINDIT bearer and cache it on this connector.
-
-        We deliberately do not push the value to the EDC vault: the optional
-        ``secrets-api`` extension is not part of the default management API
-        BOM and is absent from the SINTEF MVD build. The bearer is instead
-        inlined into each asset's data address as ``authCode`` (see
-        ``edc_mapping.build_http_asset``). Rotation is handled by ``sync``,
-        which re-publishes all listed assets after refreshing the bearer.
-        """
-        header = self._fetch_sindit_bearer()
-        if not header:
+        if not key:
             return False
-        self._bearer_header = header
-        logger.info("Refreshed cached SINDIT bearer for dataspace %s", self.uri)
-        return True
+        return hmac.compare_digest(self.__sindit_callback_key, key)
 
     # --------------------------------------------------------------- publish
 
     def publish_node(self, node: Any) -> str:
         """Upsert the asset and ensure its contract definition exists.
 
-        The cached bearer (refreshed via ``refresh_backend_token``) is inlined
-        into the data address as ``authCode`` so the EDC data plane can
-        authenticate to SINDIT without requiring the EDC vault secrets API.
-
-        If a SINDIT service user is configured but no bearer can be minted
-        (for example because the password is missing or ``AuthService``
-        rejects it) we refuse to publish: the resulting EDC asset would have
-        no ``Authorization`` header in its data address and any consumer-side
-        pull would be rejected by SINDIT's auth middleware, which is much
-        harder to debug than a hard failure here.
+        The callback API key is inlined into the data address as ``authCode``
+        so the EDC data plane can authenticate to the dedicated
+        ``GET /dataspace/node`` callback endpoint.
         """
-        if self._bearer_header is None:
-            # Lazily mint on first publish in case start() didn't run yet.
-            self.refresh_backend_token()
-        if self._bearer_header is None and self.__sindit_service_user:
-            raise EDCManagementClientError(
-                f"Refusing to publish {getattr(node, 'uri', node)} to dataspace "
-                f"{self.uri}: service user '{self.__sindit_service_user}' is "
-                "configured but no SINDIT bearer could be minted (check the "
-                "sinditServiceUserPasswordPath vault entry and AuthService logs)"
-            )
         asset_payload = build_http_asset(
             node,
             sindit_api_base_url=self.sindit_api_base_url,
-            bearer_header=self._bearer_header,
+            dataspace_uri=self.uri,
+            callback_api_key=self.__sindit_callback_key,
         )
         asset_id = self.client.create_asset(asset_payload)
         self.client.create_contract_definition(
@@ -328,14 +246,12 @@ class DataspaceConnector(Connector):
 
         - Re-asserts the public policy (in case the EDC was restarted and
           lost its in-memory store).
-        - Refreshes the cached SINDIT bearer (token rotation).
-        - Re-publishes every locally listed node so the freshly minted bearer
-          is propagated into each asset's ``authCode`` value.
+        - Re-publishes every locally listed node (the static API key never
+          changes so this mainly serves to reconcile the EDC catalog).
         - Removes any SINDIT-prefixed asset in the EDC that isn't listed.
         Returns a small summary dict for logging / API responses.
         """
         self._ensure_public_policy()
-        self.refresh_backend_token()
 
         local_uris = _extract_node_uris(
             getattr(dataspace_node, "dataspaceAssets", None)

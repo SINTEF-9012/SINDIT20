@@ -20,7 +20,8 @@ class DataspaceManagement(RDFModel):
         "isActive": GRAPH_MODEL.isActive,
         "dataspaceDescription": GRAPH_MODEL.dataspaceDescription,
         "sinditApiBaseUrl": GRAPH_MODEL.sinditApiBaseUrl,
-        "sinditServiceUser": GRAPH_MODEL.sinditServiceUser,
+        "sinditWorkspaceUri": GRAPH_MODEL.sinditWorkspaceUri,
+        "sinditCallbackKeyPath": GRAPH_MODEL.sinditCallbackKeyPath,
         "dataspaceAssets": GRAPH_MODEL.dataspaceAssets,
     }
 
@@ -43,14 +44,15 @@ class DataspaceManagement(RDFModel):
     # Used to build the ``baseUrl`` of every published HTTP asset's data
     # address (e.g. ``http://sindit:9017``).
     sinditApiBaseUrl: Literal | str = None
-    # SINDIT username the dataspace connector will impersonate when the EDC
-    # data plane calls back into ``/kg/node``. A bearer JWT is minted
-    # in-process via :meth:`AuthService.mint_service_token` and inlined into
-    # each published asset's ``DataAddress`` as ``authCode``; no password is
-    # stored on the node or in the vault. ``POST /dataspace/management``
-    # auto-fills this with the calling user's username when omitted, so most
-    # callers never need to set it explicitly.
-    sinditServiceUser: Literal | str = None
+    # Named-graph URI of the workspace whose KG nodes are published to this
+    # dataspace (e.g. ``http://sindit.sintef.no/2.0#admin/default``).
+    # **Optional on POST /dataspace/management**: if omitted or null, the
+    # server automatically fills it from the calling user's current workspace.
+    # Persisted in the KG so it survives SINDIT restarts.
+    sinditWorkspaceUri: Literal | str = None
+    # Vault path holding the static API key the EDC data plane must send as
+    # ``X-Api-Key`` when calling back to ``GET /dataspace/node``.
+    sinditCallbackKeyPath: Literal | str = None
     dataspaceAssets: List[
         Union[URIRefNode, AbstractAssetProperty, AbstractAsset]
     ] = None

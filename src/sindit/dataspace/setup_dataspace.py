@@ -69,18 +69,20 @@ def _build_connector_from_node(node: DataspaceManagement) -> DataspaceConnector 
         return None
 
     auth_key = _resolve_secret(getattr(node, "authenticationKeyPath", None))
-    service_user = (
-        str(node.sinditServiceUser)
-        if getattr(node, "sinditServiceUser", None)
+    workspace_uri = (
+        str(node.sinditWorkspaceUri)
+        if getattr(node, "sinditWorkspaceUri", None)
         else None
     )
+    callback_key = _resolve_secret(getattr(node, "sinditCallbackKeyPath", None))
 
     return DataspaceConnector(
         endpoint=str(node.endpoint),
         auth_type=str(node.authenticationType) if node.authenticationType else None,
         auth_key=auth_key,
         sindit_api_base_url=sindit_api_base_url,
-        sindit_service_user=service_user,
+        sindit_workspace_uri=workspace_uri,
+        sindit_callback_key=callback_key,
         secret_name=SINDIT_BEARER_SECRET_NAME,
         uri=str(node.uri),
         kg_connector=sindit_kg_connector,

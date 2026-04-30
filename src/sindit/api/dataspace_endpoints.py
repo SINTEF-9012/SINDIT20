@@ -1,7 +1,8 @@
-from typing import List, Optional
-from fastapi import HTTPException, Depends
-from pydantic import BaseModel, Field
+from typing import Any, List
+from fastapi import Header, HTTPException, Depends
+from pydantic import BaseModel
 from sindit.initialize_kg_connectors import sindit_kg_connector
+from sindit.initialize_authentication import workspaceService
 from sindit.api.authentication_endpoints import User, get_current_active_user
 from sindit.dataspace.setup_dataspace import (
     dataspace_connectors,
@@ -20,57 +21,6 @@ class DataspacePublishRequest(BaseModel):
     node_uris: List[str]
 
 
-class DataspaceManagementInput(BaseModel):
-    """Public request schema for ``POST /dataspace/management``.
-
-    Mirrors the user-settable subset of :class:`DataspaceManagement` and
-    intentionally excludes:
-
-    - ``sinditServiceUser``: derived from the calling user's JWT so the
-      EDC data plane cannot be made to impersonate an arbitrary user just
-      by tweaking a request body.
-    - ``isActive``: system-maintained status mirror of EDC reachability.
-    - ``dataspaceAssets``: managed via ``/dataspace/publish`` and
-      ``/dataspace/sync``.
-    """
-
-    uri: Optional[str] = Field(
-        default=None,
-        description=(
-            "Stable URI of the DataspaceManagement node. Pass the same value "
-            "on subsequent POSTs to update an existing node; omit to let the "
-            "KG layer assign one."
-        ),
-    )
-    endpoint: Optional[str] = Field(
-        default=None,
-        description="EDC Management API base URL, e.g. http://localhost:19193/management",
-    )
-    authenticationType: Optional[str] = Field(
-        default=None, description="e.g. 'tokenbased'"
-    )
-    authenticationKeyPath: Optional[str] = Field(
-        default=None,
-        description="Vault path of the EDC Management API key used by SINDIT to call the EDC.",
-    )
-    dataspaceDescription: Optional[str] = None
-    sinditApiBaseUrl: Optional[str] = Field(
-        default=None,
-        description=(
-            "Public URL of the SINDIT API as seen from the EDC data plane "
-            "(e.g. http://host.docker.internal:9017 when SINDIT runs on the "
-            "docker host and the EDC runs in a container)."
-        ),
-    )
-
-    def to_node(self, *, service_user: str) -> DataspaceManagement:
-        """Materialize a :class:`DataspaceManagement` with server-set fields."""
-        data = self.model_dump(exclude_none=True)
-        # ``sinditServiceUser`` is *always* set by the server here; if a
-        # client somehow submitted one in an extra field, Pydantic's
-        # default ``ignore`` extra policy already discarded it.
-        data["sinditServiceUser"] = service_user
-        return DataspaceManagement(**data)
 
 
 def _get_dataspace_node_or_404(uri: str) -> DataspaceManagement:
@@ -123,33 +73,39 @@ async def get_all_dataspace_nodes(
 
 @app.post("/dataspace/management", tags=["Dataspace"])
 async def create_dataspace_management(
-    payload: DataspaceManagementInput,
+    payload: DataspaceManagement,
     current_user: User = Depends(get_current_active_user),
 ) -> dict:
     """Create or update a DataspaceManagement node and (re)start its connector.
 
-    The service user impersonated by the EDC data plane is **always** the
-    caller's identity (``current_user.username``); it cannot be overridden
-    via the request body. This guarantees:
+    **System-managed fields** — the following fields in the request body are
+    always overwritten by the server and any client-supplied values are ignored:
 
-    - the dataspace cannot be made to impersonate an arbitrary user simply
-      by editing a JSON payload,
-    - actions taken through the EDC are auditable back to the SINDIT user
-      who created the dataspace.
+    - ``isActive``: reflects EDC reachability; updated after each health-check.
+    - ``dataspaceAssets``: managed via ``POST /dataspace/publish`` and
+      ``DELETE /dataspace/publish``.
 
-    The EDC connector is started immediately and ``isActive`` is updated
-    to reflect whether the EDC Management API is reachable. ``isActive``
-    and ``dataspaceAssets`` are also system-managed and are not part of
-    the request body (use ``/dataspace/publish`` to manage assets, and
-    delete the node to disable a dataspace).
+    **``sinditWorkspaceUri``** is optional. If omitted or null, it is
+    automatically set to the calling user's current workspace URI
+    (e.g. ``http://sindit.sintef.no/2.0#admin/default``). Supply an explicit
+    value to bind the dataspace to a different workspace.
+
+    The EDC connector is started immediately after the node is saved and
+    ``isActive`` is updated to reflect whether the EDC Management API is
+    reachable.
     """
     try:
-        node = payload.to_node(service_user=current_user.username)
-        result = sindit_kg_connector.save_node(node)
+        # Strip system-managed fields regardless of what the client sent.
+        payload.isActive = None
+        payload.dataspaceAssets = None
+        # Workspace URI: use client-supplied value or fall back to caller's workspace.
+        if not payload.sinditWorkspaceUri:
+            payload.sinditWorkspaceUri = str(workspaceService.get_current_workspace(current_user).uri)
+        result = sindit_kg_connector.save_node(payload)
         if result:
             # Always (re)start the connector; isActive is a system-maintained
             # status reflecting EDC reachability, not user intent.
-            update_dataspace_node(node, replace=True)
+            update_dataspace_node(payload, replace=True)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error creating dataspace management node: {e}")
@@ -361,3 +317,57 @@ async def get_dataspace_catalog(
     except Exception as e:
         logger.error(f"Error listing catalog for {uri}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/dataspace/node", tags=["Dataspace"])
+async def dataspace_node_callback(
+    dataspace_uri: str,
+    node_uri: str,
+    depth: int = 1,
+    x_api_key: str = Header(None, alias="X-Api-Key"),
+) -> Any:
+    """Dedicated callback endpoint for the EDC data plane.
+
+    The EDC data plane calls this endpoint when a consumer pulls data for a
+    SINDIT-published asset. Authentication is via a static ``X-Api-Key``
+    header whose value is stored in the SINDIT vault at the path given by
+    ``sinditCallbackKeyPath`` on the :class:`DataspaceManagement` node.
+
+    The workspace named graph is resolved from the in-memory connector
+    registry (populated at ``POST /dataspace/management`` time from the
+    calling user's current workspace), so no user token or identity mapping
+    is required and the response is always scoped to the correct graph
+    regardless of user workspace changes.
+    """
+    connector = dataspace_connectors.get(dataspace_uri)
+    if connector is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dataspace {dataspace_uri!r} not found or not active",
+        )
+
+    try:
+        valid = connector.validate_callback_key(x_api_key)
+    except ValueError as e:
+        logger.warning("Callback key validation error for %s: %s", dataspace_uri, e)
+        raise HTTPException(status_code=503, detail=str(e))
+
+    if not valid:
+        raise HTTPException(status_code=401, detail="Invalid or missing X-Api-Key")
+
+    if not connector.sindit_workspace_uri:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Dataspace {dataspace_uri!r} has no workspace URI configured",
+        )
+
+    sindit_kg_connector.set_graph_uri(connector.sindit_workspace_uri)
+    try:
+        node = sindit_kg_connector.load_node_by_uri(node_uri, depth=depth)
+    except Exception as e:
+        logger.error("Failed to load node %s for dataspace callback: %s", node_uri, e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if node is None:
+        raise HTTPException(status_code=404, detail=f"Node {node_uri!r} not found")
+    return node
