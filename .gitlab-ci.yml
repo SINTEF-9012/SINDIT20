@@ -1,4 +1,5 @@
 stages:
+  - pre-commit-hooks
   - check
   - test
   - analysis
@@ -20,13 +21,83 @@ variables:
     # Run on merge requests
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: always
-      allow_failure: false
     # Avoid duplicate jobs on merge requests
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
     # Run if on a branch and not a merge request
     - if: $CI_COMMIT_BRANCH
 
+# ─── Pre-commit hooks ────────────────────────────────────────────────
+pre-commit-hooks:
+  stage: pre-commit-hooks
+  image: python:3.11-slim-bookworm
+  variables:
+    PRE_COMMIT_AUTO_FIX: "1"
+    PRE_COMMIT_DEDUPLICATE_MR_AND_BRANCH: "true"
+  rules:
+    - if: '$PRE_COMMIT_DEDUPLICATE_MR_AND_BRANCH == "true" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      exists:
+        - .pre-commit-config.yaml
+      when: on_success
+    - if: "$CI_COMMIT_BRANCH"
+      exists:
+        - .pre-commit-config.yaml
+      when: on_success
+    - when: never
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+    - pip install --no-cache-dir pre-commit
+  script: |
+    status=0
+    pre-commit run --all-files || status=$?
+
+    if [[ $status -ne 0 ]]; then
+        if [[ -n "$CI_COMMIT_BRANCH" ]]; then
+            git remote set-url origin "https://gitlab-ci-token:${PRE_COMMIT_ACCESS_TOKEN:-$CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+            git fetch origin
+            git checkout $CI_COMMIT_BRANCH
+        fi
+        if [[ -n "$CI_MERGE_REQUEST_IID" ]]; then
+            git remote set-url origin "https://gitlab-ci-token:${PRE_COMMIT_ACCESS_TOKEN:-$CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_MERGE_REQUEST_SOURCE_PROJECT_PATH}.git"
+            git fetch origin
+        fi
+        pre-commit run --all-files  # re-run to check if autofix resolved everything
+    else
+        exit 0  # all good
+    fi
+
+    if [[ -z "$PRE_COMMIT_AUTO_FIX" ]]; then
+        exit 1 # fail the job
+    fi
+
+    git config --global user.email "$GITLAB_USER_EMAIL"
+    git config --global user.name "pre-commit fix $GITLAB_USER_NAME"
+
+    if [[ -z "$PRE_COMMIT_ACCESS_TOKEN" ]]; then
+        echo "Auto-fix is enabled, but no pre-commit access token found." >> /dev/stderr
+        echo "To enable automatic fixes, please create a project access token with repository write scope and set the PRE_COMMIT_ACCESS_TOKEN variable" > /dev/stderr
+        exit 1
+    fi
+
+    if [[ -n "$CI_COMMIT_BRANCH" ]]; then
+        git add -u .
+        git commit -m "auto fixes from pre-commit CI job" -m "job url: $CI_JOB_URL"
+        git push
+        exit 1
+    elif [[ -n "$CI_MERGE_REQUEST_IID" ]]; then
+        git add -u .
+        git commit -m "auto fixes from pre-commit CI job" -m "job url: $CI_JOB_URL"
+        git push origin HEAD:"$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+        exit 1
+    else
+       echo "Auto fix is not supported in this context" > /dev/stderr
+       echo "Auto fix is only available in branch and merge request pipelines" > /dev/stderr
+       exit 1
+    fi
+
+# ─── Check ────────────────────────────────────────────────────────────
 check:
   stage: check
   image: alpine:latest
@@ -35,6 +106,7 @@ check:
   rules:
     - when: always
 
+# ─── Tests ────────────────────────────────────────────────────────────
 pytest:
   stage: test
   extends: .base-rules
@@ -80,6 +152,7 @@ coverage:
         coverage_format: cobertura
         path: coverage.xml
 
+# ─── Analysis ─────────────────────────────────────────────────────────
 sonarqube:
   stage: analysis
   extends: .base-rules
@@ -101,6 +174,7 @@ sonarqube:
     - sonar-scanner
   allow_failure: true
 
+# ─── Build ────────────────────────────────────────────────────────────
 # Build SINDIT Docker image when a tag starting with "v" is created
 # To trigger:
 #   git tag v2.0.18 && git push origin v2.0.18

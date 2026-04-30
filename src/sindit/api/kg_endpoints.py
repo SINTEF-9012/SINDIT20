@@ -10,6 +10,9 @@ from sindit.connectors.setup_connectors import (
     update_connection_node,
     update_property_node,
 )
+from sindit.dataspace.setup_dataspace import (
+    unpublish_node_from_all_active_dataspaces,
+)
 
 from sindit.knowledge_graph.graph_model import (
     SINDITKG,
@@ -164,6 +167,10 @@ async def delete_node(
                 remove_connection_node(node)
             elif isinstance(node, AbstractAssetProperty):
                 remove_property_node(node)
+
+            # Best-effort unpublish from any active dataspace.
+            if isinstance(node, (AbstractAsset, AbstractAssetProperty)):
+                unpublish_node_from_all_active_dataspaces(node_uri)
 
         return {"result": result}
     except Exception as e:

@@ -6,6 +6,7 @@ from keycloak import KeycloakOpenID
 from sindit.authentication.authentication_service import AuthService
 from sindit.authentication.models import Token, User
 from sindit.util.environment_and_configuration import get_environment_variable
+from sindit.util.log import logger
 
 
 class KeycloakAuthService(AuthService):
@@ -25,10 +26,11 @@ class KeycloakAuthService(AuthService):
             token = self.keycloak_openid.token(username, password)
             return Token(access_token=token["access_token"], token_type="bearer")
 
-        except (KeycloakAuthenticationError, Exception):
+        except (KeycloakAuthenticationError, Exception) as e:
+            logger.error("Authentication failed for user '%s': %s", username, e)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
+                detail="Authentication failed: " + str(e),
             )
 
     def verify_token(self, token: str) -> User:
@@ -47,8 +49,8 @@ class KeycloakAuthService(AuthService):
                 email=user_info.get("email"),
                 full_name=user_info.get("name"),
             )
-        except (KeycloakAuthenticationError, Exception):
+        except (KeycloakAuthenticationError, Exception) as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
+                detail="Could not validate credentials: " + str(e),
             )

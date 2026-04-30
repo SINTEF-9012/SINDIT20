@@ -9,8 +9,13 @@ from sindit.util.log import logger  # noqa: E402
 # if not running in docker, load environment variables from dev .env file
 if not get_environment_variable_bool("DOCKER_ENV", optional=True, default=False):
     from dotenv import load_dotenv
+    import os
 
-    load_dotenv("environment_and_configuration/dev_environment_backend.env")
+    _env_path = os.path.join(
+        os.path.dirname(__file__),
+        "environment_and_configuration/dev_environment_backend.env",
+    )
+    load_dotenv(_env_path)
     logger.setLevel(
         get_environment_variable("LOG_LEVEL", optional=True, default="INFO")
     )
@@ -42,9 +47,19 @@ from sindit.api import health_endpoints  # noqa: F401, E402
 # logger.info("Starting connections and properties...")
 # initialize_connections_and_properties()
 
+from sindit.dataspace.setup_dataspace import initialize_dataspaces  # noqa: E402
+
 
 if __name__ == "__main__":
     logger.info("Starting SINDIT")
+
+    # Initialize dataspace connectors (publishes existing
+    # ``DataspaceManagement`` nodes flagged as active to their EDC).
+    try:
+        logger.info("Initializing dataspace connectors...")
+        initialize_dataspaces()
+    except Exception as e:
+        logger.error(f"Failed to initialize dataspaces: {e}")
 
     # Run fast API
     logger.info("Running FastAPI...")

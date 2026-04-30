@@ -1,7 +1,7 @@
 from io import StringIO
 
 import pandas as pd
-from sindit.common.semantic_knowledge_graph.rdf_model import RDFModel
+from sindit.common.semantic_knowledge_graph.rdf_model import MapTo, RDFModel
 from sindit.common.semantic_knowledge_graph.SemanticKGPersistenceService import (
     SemanticKGPersistenceService,
 )
@@ -601,27 +601,38 @@ class SINDITKGConnector:
         overwrite: bool = True,  # otherwise, keep both old and new data
         uri_class_mapping: dict = NodeURIClassMapping,
     ) -> bool:
-        """
-        Update a node in the knowledge graph. If overwrite is True, the old data
-        will be deleted and replaced with the new data. Otherwise, the old data
-        will be kept and the new data will be added.
-        """
+        """PATCH-style update of a node in the knowledge graph.
 
+        Only the predicates corresponding to keys explicitly present in
+        ``node_dict`` are touched. Predicates not in ``node_dict`` are left
+        completely untouched.
+
+        Semantics for each touched key:
+
+        * value is ``None`` -> all triples ``(<uri>, predicate, *)`` are
+          deleted from the graph (the predicate is cleared).
+        * value is not ``None`` and ``overwrite=True`` -> all old triples for
+          the predicate are deleted, then the new value is inserted.
+        * value is not ``None`` and ``overwrite=False`` -> only triples that
+          exactly match ``(s, p, new_value)`` are deduplicated, then the new
+          value is inserted (i.e. append-then-dedup).
+        """
         if "uri" not in node_dict:
             raise Exception("Node uri is required")
 
-        # Remove class_uri from the node_dict
-        if "class_uri" in node_dict:
-            del node_dict["class_uri"]
-
+        # Work on a shallow copy so we don't mutate the caller's dict
+        node_dict = dict(node_dict)
+        node_dict.pop("class_uri", None)
         node_uri = node_dict["uri"]
 
-        # g: Graph = node.g()
-        # get the list of subject in g
-        subjects = set()
-        subjects.add(URIRef(node_uri))
-        # Check the type of the subjects in the exising graph,
-        # if different return error
+        # Keys the caller actually wants to touch (excluding the identity
+        # field). ``None`` here means "clear this predicate".
+        touched_keys = [k for k in node_dict.keys() if k != "uri"]
+
+        subjects = {URIRef(node_uri)}
+
+        # Resolve the node class via SPARQL. We need it to map property keys
+        # to RDF predicates and to validate non-None values via Pydantic.
         with open(get_class_uri_by_uri_query_file, "r") as f:
             query_template = f.read()
             if "[graph_uri]" in query_template:
@@ -629,60 +640,96 @@ class SINDITKGConnector:
                     "[graph_uri]", str(self.__graph_uri)
                 )
 
-        node = None
         query = query_template.replace("[node_uri]", node_uri)
         query_result = self.__kg_service.graph_query(query, "text/csv")
         df = pd.read_csv(StringIO(query_result), sep=",")
-        if len(df) > 0:
-            class_uri = df["class"][0]
-            node_class = uri_class_mapping.get(URIRef(class_uri))
-            if node_class is not None:
-                try:
-                    node = node_class(**node_dict)
-                    g = node.g()
-                except Exception as e:
-                    raise Exception(
-                        f"Failed to update the node {node_uri}. Reason: {e}"
-                    )
-
-        if node is None:
+        if len(df) == 0:
             raise Exception(
                 f"Cannnot find the class of the node {node_uri}. "
                 "Try to save the node first if it is a new node."
             )
+        class_uri = df["class"][0]
+        node_class = uri_class_mapping.get(URIRef(class_uri))
+        if node_class is None:
+            raise Exception(
+                f"Class {class_uri} of node {node_uri} is not registered in "
+                f"the supplied uri_class_mapping."
+            )
 
-        subjects_str = " ".join([f"<{str(s)}>" for s in subjects])
+        # Map each touched key to its RDF predicate, ignoring keys the model
+        # doesn't know about. ``MapTo`` predicates expose their forward IRI
+        # via ``.value`` (the inverse triple is handled by the serializer).
+        touched_predicates: list[tuple[str, URIRef]] = []
+        for key in touched_keys:
+            mapped = node_class.mapping.get(key)
+            if mapped is None:
+                continue
+            if isinstance(mapped, MapTo):
+                mapped = mapped.value
+            touched_predicates.append((key, mapped))
 
-        # Load the old data
+        # Build the new (insert) graph from the keys with non-None values.
+        # Filtering ``None`` out before instantiation avoids Pydantic
+        # rejecting fields whose annotated type is non-optional, and keeps
+        # the serialized graph free of triples for unset fields.
+        non_none_input = {
+            k: v for k, v in node_dict.items() if k == "uri" or v is not None
+        }
+        try:
+            node = node_class(**non_none_input)
+            g_full = node.g()
+        except Exception as e:
+            raise Exception(f"Failed to update the node {node_uri}. Reason: {e}")
+
+        # Restrict the insert graph to only the touched predicates' triples.
+        # ``rdf:type`` always emitted by ``node.g()`` is intentionally left
+        # out of inserts here: PATCH should not change the type of the node.
+        s = URIRef(node_uri)
+        g = Graph()
+        for _, predicate in touched_predicates:
+            for triple in g_full.triples((s, predicate, None)):
+                g.add(triple)
+            # Nested RDFModel inserts also emit triples with the nested
+            # subject != s. Carry those over so referenced child nodes
+            # appear in the insert side too.
+            for nested_s, nested_p, nested_o in g_full:
+                if nested_s != s:
+                    g.add((nested_s, nested_p, nested_o))
+
+        subjects_str = " ".join([f"<{str(sub)}>" for sub in subjects])
+
+        # Load the old data for the subject so we can compute the diff.
         with open(load_nodes_query_file, "r") as f:
             query_template = f.read()
-
             if "[graph_uri]" in query_template:
                 query_template = query_template.replace(
                     "[graph_uri]", str(self.__graph_uri)
                 )
-
         query = query_template.replace("[nodes_uri]", subjects_str)
         query_result_old = self.__kg_service.graph_query(query, "application/x-trig")
-
         g_old = Graph()
         g_old.parse(data=query_result_old, format="trig")
 
-        # Get the data to be removed
+        # Build the delete set strictly from the touched predicates so
+        # untouched predicates remain in the graph.
         g_remove = Graph()
-
-        if overwrite:
-            # Find triples in g_old that match the subject and predicate from g
-            for s, p, _ in g:
-                for s_old, p_old, o_old in g_old.triples((s, p, None)):
-                    # Add the matching triples to the new graph
-                    g_remove.add((s_old, p_old, o_old))
-        else:
-            # Find triples in g_old that match the triples from g
-            for s, p, o in g:
-                for s_old, p_old, o_old in g_old.triples((s, p, o)):
-                    # Add the matching triples to the new graph
-                    g_remove.add((s_old, p_old, o_old))
+        for key, predicate in touched_predicates:
+            value = node_dict.get(key)
+            if value is None:
+                # Caller explicitly requested clearing this predicate.
+                for triple in g_old.triples((s, predicate, None)):
+                    g_remove.add(triple)
+                continue
+            if overwrite:
+                # Replace mode: drop all existing triples for this predicate.
+                for triple in g_old.triples((s, predicate, None)):
+                    g_remove.add(triple)
+            else:
+                # Append mode: only deduplicate exact (s, p, o) matches that
+                # the new graph would have re-added.
+                for new_s, new_p, new_o in g.triples((s, predicate, None)):
+                    for triple in g_old.triples((new_s, new_p, new_o)):
+                        g_remove.add(triple)
 
         try:
             with open(insert_delete_data_query_file, "r") as f:
@@ -921,3 +968,23 @@ class SINDITKGConnector:
         return self.load_all_nodes(
             uri_class_mapping=uri_class_mapping, skip=skip, limit=limit
         )
+
+    def get_dataspace_node_by_uri(
+        self,
+        node_uri: str,
+        depth: int = 1,
+        uri_class_mapping: dict = DataspaceURIClassMapping,
+    ) -> RDFModel:
+        """Load a single dataspace node (e.g. ``DataspaceManagement``) by URI.
+
+        Mirrors :meth:`get_relationships_by_node` in style: ``DataspaceManagement``
+        is not part of :data:`NodeURIClassMapping` (which is what
+        :meth:`load_node_by_uri` uses by default), so deserialization needs the
+        ``DataspaceURIClassMapping`` to know which Python class to instantiate.
+        """
+        ret = self._load_node_optimized(
+            node_uri,
+            depth=depth,
+            uri_class_mapping=uri_class_mapping,
+        )
+        return ret.get(node_uri)

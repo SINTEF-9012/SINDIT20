@@ -1,0 +1,92 @@
+# Compose v2 ignores the `version` key; omitted intentionally.
+services:
+  postgres_keycloak:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak123
+    volumes:
+      - data_postgres:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3
+    # Keycloak automatically imports any realm JSON files found in
+    # /opt/keycloak/data/import at startup (--import-realm flag).
+    # Place exported realm files in ./keycloak/import/ on the host.
+    command: start-dev --import-realm
+    depends_on:
+      postgres_keycloak:
+        condition: service_healthy
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import:ro
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres_keycloak:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak123
+      KC_HTTP_PORT: "8080"
+      # Expose /health/* on the management port (9000) so we can run a real
+      # healthcheck instead of timing-based ``sleep`` loops.
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: sindit
+      KC_BOOTSTRAP_ADMIN_PASSWORD: sindit123
+      # ``admin-fine-grained-authz:v1`` enables per-client permission UI in
+      # the admin console. Token-exchange is not required; SINDIT uses a
+      # static API key for EDC dataplane callbacks.
+      KC_FEATURES: "admin-fine-grained-authz:v1"
+    ports:
+      - "8081:8080"
+      - "9000:9000"
+    healthcheck:
+      # The Keycloak 26 image is based on ubi9-micro and does NOT ship
+      # ``curl`` or ``wget``. ``CMD-SHELL`` uses ``/bin/sh`` which doesn't
+      # support bash's ``/dev/tcp``, so we invoke bash explicitly. This
+      # only checks that the management port is accepting TCP connections,
+      # not that ``/health/ready`` returns 200, but in practice that flips
+      # within a couple of seconds of the port opening and is more than
+      # good enough to gate the keycloak-setup sidecar.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  keycloak-setup:
+    image: quay.io/keycloak/keycloak:26.3
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        /opt/keycloak/bin/kcadm.sh config credentials \
+          --server http://keycloak:8080 \
+          --realm master \
+          --user sindit --password sindit123
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+        echo "sslRequired=NONE set on master realm"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres_keycloak
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  data_postgres:
+  pgadmin_data:

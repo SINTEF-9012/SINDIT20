@@ -35,15 +35,24 @@ class InMemoryAuthService(AuthService):
 
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-        self.USER_PATH = get_environment_variable(
+        _base = os.path.dirname(os.path.dirname(__file__))
+        _user_path = get_environment_variable(
             "USER_PATH",
             optional=True,
             default="environment_and_configuration/user.json",
         )
-        self.WORKSPACE_PATH = get_environment_variable(
+        self.USER_PATH = (
+            _user_path if os.path.isabs(_user_path) else os.path.join(_base, _user_path)
+        )
+        _workspace_path = get_environment_variable(
             "WORKSPACE_PATH",
             optional=True,
             default="environment_and_configuration/workspace.json",
+        )
+        self.WORKSPACE_PATH = (
+            _workspace_path
+            if os.path.isabs(_workspace_path)
+            else os.path.join(_base, _workspace_path)
         )
         # read users from file, create file if it does not exist
         if os.path.exists(self.USER_PATH):

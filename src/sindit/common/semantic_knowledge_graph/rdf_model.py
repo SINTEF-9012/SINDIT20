@@ -238,12 +238,16 @@ class RDFModel(BaseModel):
             new_val = value
         elif isinstance(value, str):
             new_val = Literal(value, datatype=XSD.string)
+        # ``bool`` MUST be checked before ``int``: in Python ``bool`` is a
+        # subclass of ``int``, so an ``isinstance(value, int)`` check would
+        # match first and silently coerce ``True``/``False`` to
+        # ``xsd:integer`` instead of ``xsd:boolean``.
+        elif isinstance(value, bool):
+            new_val = Literal(value, datatype=XSD.boolean)
         elif isinstance(value, int):
             new_val = Literal(value, datatype=XSD.integer)
         elif isinstance(value, float):
             new_val = Literal(value, datatype=XSD.float)
-        elif isinstance(value, bool):
-            new_val = Literal(value, datatype=XSD.boolean)
         elif isinstance(value, dict):
             new_val = Literal(json.dumps(value))
         elif isinstance(value, datetime):

@@ -16,10 +16,14 @@
 
 :DataspaceManagement a samm:Entity ;
    samm:description "A node representing the Dataspace Management protocol"@en ;
-   samm:properties ( :isActive :authenticationKeyPath :authenticationType :endpoint :dataspaceDescription ) .
+   samm:properties ( :isActive :authenticationKeyPath :authenticationType :endpoint :dataspaceDescription :sinditApiBaseUrl :sinditServiceUser :dataspaceAssets ) .
+
+:dataspaceAssets a samm:Property ;
+   samm:description "List of SINDIT KG node URIs (assets/asset properties) currently published into this dataspace's EDC catalog"@en ;
+   samm:characteristic samm-c:Text .
 
 :authenticationKeyPath a samm:Property ;
-   samm:description "Path to the vault where authentication key is stored"@en ;
+   samm:description "Path to the vault where the EDC management API key is stored"@en ;
    samm:characteristic samm-c:Text .
 
 :dataspaceDescription a samm:Property ;
@@ -34,3 +38,12 @@
    samm:description "Type of authentication method"@en ;
    samm:characteristic samm-c:Text ;
    samm:exampleValue "tokenbased" .
+
+:sinditApiBaseUrl a samm:Property ;
+   samm:description "Public URL of the SINDIT API reachable from the EDC data plane (used as the baseUrl of published HTTP assets)"@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "http://sindit:9017" .
+
+:sinditServiceUser a samm:Property ;
+   samm:description "SINDIT username impersonated when the EDC data plane calls back into /kg/node. Auto-set to the calling user when the dataspace node is created via the API; no password is required because the bearer is minted in-process via AuthService.mint_service_token."@en ;
+   samm:characteristic samm-c:Text .
