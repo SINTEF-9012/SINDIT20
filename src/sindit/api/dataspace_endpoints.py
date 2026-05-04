@@ -101,9 +101,23 @@ async def create_dataspace_management(
     reachable.
     """
     try:
-        # Strip system-managed fields regardless of what the client sent.
-        payload.isActive = None
-        payload.dataspaceAssets = None
+        # Preserve system-managed fields from the existing node (if any).
+        # dataspaceAssets is managed via /dataspace/publish endpoints only.
+        # isActive is managed via /dataspace/test_connection only.
+        existing: DataspaceManagement | None = None
+        if payload.uri:
+            try:
+                existing = sindit_kg_connector.get_dataspace_node_by_uri(
+                    str(payload.uri)
+                )
+            except Exception:
+                existing = None
+        if isinstance(existing, DataspaceManagement):
+            payload.isActive = existing.isActive
+            payload.dataspaceAssets = existing.dataspaceAssets
+        else:
+            payload.isActive = None
+            payload.dataspaceAssets = None
         # Workspace URI: use client-supplied value or fall back to caller's workspace.
         if not payload.sinditWorkspaceUri:
             payload.sinditWorkspaceUri = str(
