@@ -123,7 +123,7 @@ async def switch_workspace(
         # return {"workspace_uri": graph_uri}
         new_workspace = workspaceService.create_workspace(current_user, workspace_name)
         sindit_kg_connector.set_graph_uri(new_workspace.uri.strip())
-        load_dataspaces_for_current_graph(force=True)
+        load_dataspaces_for_current_graph(force=True, username=current_user.username)
         return new_workspace
         # TODO: switching to a new workspace should also
         # stop/clean up all connections and properties

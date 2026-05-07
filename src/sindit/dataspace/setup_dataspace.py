@@ -14,7 +14,7 @@ import threading
 
 from sindit.dataspace.connector_dataspace import DataspaceConnector
 from sindit.initialize_kg_connectors import sindit_kg_connector
-from sindit.initialize_vault import secret_vault
+from sindit.initialize_vault import get_vault_for_username
 from sindit.knowledge_graph.dataspace_model import DataspaceManagement
 from sindit.util.log import logger
 
@@ -41,17 +41,20 @@ _lock = threading.Lock()
 # --------------------------------------------------------------------- helpers
 
 
-def _resolve_secret(path: str | None) -> str | None:
+def _resolve_secret(path: str | None, username: str | None = None) -> str | None:
     if not path:
         return None
     try:
-        return secret_vault.resolveSecret(path)
+        vault = get_vault_for_username(username)
+        return vault.resolveSecret(path)
     except Exception as e:  # noqa: BLE001 - vault impls raise various
         logger.warning("Failed to resolve vault secret '%s': %s", path, e)
         return None
 
 
-def _build_connector_from_node(node: DataspaceManagement) -> DataspaceConnector | None:
+def _build_connector_from_node(
+    node: DataspaceManagement, username: str | None = None
+) -> DataspaceConnector | None:
     """Instantiate a :class:`DataspaceConnector` from the KG node alone.
 
     All connection parameters live on the ``DataspaceManagement`` node itself
@@ -71,13 +74,15 @@ def _build_connector_from_node(node: DataspaceManagement) -> DataspaceConnector 
         )
         return None
 
-    auth_key = _resolve_secret(getattr(node, "authenticationKeyPath", None))
+    auth_key = _resolve_secret(getattr(node, "authenticationKeyPath", None), username)
     workspace_uri = (
         str(node.sinditWorkspaceUri)
         if getattr(node, "sinditWorkspaceUri", None)
         else None
     )
-    callback_key = _resolve_secret(getattr(node, "sinditCallbackKeyPath", None))
+    callback_key = _resolve_secret(
+        getattr(node, "sinditCallbackKeyPath", None), username
+    )
 
     if not workspace_uri:
         logger.error(
@@ -102,7 +107,7 @@ def _build_connector_from_node(node: DataspaceManagement) -> DataspaceConnector 
 
 
 def update_dataspace_node(
-    node: DataspaceManagement, replace: bool = True
+    node: DataspaceManagement, replace: bool = True, username: str | None = None
 ) -> DataspaceConnector | None:
     """Create / refresh the connector for ``node`` and run an initial sync."""
     if node is None:
@@ -130,7 +135,7 @@ def update_dataspace_node(
         # ``isActive`` is system-maintained (set by ``start``/``stop`` and
         # health-check), so we always build & start the connector here. The
         # actual reachability of the EDC determines the persisted status.
-        connector = _build_connector_from_node(node)
+        connector = _build_connector_from_node(node, username=username)
         if connector is None:
             return None
 
@@ -182,7 +187,9 @@ def remove_dataspace_node(node_uri: str, workspace_uri: str | None = None) -> bo
 # --------------------------------------------------------------------- init
 
 
-def load_dataspaces_for_current_graph(force: bool = False) -> None:
+def load_dataspaces_for_current_graph(
+    force: bool = False, username: str | None = None
+) -> None:
     """Load and (re)start all ``DataspaceManagement`` nodes from the currently
     active named graph (i.e. the caller's workspace).
 
@@ -206,7 +213,7 @@ def load_dataspaces_for_current_graph(force: bool = False) -> None:
 
     for node in nodes:
         try:
-            update_dataspace_node(node, replace=True)
+            update_dataspace_node(node, replace=True, username=username)
         except Exception as e:  # noqa: BLE001
             logger.error(
                 "Failed to (re)start dataspace %s: %s", getattr(node, "uri", "?"), e

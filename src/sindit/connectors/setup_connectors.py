@@ -7,7 +7,7 @@ from sindit.knowledge_graph.graph_model import (
 )
 from sindit.common.semantic_knowledge_graph.rdf_model import URIRefNode
 from sindit.initialize_kg_connectors import sindit_kg_connector
-from sindit.initialize_vault import secret_vault
+from sindit.initialize_vault import get_vault_for_username
 from sindit.connectors.connector import Connector
 from sindit.connectors.connector import Property
 from sindit.util.log import logger
@@ -38,7 +38,10 @@ _tasks_lock = threading.Lock()
 
 
 def update_property_node(
-    node: AbstractAssetProperty, replace: bool = True, async_start: bool = False
+    node: AbstractAssetProperty,
+    replace: bool = True,
+    async_start: bool = False,
+    username: str | None = None,
 ) -> Property:
     """
     Update or create a property node.
@@ -47,18 +50,19 @@ def update_property_node(
         node: The property node to update
         replace: If True, replace existing property
         async_start: If True, start property operations asynchronously
+        username: The username to scope vault lookups
 
     Returns:
         The property instance
     """
     if async_start:
-        return _update_property_async(node, replace)
+        return _update_property_async(node, replace, username)
     else:
-        return _update_property_sync(node, replace)
+        return _update_property_sync(node, replace, username)
 
 
 def _update_property_sync(
-    node: AbstractAssetProperty, replace: bool = True
+    node: AbstractAssetProperty, replace: bool = True, username: str | None = None
 ) -> Property:
     """
     Update property synchronously.
@@ -78,7 +82,7 @@ def _update_property_sync(
                 connection.detach(old_property)
             del properties[node_uri]
         # Create a new property
-        new_property = create_property(node)
+        new_property = create_property(node, username=username)
         if new_property is not None:
             properties[node_uri] = new_property
         return new_property
@@ -88,7 +92,7 @@ def _update_property_sync(
         old_property: Property = properties[node_uri]
         connection = old_property.connector
         if connection is None:
-            new_property = create_property(node)
+            new_property = create_property(node, username=username)
             if new_property is not None:
                 properties[node_uri] = new_property
                 del old_property
@@ -98,7 +102,7 @@ def _update_property_sync(
 
 
 def _update_property_async(
-    node: AbstractAssetProperty, replace: bool = True
+    node: AbstractAssetProperty, replace: bool = True, username: str | None = None
 ) -> Property:
     """
     Update property asynchronously in a background thread.
@@ -124,7 +128,7 @@ def _update_property_async(
                 f"class={node.__class__.__name__}"
             )
 
-            _update_property_sync(node, replace)
+            _update_property_sync(node, replace, username)
             logger.info(f"Property {node_uri} updated successfully")
         except AttributeError as ae:
             logger.debug(
@@ -186,7 +190,9 @@ def replace_connector(new_connector: Connector, old_connector: Connector):
 
 
 # TODO: Add support for other types of properties here
-def create_property(node: AbstractAssetProperty) -> Property:
+def create_property(
+    node: AbstractAssetProperty, username: str | None = None
+) -> Property:
     new_property = None
     if node is not None:
         node_uri = str(node.uri)
@@ -201,7 +207,9 @@ def create_property(node: AbstractAssetProperty) -> Property:
 
             if connection_node is not None:
                 if connection_uri not in connections:
-                    connection = update_connection_node(connection_node)
+                    connection = update_connection_node(
+                        connection_node, username=username
+                    )
                 else:
                     connection = connections[connection_uri]
                 if connection is not None:
@@ -218,7 +226,7 @@ def create_property(node: AbstractAssetProperty) -> Property:
 
 
 # TODO: Add support for other types of connections here
-def create_connector(node: Connection) -> Connector:
+def create_connector(node: Connection, username: str | None = None) -> Connector:
     password = None
     token = None
     connector: Connector = None
@@ -226,14 +234,15 @@ def create_connector(node: Connection) -> Connector:
 
     if node is not None:
         node_uri = str(node.uri)
+        _vault = get_vault_for_username(username)
         try:
-            password = secret_vault.resolveSecret(node.passwordPath)
+            password = _vault.resolveSecret(node.passwordPath)
         except Exception:
             # logger.debug(f"Error getting password for {node_uri}: {e}")
             pass
 
         try:
-            token = secret_vault.resolveSecret(node.tokenPath)
+            token = _vault.resolveSecret(node.tokenPath)
         except Exception:
             # logger.debug(f"Error getting token for {node_uri}: {e}")
             pass
@@ -272,7 +281,10 @@ def create_connector(node: Connection) -> Connector:
 
 
 def update_connection_node(
-    node: Connection, replace: bool = True, async_start: bool = False
+    node: Connection,
+    replace: bool = True,
+    async_start: bool = False,
+    username: str | None = None,
 ) -> Connector:
     """
     Update or create a connection node.
@@ -299,7 +311,7 @@ def update_connection_node(
                     _start_connector_sync(connector, node)
             return connector
 
-        connector = create_connector(node)
+        connector = create_connector(node, username=username)
         if connector is not None:
             if node_uri in connections:
                 old_connector = connections[node_uri]
@@ -415,7 +427,10 @@ def _iter_nodes_by_class(class_uri: str, batch_size: int = 50):
 
 
 def initialize_connections_and_properties(
-    replace: bool = True, batch_size: int = 50, async_start: bool = False
+    replace: bool = True,
+    batch_size: int = 50,
+    async_start: bool = False,
+    username: str | None = None,
 ):
     """
     Initialize all connections and properties.
@@ -424,18 +439,26 @@ def initialize_connections_and_properties(
         replace: If True, replace existing connections
         batch_size: Number of nodes to fetch per batch
         async_start: If True, start connections and properties asynchronously
+        username: The username to scope vault lookups
     """
     # First initialize all connections
     for node in _iter_nodes_by_class(Connection.CLASS_URI, batch_size):
-        update_connection_node(node, replace=replace, async_start=async_start)
+        update_connection_node(
+            node, replace=replace, async_start=async_start, username=username
+        )
 
     # Then initialize all properties
     for node in _iter_nodes_by_class(AbstractAssetProperty.CLASS_URI, batch_size):
-        update_property_node(node, replace=replace, async_start=async_start)
+        update_property_node(
+            node, replace=replace, async_start=async_start, username=username
+        )
 
 
 def refresh_connection(
-    connection_uri: str, replace: bool = True, async_start: bool = False
+    connection_uri: str,
+    replace: bool = True,
+    async_start: bool = False,
+    username: str | None = None,
 ):
     """
     Refresh a specific connection by its URI.
@@ -444,14 +467,20 @@ def refresh_connection(
         connection_uri: The URI of the connection to refresh
         replace: If True, replace existing connection
         async_start: If True, start the connection asynchronously
+        username: The username to scope vault lookups
     """
     node: Connection = sindit_kg_connector.load_node_by_uri(connection_uri)
     if node is not None:
-        update_connection_node(node, replace=replace, async_start=async_start)
+        update_connection_node(
+            node, replace=replace, async_start=async_start, username=username
+        )
 
 
 def refresh_property(
-    property_uri: str, replace: bool = True, async_start: bool = False
+    property_uri: str,
+    replace: bool = True,
+    async_start: bool = False,
+    username: str | None = None,
 ):
     """
     Refresh a specific property by its URI.
@@ -460,7 +489,10 @@ def refresh_property(
         property_uri: The URI of the property to refresh
         replace: If True, replace existing property
         async_start: If True, start the property asynchronously
+        username: The username to scope vault lookups
     """
     node: AbstractAssetProperty = sindit_kg_connector.load_node_by_uri(property_uri)
     if node is not None:
-        update_property_node(node, replace=replace, async_start=async_start)
+        update_property_node(
+            node, replace=replace, async_start=async_start, username=username
+        )

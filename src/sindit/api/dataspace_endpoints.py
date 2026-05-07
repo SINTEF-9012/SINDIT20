@@ -21,7 +21,7 @@ from sindit.util.log import logger
 
 def _load_dataspaces(current_user: User = Depends(get_current_active_user)) -> User:
     """Dependency: ensures dataspace connectors are loaded for the current graph."""
-    load_dataspaces_for_current_graph()
+    load_dataspaces_for_current_graph(username=current_user.username)
     return current_user
 
 
@@ -127,7 +127,7 @@ async def create_dataspace_management(
         if result:
             # Always (re)start the connector; isActive is a system-maintained
             # status reflecting EDC reachability, not user intent.
-            update_dataspace_node(payload, replace=True)
+            update_dataspace_node(payload, replace=True, username=current_user.username)
         return {"result": result}
     except Exception as e:
         logger.error(f"Error creating dataspace management node: {e}")
