@@ -564,28 +564,16 @@ class RDFModel(BaseModel):
                     # set the value as a list
                     setattr(ind_obj, att_name, [new_att_value])
             else:
-                # get the exising value, New, need to be tested!!
-                existing_value = getattr(ind_obj, att_name, None)
-                # if the existing value is not None
-                if existing_value is not None:
-                    # append the new value to the existing value
-                    if not isinstance(existing_value, list):
-                        existing_value = [existing_value]
-                    setattr(ind_obj, att_name, existing_value + [new_att_value])
-                # if the existing value is None
-                else:
-                    setattr(ind_obj, att_name, new_att_value)
+                # Scalar field: always replace (never accumulate non-List fields)
+                setattr(ind_obj, att_name, new_att_value)
 
         else:
-            # get the exising value, New, need to be tested!!
+            # No type hint: accumulate (unknown if scalar or multi-valued)
             existing_value = getattr(ind_obj, att_name, None)
-            # if the existing value is not None
             if existing_value is not None:
-                # append the new value to the existing value
                 if not isinstance(existing_value, list):
                     existing_value = [existing_value]
                 setattr(ind_obj, att_name, existing_value + [new_att_value])
-            # if the existing value is None
             else:
                 setattr(ind_obj, att_name, new_att_value)
 

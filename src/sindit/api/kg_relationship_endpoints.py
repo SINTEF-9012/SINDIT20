@@ -1,25 +1,18 @@
-from typing import List, Union
-from fastapi import HTTPException, Depends
+from typing import List
+from fastapi import Body, HTTPException, Depends
+from pydantic import TypeAdapter
 from sindit.initialize_kg_connectors import sindit_kg_connector
 from sindit.api.authentication_endpoints import User, get_current_active_user
 
 from sindit.knowledge_graph.relationship_model import (
-    AbstractRelationship,
-    ConsistOfRelationship,
-    PartOfRelationship,
-    ConnectedToRelationship,
-    DependsOnRelationship,
-    DerivedFromRelationship,
-    MonitorsRelationship,
-    ControlsRelationship,
-    SimulatesRelationship,
-    UsesRelationship,
-    CommunicatesWithRelationship,
-    IsTypeOfRelationship,
+    RelationshipUnion,
 )
+
 from sindit.util.log import logger
 
 from sindit.api.api import app
+
+_relationship_adapter = TypeAdapter(RelationshipUnion)
 
 
 @app.get("/kg/relationship_types", tags=["Knowledge Graph"])
@@ -38,30 +31,18 @@ async def get_all_relationship_types(
 
 @app.post("/kg/relationship", tags=["Knowledge Graph"])
 async def create_relationship(
-    relationship: Union[
-        ConsistOfRelationship,
-        PartOfRelationship,
-        ConnectedToRelationship,
-        DependsOnRelationship,
-        DerivedFromRelationship,
-        MonitorsRelationship,
-        ControlsRelationship,
-        SimulatesRelationship,
-        UsesRelationship,
-        CommunicatesWithRelationship,
-        AbstractRelationship,
-        IsTypeOfRelationship,
-    ],
+    data: dict = Body(...),
     current_user: User = Depends(get_current_active_user),
 ):
     """
     Create a relationship between two assets.
     """
     try:
+        relationship = _relationship_adapter.validate_python(data)
         result = sindit_kg_connector.save_node(relationship)
         return {"result": result}
     except Exception as e:
-        logger.error(f"Error creating relationship {relationship}: {e}")
+        logger.error(f"Error creating relationship {data}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -69,22 +50,7 @@ async def create_relationship(
     "/kg/relationship_by_node",
     tags=["Knowledge Graph"],
     response_model_exclude_none=True,
-    response_model=List[
-        Union[
-            ConsistOfRelationship,
-            PartOfRelationship,
-            ConnectedToRelationship,
-            DependsOnRelationship,
-            DerivedFromRelationship,
-            MonitorsRelationship,
-            ControlsRelationship,
-            SimulatesRelationship,
-            UsesRelationship,
-            CommunicatesWithRelationship,
-            AbstractRelationship,
-            IsTypeOfRelationship,
-        ]
-    ],
+    response_model=List[RelationshipUnion],
 )
 async def get_relationship_by_node(
     node_uri: str, current_user: User = Depends(get_current_active_user)
@@ -104,22 +70,7 @@ async def get_relationship_by_node(
     "/kg/relationship",
     tags=["Knowledge Graph"],
     response_model_exclude_none=True,
-    response_model=List[
-        Union[
-            ConsistOfRelationship,
-            PartOfRelationship,
-            ConnectedToRelationship,
-            DependsOnRelationship,
-            DerivedFromRelationship,
-            MonitorsRelationship,
-            ControlsRelationship,
-            SimulatesRelationship,
-            UsesRelationship,
-            CommunicatesWithRelationship,
-            AbstractRelationship,
-            IsTypeOfRelationship,
-        ]
-    ],
+    response_model=List[RelationshipUnion],
 )
 async def get_all_relationships(
     current_user: User = Depends(get_current_active_user),
@@ -134,3 +85,19 @@ async def get_all_relationships(
     except Exception as e:
         logger.error(f"Error getting all relationships: {e}")
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.delete("/kg/relationship", tags=["Knowledge Graph"])
+async def delete_relationship(
+    relationship_uri: str, current_user: User = Depends(get_current_active_user)
+) -> dict:
+    """
+    Delete a relationship from the knowledge graph by its URI.
+    Bypasses node-class resolution that is not needed for relationships.
+    """
+    try:
+        result = sindit_kg_connector.delete_node(relationship_uri)
+        return {"result": result}
+    except Exception as e:
+        logger.error(f"Error deleting relationship by URI {relationship_uri}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

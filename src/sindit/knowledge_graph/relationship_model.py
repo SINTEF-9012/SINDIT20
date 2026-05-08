@@ -1,5 +1,6 @@
-from typing import Any, ClassVar, Union
+from typing import Annotated, Any, ClassVar, Union
 
+from pydantic import Discriminator, Tag
 from sindit.common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from rdflib import Literal, URIRef
 
@@ -161,3 +162,48 @@ RelationshipURIClassMapping = {
     CommunicatesWithRelationship.CLASS_URI: CommunicatesWithRelationship,
     IsTypeOfRelationship.CLASS_URI: IsTypeOfRelationship,
 }
+
+_KNOWN_RELATIONSHIP_TYPES = {
+    "consistsOf",
+    "partOf",
+    "connectedTo",
+    "dependsOn",
+    "derivedFrom",
+    "monitors",
+    "controls",
+    "simulates",
+    "uses",
+    "communicatesWith",
+    "isTypeOf",
+}
+
+
+def _relationship_discriminator(v) -> str:
+    if isinstance(v, dict):
+        rel_type = v.get("relationshipType")
+    else:
+        rel_type = getattr(v, "relationshipType", None)
+        if isinstance(rel_type, list):
+            rel_type = rel_type[0] if rel_type else None
+    if rel_type and str(rel_type) in _KNOWN_RELATIONSHIP_TYPES:
+        return str(rel_type)
+    return "abstract"
+
+
+RelationshipUnion = Annotated[
+    Union[
+        Annotated[ConsistOfRelationship, Tag("consistsOf")],
+        Annotated[PartOfRelationship, Tag("partOf")],
+        Annotated[ConnectedToRelationship, Tag("connectedTo")],
+        Annotated[DependsOnRelationship, Tag("dependsOn")],
+        Annotated[DerivedFromRelationship, Tag("derivedFrom")],
+        Annotated[MonitorsRelationship, Tag("monitors")],
+        Annotated[ControlsRelationship, Tag("controls")],
+        Annotated[SimulatesRelationship, Tag("simulates")],
+        Annotated[UsesRelationship, Tag("uses")],
+        Annotated[CommunicatesWithRelationship, Tag("communicatesWith")],
+        Annotated[IsTypeOfRelationship, Tag("isTypeOf")],
+        Annotated[AbstractRelationship, Tag("abstract")],
+    ],
+    Discriminator(_relationship_discriminator),
+]
