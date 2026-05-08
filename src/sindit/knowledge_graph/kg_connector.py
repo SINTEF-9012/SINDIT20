@@ -762,7 +762,15 @@ class SINDITKGConnector:
                 else:
                     delete_data += line + "\n"
 
-            query = query_template.replace("[prefixes]", prefixes)
+            # Merge prefixes from both insert and delete graphs so that
+            # predicates only present in the delete side (e.g. when clearing
+            # a field with null) are also properly declared.
+            all_prefixes = prefixes
+            for line in old_prefixes.strip().split("\n"):
+                if line and line not in all_prefixes:
+                    all_prefixes += line + "\n"
+
+            query = query_template.replace("[prefixes]", all_prefixes)
             query = query.replace("[insert_data]", insert_data)
             query = query.replace("[delete_data]", delete_data)
 
