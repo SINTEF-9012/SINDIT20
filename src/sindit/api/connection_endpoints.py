@@ -69,7 +69,9 @@ async def refresh_connections_and_properties(
     def refresh_with_cleanup():
         try:
             logger.info(f"Starting connections/properties refresh (replace={replace})")
-            initialize_connections_and_properties(replace=replace, async_start=True)
+            initialize_connections_and_properties(
+                replace=replace, async_start=True, username=current_user.username
+            )
             logger.info("Connections and properties refresh completed")
         except Exception as e:
             logger.error(f"Error refreshing connections and properties: {e}")
@@ -180,7 +182,12 @@ async def refresh_connection_by_uri(
     def refresh_with_cleanup():
         try:
             logger.info(f"Refreshing connection {connection_uri} (replace={replace})")
-            refresh_connection(connection_uri, replace=replace, async_start=True)
+            refresh_connection(
+                connection_uri,
+                replace=replace,
+                async_start=True,
+                username=current_user.username,
+            )
             logger.info(f"Connection {connection_uri} refresh completed")
         except Exception as e:
             logger.error(f"Error refreshing connection {connection_uri}: {e}")
@@ -265,7 +272,12 @@ async def refresh_property_by_uri(
     def refresh_with_cleanup():
         try:
             logger.info(f"Refreshing property {property_uri} (replace={replace})")
-            refresh_property(property_uri, replace=replace, async_start=True)
+            refresh_property(
+                property_uri,
+                replace=replace,
+                async_start=True,
+                username=current_user.username,
+            )
             logger.info(f"Property {property_uri} refresh completed")
         except Exception as e:
             logger.error(f"Error refreshing property {property_uri}: {e}")

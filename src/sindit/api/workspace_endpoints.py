@@ -2,6 +2,7 @@ from fastapi import HTTPException, Depends
 from sindit.authentication.models import Workspace
 from sindit.initialize_kg_connectors import sindit_kg_connector
 from sindit.api.authentication_endpoints import User, get_current_active_user
+from sindit.dataspace.setup_dataspace import load_dataspaces_for_current_graph
 
 from sindit.util.log import logger
 
@@ -122,6 +123,7 @@ async def switch_workspace(
         # return {"workspace_uri": graph_uri}
         new_workspace = workspaceService.create_workspace(current_user, workspace_name)
         sindit_kg_connector.set_graph_uri(new_workspace.uri.strip())
+        load_dataspaces_for_current_graph(force=True, username=current_user.username)
         return new_workspace
         # TODO: switching to a new workspace should also
         # stop/clean up all connections and properties

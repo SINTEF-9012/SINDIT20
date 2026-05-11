@@ -10,6 +10,8 @@
 #   }
 # }
 
+PREFIX sindit: <urn:samm:sindit.sintef.no:1.0.0#>
+
 DELETE {
   GRAPH <[graph_uri]> {
     ?s ?p ?o .
@@ -18,12 +20,20 @@ DELETE {
 WHERE {
   GRAPH <[graph_uri]> {
     {
+      # Delete the node's own triples
       BIND(<[node_uri]> AS ?s) .
       ?s ?p ?o .
     }
     UNION
     {
+      # Delete triples in other nodes that directly reference this node
       BIND(<[node_uri]> AS ?o) .
+      ?s ?p ?o .
+    }
+    UNION
+    {
+      # Cascade-delete any relationship nodes that use this node as source or target
+      ?s sindit:relationshipSource|sindit:relationshipTarget <[node_uri]> .
       ?s ?p ?o .
     }
   }

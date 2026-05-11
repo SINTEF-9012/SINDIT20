@@ -1,3 +1,6 @@
+import os
+import threading
+
 import hvac
 from jproperties import Properties
 from sindit.util.log import logger
@@ -112,3 +115,96 @@ class HashiCorpVault(Vault):
             return response["data"]["keys"]
         except hvac.exceptions.InvalidPath:
             return []
+
+
+class UserScopedHashiCorpVault(Vault):
+    """Wraps a HashiCorpVault and transparently prefixes all paths with the username.
+
+    This ensures secrets stored by user ``alice`` at path ``myConn/pass``
+    live under ``alice/myConn/pass`` in HashiCorp Vault, isolated from
+    other users.
+    """
+
+    def __init__(self, base_vault: "HashiCorpVault", username: str):
+        self._base = base_vault
+        self._prefix = username
+
+    def _scoped(self, path: str) -> str:
+        return f"{self._prefix}/{path}"
+
+    def resolveSecret(self, secretPath) -> str:
+        return self._base.resolveSecret(self._scoped(secretPath))
+
+    def storeSecret(self, secretPath, secretValue) -> bool:
+        return self._base.storeSecret(self._scoped(secretPath), secretValue)
+
+    def deleteSecret(self, secretPath) -> bool:
+        return self._base.deleteSecret(self._scoped(secretPath))
+
+    def listSecretPaths(self):
+        prefix = f"{self._prefix}/"
+        all_paths = self._base.listSecretPaths()
+        return [p[len(prefix) :] for p in all_paths if p.startswith(prefix)]
+
+
+class VaultService:
+    """Manages a pool of per-user :class:`Vault` instances.
+
+    Subclasses implement :meth:`_create_vault` to build the appropriate vault
+    type for a given username.
+    """
+
+    def __init__(self):
+        self._vaults: dict[str, Vault] = {}
+        self._lock = threading.Lock()
+
+    def get_vault(self, username: str) -> Vault:
+        """Return (lazily creating) the vault scoped to *username*."""
+        with self._lock:
+            if username not in self._vaults:
+                self._vaults[username] = self._create_vault(username)
+            return self._vaults[username]
+
+    def _create_vault(self, username: str) -> Vault:
+        raise NotImplementedError
+
+
+class FsVaultService(VaultService):
+    """Per-user file-system vault.
+
+    Each user gets their own ``.properties`` file named
+    ``<stem>_<username><suffix>`` placed next to the base vault file.
+    For example, if the base vault is ``vault.properties`` and the user is
+    ``alice``, her vault is stored in ``vault_alice.properties``.
+    """
+
+    def __init__(self, vault_path: str):
+        super().__init__()
+        base_dir = os.path.dirname(vault_path)
+        base_name = os.path.basename(vault_path)
+        stem, suffix = os.path.splitext(base_name)
+        self._base_dir = base_dir
+        self._stem = stem
+        self._suffix = suffix
+
+    def _create_vault(self, username: str) -> FsVault:
+        user_vault_path = os.path.join(
+            self._base_dir, f"{self._stem}_{username}{self._suffix}"
+        )
+        return FsVault(user_vault_path)
+
+
+class HashiCorpVaultService(VaultService):
+    """Per-user HashiCorp Vault.
+
+    A single :class:`HashiCorpVault` client is shared; each user's secrets
+    are transparently prefixed with ``<username>/`` via
+    :class:`UserScopedHashiCorpVault`.
+    """
+
+    def __init__(self, vault_url: str, token: str):
+        super().__init__()
+        self._base_vault = HashiCorpVault(vault_url, token)
+
+    def _create_vault(self, username: str) -> UserScopedHashiCorpVault:
+        return UserScopedHashiCorpVault(self._base_vault, username)

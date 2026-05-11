@@ -1,13 +1,9 @@
-from typing import ClassVar, List, Union
+from typing import ClassVar, List
 
 from sindit.common.semantic_knowledge_graph.rdf_model import RDFModel, URIRefNode
 from rdflib import Literal, URIRef
 
-from sindit.knowledge_graph.graph_model import (
-    GRAPH_MODEL,
-    AbstractAsset,
-    AbstractAssetProperty,
-)
+from sindit.knowledge_graph.graph_model import GRAPH_MODEL
 
 
 class DataspaceManagement(RDFModel):
@@ -53,9 +49,7 @@ class DataspaceManagement(RDFModel):
     # Vault path holding the static API key the EDC data plane must send as
     # ``X-Api-Key`` when calling back to ``GET /dataspace/node``.
     sinditCallbackKeyPath: Literal | str = None
-    dataspaceAssets: List[
-        Union[URIRefNode, AbstractAssetProperty, AbstractAsset]
-    ] = None
+    dataspaceAssets: List[URIRefNode] = None
 
 
 DataspaceURIClassMapping = {

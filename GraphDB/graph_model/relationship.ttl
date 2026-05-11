@@ -99,7 +99,7 @@
    samm:description "For data exchange between assets."@en ;
    samm:properties ( ) .
 
-:MonitorRelationship a samm:Entity ;
+:MonitorsRelationship a samm:Entity ;
    samm:extends :AbstractRelationship ;
    samm:description "For condition monitoring."@en ;
    samm:properties ( ) .

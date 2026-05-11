@@ -1,2 +1,2 @@
-environment_and_configuration/vault.properties
+environment_and_configuration/*.properties
 environment_and_configuration/workspace.json

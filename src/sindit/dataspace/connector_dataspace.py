@@ -5,14 +5,12 @@ bookkeeping (uri, kg_connector, is_connected, observers_lock, ...) but the
 "observer" semantics inherited from :class:`Connector` are unused: dataspace
 publishing is outbound rather than inbound, so :meth:`notify` is never called.
 
-The connector orchestrates three things:
+The connector orchestrates two things:
 
-1. Authenticates SINDIT against itself by calling ``POST /token`` with a
-   configured service user, obtaining a JWT.
-2. Pushes that JWT (as ``"Bearer <token>"``) into the EDC vault under the
-   :data:`SINDIT_BEARER_SECRET_NAME` key via the EDC Management API.
-3. Publishes / unpublishes / reconciles EDC HTTP assets that point back at
-   ``GET /kg/node?node_uri=<uri>`` of the SINDIT API.
+1. Publishes / unpublishes / reconciles EDC HTTP assets that point back at
+   ``GET /dataspace/node`` of the SINDIT API.
+2. Authenticates incoming EDC data-plane callbacks via a static
+   ``X-Api-Key`` header whose value is stored in the SINDIT vault.
 """
 
 from __future__ import annotations
@@ -24,7 +22,6 @@ from sindit.connectors.connector_factory import ObjectBuilder, connector_factory
 from sindit.dataspace.edc_client import EDCManagementClient, EDCManagementClientError
 from sindit.dataspace.edc_mapping import (
     DEFAULT_PUBLIC_POLICY_ID,
-    SINDIT_BEARER_SECRET_NAME,
     build_contract_definition,
     build_default_public_policy,
     build_http_asset,
@@ -44,10 +41,6 @@ class DataspaceConnector(Connector):
         auth_key: Resolved API key for the EDC Management API.
         sindit_api_base_url: Public URL where SINDIT's REST API is reachable
             from the EDC data plane.
-        sindit_service_user: SINDIT username used to mint the long-lived
-            bearer token consumed by EDC.
-        sindit_service_user_password: Password for that user.
-        secret_name: Vault key in EDC's vault that will hold the bearer.
         uri: Identifier for this connector instance (the URI of the
             ``DataspaceManagement`` KG node).
         kg_connector: SINDIT KG connector for status updates.
@@ -63,7 +56,6 @@ class DataspaceConnector(Connector):
         sindit_api_base_url: str | None = None,
         sindit_workspace_uri: str | None = None,
         sindit_callback_key: str | None = None,
-        secret_name: str = SINDIT_BEARER_SECRET_NAME,
         uri: str | None = None,
         kg_connector: SINDITKGConnector | None = None,
     ) -> None:
@@ -81,7 +73,6 @@ class DataspaceConnector(Connector):
         self.sindit_workspace_uri = sindit_workspace_uri
         # Static API key sent by the EDC data plane as ``X-Api-Key``.
         self.__sindit_callback_key = sindit_callback_key
-        self.secret_name = secret_name
         self.client = EDCManagementClient(
             endpoint=endpoint,
             auth_type=auth_type,
@@ -191,6 +182,7 @@ class DataspaceConnector(Connector):
             node,
             sindit_api_base_url=self.sindit_api_base_url,
             dataspace_uri=self.uri,
+            workspace_uri=self.sindit_workspace_uri,
             callback_api_key=self.__sindit_callback_key,
         )
         asset_id = self.client.create_asset(asset_payload)
@@ -273,8 +265,8 @@ class DataspaceConnector(Connector):
             and a["@id"].startswith("sindit-")
         }
 
-        # Always re-publish every locally listed node so the rotated bearer is
-        # propagated. EDC's create-asset upsert (409 -> PUT) makes this safe.
+        # Always re-publish every locally listed node to keep the EDC catalog
+        # in sync with the KG. EDC's create-asset upsert (409 -> PUT) makes this safe.
         published = 0
         for asset_id, node_uri in local_asset_ids.items():
             try:
@@ -338,8 +330,6 @@ class DataspaceConnectorBuilder(ObjectBuilder):
         auth_type: str | None = "tokenbased",
         auth_key: str | None = None,
         sindit_api_base_url: str | None = None,
-        sindit_service_user: str | None = None,
-        secret_name: str = SINDIT_BEARER_SECRET_NAME,
         uri: str | None = None,
         kg_connector: SINDITKGConnector | None = None,
         **_: Any,
@@ -349,8 +339,6 @@ class DataspaceConnectorBuilder(ObjectBuilder):
             auth_type=auth_type,
             auth_key=auth_key,
             sindit_api_base_url=sindit_api_base_url,
-            sindit_service_user=sindit_service_user,
-            secret_name=secret_name,
             uri=uri,
             kg_connector=kg_connector,
         )

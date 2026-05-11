@@ -245,7 +245,9 @@ async def create_connection(
         if result:
             # Start connection asynchronously
             # (task tracking handled in setup_connectors)
-            update_connection_node(node, replace=True, async_start=True)
+            update_connection_node(
+                node, replace=True, async_start=True, username=current_user.username
+            )
             return {"result": result, "status": "connection_starting"}
         return {"result": result}
     except Exception as e:
@@ -272,7 +274,9 @@ async def create_asset_property(
         result = sindit_kg_connector.save_node(node)
         if result:
             # Update property asynchronously (task tracking handled in setup_connectors)
-            update_property_node(node, replace=True, async_start=True)
+            update_property_node(
+                node, replace=True, async_start=True, username=current_user.username
+            )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -298,7 +302,9 @@ async def create_database_property(
         result = sindit_kg_connector.save_node(node)
         if result:
             # Update property asynchronously (task tracking handled in setup_connectors)
-            update_property_node(node, replace=True, async_start=True)
+            update_property_node(
+                node, replace=True, async_start=True, username=current_user.username
+            )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -324,7 +330,9 @@ async def create_streaming_property(
         result = sindit_kg_connector.save_node(node)
         if result:
             # Update property asynchronously (task tracking handled in setup_connectors)
-            update_property_node(node, replace=True, async_start=True)
+            update_property_node(
+                node, replace=True, async_start=True, username=current_user.username
+            )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -350,7 +358,9 @@ async def create_timeseries_property(
         result = sindit_kg_connector.save_node(node)
         if result:
             # Update property asynchronously (task tracking handled in setup_connectors)
-            update_property_node(node, replace=True, async_start=True)
+            update_property_node(
+                node, replace=True, async_start=True, username=current_user.username
+            )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -379,7 +389,9 @@ async def create_file(
         result = sindit_kg_connector.save_node(node)
         if result:
             # Update property asynchronously (task tracking handled in setup_connectors)
-            update_property_node(node, replace=True, async_start=True)
+            update_property_node(
+                node, replace=True, async_start=True, username=current_user.username
+            )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -406,7 +418,9 @@ async def create_s3_object(
         result = sindit_kg_connector.save_node(node)
         if result:
             # Update property asynchronously (task tracking handled in setup_connectors)
-            update_property_node(node, replace=True, async_start=True)
+            update_property_node(
+                node, replace=True, async_start=True, username=current_user.username
+            )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")
@@ -434,7 +448,12 @@ async def create_property_collection(
             # (task tracking handled in setup_connectors)
             for prop in node.collectionProperties:
                 if isinstance(prop, AbstractAssetProperty):
-                    update_property_node(prop, replace=True, async_start=True)
+                    update_property_node(
+                        prop,
+                        replace=True,
+                        async_start=True,
+                        username=current_user.username,
+                    )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error saving node {node}: {e}")

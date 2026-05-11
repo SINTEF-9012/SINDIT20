@@ -57,6 +57,7 @@ def build_http_asset(
     node: Any,
     sindit_api_base_url: str,
     dataspace_uri: str,
+    workspace_uri: str | None = None,
     callback_api_key: str | None = None,
 ) -> dict:
     """Build the EDC 0.17 JSON-LD payload for an HTTP asset backed by SINDIT.
@@ -68,7 +69,11 @@ def build_http_asset(
             reachable from the EDC data plane (e.g. ``http://sindit:9017``).
         dataspace_uri: URI of the ``DataspaceManagement`` node that published
             this asset.  Embedded as a query parameter so the callback endpoint
-            can look up the workspace without any user-identity assumptions.
+            can look up the right in-memory connector.
+        workspace_uri: Named-graph URI of the workspace that owns this
+            DataspaceManagement node.  Required to uniquely identify the
+            connector when multiple workspaces have nodes with the same URI
+            (since X-Api-Key is user-defined and not guaranteed unique).
         callback_api_key: Static API key inlined into the data address as
             ``authCode``; sent by the EDC data plane as ``X-Api-Key``.
             Pass ``None`` to omit auth.
@@ -79,10 +84,10 @@ def build_http_asset(
     # Point to the dedicated callback endpoint that resolves the workspace
     # from the DataspaceManagement node rather than from a user token.
     base_url = sindit_api_base_url.rstrip("/") + "/dataspace/node"
-    query_params = (
-        f"dataspace_uri={quote(dataspace_uri, safe='')}"
-        f"&node_uri={quote(node_uri, safe='')}&depth=1"
-    )
+    query_params = f"dataspace_uri={quote(dataspace_uri, safe='')}"
+    if workspace_uri:
+        query_params += f"&workspace_uri={quote(workspace_uri, safe='')}"
+    query_params += f"&node_uri={quote(node_uri, safe='')}&depth=1"
 
     # Plain, unprefixed property keys to match the canonical seed payload
     # (``deployment/requests/create-asset.json``). With ``@vocab=edc`` they

@@ -1,5 +1,5 @@
 from fastapi import HTTPException, Depends
-from sindit.initialize_vault import secret_vault
+from sindit.initialize_vault import vault_service
 from sindit.util.log import logger
 from sindit.api.authentication_endpoints import User, get_current_active_user
 
@@ -33,7 +33,9 @@ async def store_secret(
     Store a secret in the vault.
     """
     try:
-        result = secret_vault.storeSecret(secret_path, secret_value)
+        result = vault_service.get_vault(current_user.username).storeSecret(
+            secret_path, secret_value
+        )
         return {"result": result}
     except Exception as e:
         logger.error(f"Error storing secret {secret_path}: {e}")
@@ -67,7 +69,11 @@ async def list_secret_paths(
     List all secret paths in the vault.
     """
     try:
-        return {"secret_paths": secret_vault.listSecretPaths()}
+        return {
+            "secret_paths": vault_service.get_vault(
+                current_user.username
+            ).listSecretPaths()
+        }
     except Exception as e:
         logger.error(f"Error listing secret paths: {e}")
         raise HTTPException(status_code=400, detail=str(e))
