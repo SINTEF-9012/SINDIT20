@@ -13,7 +13,7 @@ line_length = 88
 
 [project]
 name = "sindit"
-version = "2.0.18"
+version = "2.1.0"
 authors = [
     {name = "An Lam", email = "an.lam@sintef.no"},
     {name = "Gøran Brekke Svaland", email = "goran.svaland@sintef.no"}
