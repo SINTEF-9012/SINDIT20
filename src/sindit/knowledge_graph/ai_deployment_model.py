@@ -47,10 +47,10 @@ class AIModelDeployment(RDFModel):
 
     deploymentDescription: Literal | str = None
     deployedToAsset: URIRefNode = None
-    endpointUrl: Literal | str = None    # prediction REST URL
-    endpointType: Literal | str = None   # "generic" | "mlflow" | "triton" | …
-    apiKeyPath: Literal | str = None     # vault path for the API key
-    isActive: Literal | bool = None      # runtime-managed; see class docstring
+    endpointUrl: Literal | str = None  # prediction REST URL
+    endpointType: Literal | str = None  # "generic" | "mlflow" | "triton" | …
+    apiKeyPath: Literal | str = None  # vault path for the API key
+    isActive: Literal | bool = None  # runtime-managed; see class docstring
 
 
 # ---------------------------------------------------------------------------

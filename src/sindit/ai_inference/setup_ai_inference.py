@@ -193,9 +193,7 @@ def _update_deployment_invoker_async(
 
     with _tasks_lock:
         if node_uri in _running_tasks:
-            logger.debug(
-                "update_deployment_invoker: already running for %s", node_uri
-            )
+            logger.debug("update_deployment_invoker: already running for %s", node_uri)
             return
         _running_tasks.add(node_uri)
 
@@ -266,9 +264,7 @@ def update_inference_property_node(
                 deployment_uri,
             )
             return None
-        update_deployment_invoker(
-            deployment_node, replace=False, username=username
-        )
+        update_deployment_invoker(deployment_node, replace=False, username=username)
 
     invoker = ai_model_invokers.get(deployment_uri)
     if invoker is None:
@@ -367,9 +363,7 @@ def invoke_and_update(property_uri: str, username: str | None = None) -> dict:
     deployment_uri = _deployment_uri_from_ref(node.inferenceDeployment)
     invoker = ai_model_invokers.get(deployment_uri)  # type: ignore[arg-type]
     if invoker is None:
-        raise RuntimeError(
-            f"No active AIModelInvoker for deployment {deployment_uri}"
-        )
+        raise RuntimeError(f"No active AIModelInvoker for deployment {deployment_uri}")
 
     # Run inference synchronously
     prop_invoker.update_value(invoker)

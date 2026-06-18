@@ -124,8 +124,7 @@ class AIInferencePropertyInvoker(Property):
 
             # Guard: reject obviously invalid URIs before hitting SPARQL
             if not prop_uri_str or not (
-                prop_uri_str.startswith("http")
-                or prop_uri_str.startswith("urn:")
+                prop_uri_str.startswith("http") or prop_uri_str.startswith("urn:")
             ):
                 logger.error(
                     "AIInferencePropertyInvoker %s: inputMapping['%s'] = %r "
@@ -176,9 +175,7 @@ class AIInferencePropertyInvoker(Property):
             try:
                 result = _extract_by_dotpath(response, str(response_field))
             except ValueError as exc:
-                logger.error(
-                    "AIInferencePropertyInvoker %s: %s", self.uri, exc
-                )
+                logger.error("AIInferencePropertyInvoker %s: %s", self.uri, exc)
                 return
         else:
             result = response
@@ -187,6 +184,4 @@ class AIInferencePropertyInvoker(Property):
         timestamp = datetime.now(tz=timezone.utc)
         self.value = result
         self.update_property_value_to_kg(self.uri, result, timestamp)
-        logger.debug(
-            "AIInferencePropertyInvoker %s: updated propertyValue", self.uri
-        )
+        logger.debug("AIInferencePropertyInvoker %s: updated propertyValue", self.uri)
