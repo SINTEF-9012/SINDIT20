@@ -1,0 +1,54 @@
+
+@prefix samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#> .
+@prefix samm-c: <urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#> .
+@prefix samm-e: <urn:samm:org.eclipse.esmf.samm:entity:2.1.0#> .
+@prefix unit: <urn:samm:org.eclipse.esmf.samm:unit:2.1.0#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <urn:samm:sindit.sintef.no:1.0.0#> .
+
+# ---------------------------------------------------------------------------
+# AI Model Deployment
+#
+# Represents an externally deployed AI model that SINDIT connects to as a
+# client. Combines a minimal human-readable description with the serving
+# endpoint configuration needed to call the model's prediction API.
+#
+# Note: :isActive is shared with dataspace.ttl and already declared there.
+# ---------------------------------------------------------------------------
+
+:AIModelDeployment a samm:Entity ;
+   samm:preferredName "AI Model Deployment"@en ;
+   samm:description "An externally deployed AI model that SINDIT calls for predictions. Holds a description, an optional link to a twin asset, and the serving endpoint configuration."@en ;
+   samm:properties ( :deploymentDescription :deployedToAsset :endpointUrl :endpointType :apiKeyPath :isActive ) .
+
+:deploymentDescription a samm:Property ;
+   samm:preferredName "Deployment Description"@en ;
+   samm:description "Human-readable description of what the model does and what it predicts."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "Anomaly detection model for milling machine vibration data" .
+
+:deployedToAsset a samm:Property ;
+   samm:preferredName "Deployed To Asset"@en ;
+   samm:description "URI reference to the AbstractAsset KG node this model is deployed for."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "http://sindit.sintef.no/2.0#MillingMachine1" .
+
+:endpointUrl a samm:Property ;
+   samm:preferredName "Endpoint URL"@en ;
+   samm:description "Full URL of the model's prediction REST endpoint."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "https://router.huggingface.co/hf-inference/models/distilbert-base-uncased-finetuned-sst-2-english" .
+
+:endpointType a samm:Property ;
+   samm:preferredName "Endpoint Type"@en ;
+   samm:description "Payload protocol used when calling the endpoint. Supported values: generic (default), mlflow, triton, huggingface, tensorflow-serving, torchserve, bentoml, seldon."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "huggingface" .
+
+:apiKeyPath a samm:Property ;
+   samm:preferredName "API Key Path"@en ;
+   samm:description "Vault path where the API key for this endpoint is stored. Resolved at runtime; never stored in plain text."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "ai_models/anomaly_detector/api_key" .

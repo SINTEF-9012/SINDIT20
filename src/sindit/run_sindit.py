@@ -2,14 +2,14 @@ from sindit.util.environment_and_configuration import (  # noqa: E402
     get_environment_variable,
     get_environment_variable_bool,
     get_environment_variable_int,
-)  # noqa: E402
-
+)
 from sindit.util.log import logger  # noqa: E402
 
 # if not running in docker, load environment variables from dev .env file
 if not get_environment_variable_bool("DOCKER_ENV", optional=True, default=False):
-    from dotenv import load_dotenv
     import os
+
+    from dotenv import load_dotenv
 
     _env_path = os.path.join(
         os.path.dirname(__file__),
@@ -30,17 +30,17 @@ else:
 
 import uvicorn  # noqa: E402
 
-
-from sindit.api import kg_endpoints  # noqa: F401, E402
-from sindit.api import vault_endpoints  # noqa: F401, E402
-from sindit.api import connection_endpoints  # noqa: F401, E402
-from sindit.api import workspace_endpoints  # noqa: F401, E402
-from sindit.api import metamodel_endpoints  # noqa: F401, E402
-from sindit.api import kg_relationship_endpoints  # noqa: F401, E402
+from sindit.api import ai_deployment_endpoints  # noqa: F401, E402
+from sindit.api import ai_inference_endpoints  # noqa: F401, E402
 from sindit.api import authentication_endpoints  # noqa: F401, E402
+from sindit.api import connection_endpoints  # noqa: F401, E402
 from sindit.api import dataspace_endpoints  # noqa: F401, E402
 from sindit.api import health_endpoints  # noqa: F401, E402
-
+from sindit.api import kg_endpoints  # noqa: F401, E402
+from sindit.api import kg_relationship_endpoints  # noqa: F401, E402
+from sindit.api import metamodel_endpoints  # noqa: F401, E402
+from sindit.api import vault_endpoints  # noqa: F401, E402
+from sindit.api import workspace_endpoints  # noqa: F401, E402
 
 if __name__ == "__main__":
     logger.info("Starting SINDIT")

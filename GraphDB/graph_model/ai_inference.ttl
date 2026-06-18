@@ -1,0 +1,58 @@
+
+@prefix samm: <urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#> .
+@prefix samm-c: <urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#> .
+@prefix samm-e: <urn:samm:org.eclipse.esmf.samm:entity:2.1.0#> .
+@prefix unit: <urn:samm:org.eclipse.esmf.samm:unit:2.1.0#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <urn:samm:sindit.sintef.no:1.0.0#> .
+
+# ---------------------------------------------------------------------------
+# AI Inference Property
+#
+# Extends AbstractAssetProperty (defined in SINDITKG.ttl) so predictions are
+# first-class SINDIT data properties: they can be attached to assets,
+# streamed, searched, and displayed like any other property.
+#
+# The inference runtime reads current propertyValue from each URI listed in
+# inputMapping, POSTs them to the endpoint on the referenced AIModelDeployment
+# node, extracts the result via responseField, and writes it back to this
+# property's propertyValue / propertyValueTimestamp.
+# ---------------------------------------------------------------------------
+
+:AIInferenceProperty a samm:Entity ;
+   samm:extends :AbstractAssetProperty ;
+   samm:preferredName "AI Inference Property"@en ;
+   samm:description "An AbstractAssetProperty whose value is produced by calling an external AI model prediction API. Input values are read from other SINDIT properties; the prediction result is written back as propertyValue."@en ;
+   samm:properties ( :inferenceDeployment :inputMapping :responseField :updateInterval :isEnabled ) .
+
+:inferenceDeployment a samm:Property ;
+   samm:preferredName "Inference Deployment"@en ;
+   samm:description "URI reference to the AIModelDeployment node that holds the endpoint URL, type, and API-key vault path."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "http://sindit.sintef.no/2.0#AnomalyDetectorDeployment" .
+
+:inputMapping a samm:Property ;
+   samm:preferredName "Input Mapping"@en ;
+   samm:description "JSON object mapping model feature names to SINDIT property URIs. The invoker reads the current propertyValue of each URI and assembles the request payload."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "{\"temperature\": \"http://sindit.sintef.no/2.0#TempSensor\", \"rpm\": \"http://sindit.sintef.no/2.0#RpmSensor\"}" .
+
+:responseField a samm:Property ;
+   samm:preferredName "Response Field"@en ;
+   samm:description "Optional dot-path into the JSON response used to extract a scalar result. Example: 'predictions.0' extracts response['predictions'][0]. When omitted the full response JSON is stored as propertyValue."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "predictions.0" .
+
+:updateInterval a samm:Property ;
+   samm:preferredName "Update Interval"@en ;
+   samm:description "Polling interval in seconds. The invoker calls the model endpoint every updateInterval seconds. Defaults to 60 when not set."@en ;
+   samm:characteristic samm-c:Text ;
+   samm:exampleValue "30" .
+
+:isEnabled a samm:Property ;
+   samm:preferredName "Is Enabled"@en ;
+   samm:description "Set to false to pause inference for this property without deleting it. The invoker skips disabled properties."@en ;
+   samm:characteristic samm-c:Boolean ;
+   samm:exampleValue true .

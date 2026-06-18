@@ -1,13 +1,15 @@
+from pathlib import Path
+
 import fastapi
+import tomli
+from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
 from sindit.util.environment_and_configuration import (
     ConfigGroups,
     get_configuration,
     get_environment_variable_bool,
 )
-from fastapi.middleware.cors import CORSMiddleware
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-import tomli
-from pathlib import Path
 
 description = """This is the API for the SINDIT project.
 It provides access to the knowledge graph and the data stored in it."""
@@ -22,6 +24,13 @@ tags_metadata = [
         "description": "Operations related to the connections and properties",
     },
     {
+        "name": "AI",
+        "description": (
+            "Operations related to AI model deployment metadata"
+            " and inference via external prediction APIs"
+        ),
+    },
+    {
         "name": "Dataspace",
         "description": "Operations related to the dataspace",
     },
@@ -31,7 +40,7 @@ tags_metadata = [
     },
     {
         "name": "Vault",
-        "description": "Operations related to the secret vault and authenitcation",
+        "description": "Operations related to the secret vault and authentication",
     },
     {
         "name": "Metamodel",

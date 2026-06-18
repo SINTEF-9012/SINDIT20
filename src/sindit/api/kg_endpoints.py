@@ -26,6 +26,8 @@ from sindit.knowledge_graph.graph_model import (
     TimeseriesProperty,
     PropertyCollection,
 )
+from sindit.knowledge_graph.ai_deployment_model import AIModelDeployment
+from sindit.knowledge_graph.ai_inference_model import AIInferenceProperty
 from sindit.util.log import logger
 
 from sindit.api.api import app
@@ -50,6 +52,8 @@ async def get_all_node_types(
     tags=["Knowledge Graph"],
     response_model_exclude_none=True,
     response_model=Union[
+        AIModelDeployment,
+        AIInferenceProperty,
         AbstractAsset,
         SINDITKG,
         Connection,
@@ -81,6 +85,8 @@ async def get_node_by_uri(
     response_model_exclude_none=True,
     response_model=List[
         Union[
+            AIModelDeployment,
+            AIInferenceProperty,
             AbstractAsset,
             SINDITKG,
             Connection,
@@ -121,6 +127,8 @@ async def get_nodes_by_type(
     response_model_exclude_none=True,
     response_model=List[
         Union[
+            AIModelDeployment,
+            AIInferenceProperty,
             AbstractAsset,
             SINDITKG,
             Connection,
