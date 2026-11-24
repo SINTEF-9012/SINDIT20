@@ -3,6 +3,7 @@ from sindit.connectors.connector_factory import ObjectBuilder, connector_factory
 from sindit.knowledge_graph.kg_connector import SINDITKGConnector
 from sindit.util.log import logger
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 import threading
 
@@ -132,8 +133,14 @@ class S3Connector(Connector):
             endpoint_url=self.endpoint_url,
             aws_access_key_id=self.__access_key_id,
             aws_secret_access_key=self.__secret_access_key,
-            region_name=self.region_name,
+            # SigV4 needs a region; MinIO's default is us-east-1.
+            region_name=self.region_name or "us-east-1",
             verify=True,  # SSL certificate verification
+            # Without this, presigned URLs fall back to SigV2, which signs the
+            # Content-Type: browser uploads that send one fail with
+            # SignatureDoesNotMatch. Path-style keeps the bucket in the path,
+            # as MinIO behind a single hostname expects.
+            config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
         )
         try:
             self.client.list_buckets()
