@@ -56,28 +56,49 @@ REPORT_PROPS = [
 
 # Live MQTT properties on the chamber: (slug, name, topic, JSON field, xsd, unit)
 CHAMBER_STREAMS = [
-    ("live-temperature", "Chamber temperature (live)", CLIMATE_TOPIC, "temperature",
-     "float", "DEG_C"),
+    (
+        "live-temperature",
+        "Chamber temperature (live)",
+        CLIMATE_TOPIC,
+        "temperature",
+        "float",
+        "DEG_C",
+    ),
     ("live-status", "Chamber status (live)", STATUS_TOPIC, "status", "string", None),
 ]
 
 ASSETS = {
     # slug: (label, assetType, description)
     "svc-climate-testing": (
-        "Climate Testing Service", "Service",
-        "Temperature and humidity testing of components and products."),
+        "Climate Testing Service",
+        "Service",
+        "Temperature and humidity testing of components and products.",
+    ),
     "climate-chamber-cc01": (
-        "Climate Chamber CC-01", "Equipment",
-        "Walk-in climate chamber. Datasheet in MinIO, live readings over MQTT."),
+        "Climate Chamber CC-01",
+        "Equipment",
+        "Walk-in climate chamber. Datasheet in MinIO, live readings over MQTT.",
+    ),
     "test-report-tc-2026-014": (
-        "Test Report TC-2026-014", "Test record",
-        "Completed customer test. Internal - not shared via the dataspace."),
+        "Test Report TC-2026-014",
+        "Test record",
+        "Completed customer test. Internal - not shared via the dataspace.",
+    ),
 }
 
 RELATIONSHIPS = [
-    ("uses", "svc-climate-testing", "climate-chamber-cc01", "Service is performed with"),
-    ("derivedFrom", "test-report-tc-2026-014", "svc-climate-testing",
-     "Report delivered under"),
+    (
+        "uses",
+        "svc-climate-testing",
+        "climate-chamber-cc01",
+        "Service is performed with",
+    ),
+    (
+        "derivedFrom",
+        "test-report-tc-2026-014",
+        "svc-climate-testing",
+        "Report delivered under",
+    ),
 ]
 
 # Nodes to publish to the dataspace in the demo (the report stays internal).
@@ -114,8 +135,9 @@ class Api:
             raise RuntimeError(f"{method} {path} -> HTTP {e.code}: {detail}") from None
 
     def login(self, username, password):
-        res = self._call("POST", "/token", form={"username": username,
-                                                 "password": password})
+        res = self._call(
+            "POST", "/token", form={"username": username, "password": password}
+        )
         self.token = res["access_token"]
 
     def get(self, path, **params):
@@ -164,17 +186,22 @@ def seed(api: Api, prefix: str, args) -> None:
 
     # MQTT connection (cluster-internal broker; SINDIT and the simulator use it)
     mqtt_uri = u("demo-mqtt")
-    api.post("/kg/connection", {
-        "uri": mqtt_uri,
-        "label": "Demo MQTT broker",
-        "type": "MQTT",
-        "host": args.mqtt_host,
-        "port": args.mqtt_port,
-        "connectionDescription": "Demo broker with simulated climate-chamber data",
-    })
+    api.post(
+        "/kg/connection",
+        {
+            "uri": mqtt_uri,
+            "label": "Demo MQTT broker",
+            "type": "MQTT",
+            "host": args.mqtt_host,
+            "port": args.mqtt_port,
+            "connectionDescription": "Demo broker with simulated climate-chamber data",
+        },
+    )
     ok = wait_connected(api, mqtt_uri)
-    print(f"  conn   Demo MQTT broker ({args.mqtt_host}:{args.mqtt_port})"
-          f" connected={ok}")
+    print(
+        f"  conn   Demo MQTT broker ({args.mqtt_host}:{args.mqtt_port})"
+        f" connected={ok}"
+    )
 
     prop_refs: dict[str, list[dict]] = {}
 
@@ -182,7 +209,9 @@ def seed(api: Api, prefix: str, args) -> None:
         refs = prop_refs.setdefault(asset_slug, [])
         for slug, name, value, xsd_type, unit in props:
             uri = u(f"{asset_slug}-{slug}")
-            api.post("/kg/asset_property", static_prop(uri, name, value, xsd_type, unit))
+            api.post(
+                "/kg/asset_property", static_prop(uri, name, value, xsd_type, unit)
+            )
             refs.append({"uri": uri})
 
     add_static("svc-climate-testing", SERVICE_PROPS)
@@ -221,37 +250,48 @@ def seed(api: Api, prefix: str, args) -> None:
             print(f"  s3     Datasheet (PDF): kept existing property ({uri})")
             args.s3_connection = None
     if args.s3_connection:
-        api.post("/kg/s3_object", {
-            "uri": uri,
-            "label": "Datasheet (PDF)",
-            "propertyName": "Datasheet (PDF)",
-            "propertyDescription": "Equipment datasheet stored in MinIO",
-            "propertyConnection": {"uri": args.s3_connection},
-            "bucket": args.s3_bucket,
-            "key": args.s3_key,
-        })
+        api.post(
+            "/kg/s3_object",
+            {
+                "uri": uri,
+                "label": "Datasheet (PDF)",
+                "propertyName": "Datasheet (PDF)",
+                "propertyDescription": "Equipment datasheet stored in MinIO",
+                "propertyConnection": {"uri": args.s3_connection},
+                "bucket": args.s3_bucket,
+                "key": args.s3_key,
+            },
+        )
         prop_refs["climate-chamber-cc01"].append({"uri": uri})
         print(f"  s3     Datasheet (PDF): {args.s3_bucket}/{args.s3_key}")
 
     for slug, (label, asset_type, description) in ASSETS.items():
-        api.post("/kg/asset", {
-            "uri": u(slug),
-            "label": label,
-            "assetType": asset_type,
-            "assetDescription": description,
-            "assetProperties": prop_refs.get(slug, []),
-        })
-        print(f"  asset  {label:<26} ({asset_type}, "
-              f"{len(prop_refs.get(slug, []))} properties)")
+        api.post(
+            "/kg/asset",
+            {
+                "uri": u(slug),
+                "label": label,
+                "assetType": asset_type,
+                "assetDescription": description,
+                "assetProperties": prop_refs.get(slug, []),
+            },
+        )
+        print(
+            f"  asset  {label:<26} ({asset_type}, "
+            f"{len(prop_refs.get(slug, []))} properties)"
+        )
 
     for rel_type, src, tgt, desc in RELATIONSHIPS:
-        api.post("/kg/relationship", {
-            "uri": u(f"rel-{rel_type}-{src}-{tgt}"),
-            "relationshipType": rel_type,
-            "relationshipDescription": desc,
-            "relationshipSource": {"uri": u(src)},
-            "relationshipTarget": {"uri": u(tgt)},
-        })
+        api.post(
+            "/kg/relationship",
+            {
+                "uri": u(f"rel-{rel_type}-{src}-{tgt}"),
+                "relationshipType": rel_type,
+                "relationshipDescription": desc,
+                "relationshipSource": {"uri": u(src)},
+                "relationshipTarget": {"uri": u(tgt)},
+            },
+        )
         print(f"  link   {ASSETS[src][0]} --{rel_type}--> {ASSETS[tgt][0]}")
 
     print("\nPublish these to the dataspace in the demo (the report stays internal):")
@@ -286,21 +326,29 @@ def reset(api: Api, prefix: str, args) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--api", default=os.environ.get("SINDIT_API", "http://localhost:9017"))
+    ap.add_argument(
+        "--api", default=os.environ.get("SINDIT_API", "http://localhost:9017")
+    )
     ap.add_argument("--username", default=os.environ.get("SINDIT_USERNAME"))
     ap.add_argument("--password", default=os.environ.get("SINDIT_PASSWORD"))
     ap.add_argument("--workspace", default="NordicTestLab")
     ap.add_argument("--mqtt-host", default=DEFAULT_MQTT_HOST)
     ap.add_argument("--mqtt-port", type=int, default=1883)
-    ap.add_argument("--s3-connection", help="URI of an existing S3 connection in SINDIT")
+    ap.add_argument(
+        "--s3-connection", help="URI of an existing S3 connection in SINDIT"
+    )
     ap.add_argument("--s3-bucket", default="sindit-demo")
     ap.add_argument("--s3-key", default="nordic-test-lab/CC01-datasheet.pdf")
-    ap.add_argument("--reset", action="store_true", help="Delete the demo nodes instead")
+    ap.add_argument(
+        "--reset", action="store_true", help="Delete the demo nodes instead"
+    )
     args = ap.parse_args()
 
     if not args.username:
         ap.error("--username (or SINDIT_USERNAME) is required")
-    password = args.password or getpass.getpass(f"SINDIT password for {args.username}: ")
+    password = args.password or getpass.getpass(
+        f"SINDIT password for {args.username}: "
+    )
 
     api = Api(args.api)
     api.login(args.username, password)
