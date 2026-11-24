@@ -238,7 +238,7 @@ def seed(api: Api, prefix: str, args) -> None:
 
     # Datasheet in MinIO through an existing S3 connection (optional)
     if args.s3_connection:
-        uri = u("climate-chamber-cc01-datasheet-file")
+        uri = u("climate-chamber-cc01-datasheet-pdf")
         try:
             exists = bool(api.get("/kg/node", node_uri=uri, depth=0))
         except RuntimeError:
@@ -308,7 +308,7 @@ def all_uris(prefix: str, include_s3: bool) -> list[str]:
     uris += [u(f"climate-chamber-cc01-{p[0]}") for p in CHAMBER_PROPS + CHAMBER_STREAMS]
     uris += [u(f"test-report-tc-2026-014-{p[0]}") for p in REPORT_PROPS]
     if include_s3:
-        uris.append(u("climate-chamber-cc01-datasheet-file"))
+        uris.append(u("climate-chamber-cc01-datasheet-pdf"))
     uris += [u(slug) for slug in ASSETS]
     uris.append(u("demo-mqtt"))
     return uris
@@ -338,7 +338,7 @@ def main() -> int:
         "--s3-connection", help="URI of an existing S3 connection in SINDIT"
     )
     ap.add_argument("--s3-bucket", default="sindit-demo")
-    ap.add_argument("--s3-key", default="nordic-test-lab/CC01-datasheet.pdf")
+    ap.add_argument("--s3-key", default="nordic-test-lab/datasheets/CC01-datasheet.pdf")
     ap.add_argument(
         "--reset", action="store_true", help="Delete the demo nodes instead"
     )
