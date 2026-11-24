@@ -22,6 +22,7 @@ from sindit.connectors.connector_factory import ObjectBuilder, connector_factory
 from sindit.dataspace.edc_client import EDCManagementClient, EDCManagementClientError
 from sindit.dataspace.edc_mapping import (
     DEFAULT_PUBLIC_POLICY_ID,
+    asset_belongs_to,
     build_contract_definition,
     build_default_public_policy,
     build_http_asset,
@@ -257,12 +258,12 @@ class DataspaceConnector(Connector):
         except EDCManagementClientError as e:
             logger.error("Failed to list assets during sync of %s: %s", self.uri, e)
             remote_assets = []
+        # Only assets this node published: other SINDIT dataspace nodes (e.g. in
+        # other workspaces) may share the same EDC and use the same id prefix.
         remote_ids = {
-            a.get("@id")
+            a["@id"]
             for a in remote_assets
-            if isinstance(a, dict)
-            and isinstance(a.get("@id"), str)
-            and a["@id"].startswith("sindit-")
+            if asset_belongs_to(a, self.uri, self.sindit_workspace_uri)
         }
 
         # Always re-publish every locally listed node to keep the EDC catalog

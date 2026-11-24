@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sindit.api.api import app
 from sindit.api.authentication_endpoints import User, get_current_active_user
 from sindit.common.semantic_knowledge_graph.rdf_model import URIRefNode
+from sindit.dataspace.edc_mapping import asset_belongs_to
 from sindit.dataspace.setup_dataspace import (
     _connector_key,
     dataspace_connectors,
@@ -324,7 +325,11 @@ async def get_dataspace_catalog(
     uri: str,
     current_user: User = Depends(_load_dataspaces),
 ) -> list:
-    """Return the SINDIT-published assets currently registered in the EDC."""
+    """Return the assets this dataspace node has registered in the EDC.
+
+    Assets published by other SINDIT dataspace nodes sharing the same EDC are
+    left out.
+    """
     ds_node = _get_dataspace_node_or_404(uri)
     _key = _connector_key(sindit_kg_connector.get_graph_uri(), str(ds_node.uri))
     connector = dataspace_connectors.get(_key)
@@ -337,9 +342,7 @@ async def get_dataspace_catalog(
         return [
             a
             for a in assets
-            if isinstance(a, dict)
-            and isinstance(a.get("@id"), str)
-            and a["@id"].startswith("sindit-")
+            if asset_belongs_to(a, connector.uri, connector.sindit_workspace_uri)
         ]
     except Exception as e:
         logger.error(f"Error listing catalog for {uri}: {e}")

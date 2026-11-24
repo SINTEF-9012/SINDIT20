@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import hashlib
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote
 
 EDC_NS = "https://w3id.org/edc/v0.0.1/ns/"
 # Mirror the canonical context used by the SINTEF MVD seed payloads
@@ -51,6 +51,43 @@ def sindit_uri_to_edc_asset_id(uri: str) -> str:
 
 def contract_definition_id_for(asset_id: str) -> str:
     return f"{CONTRACT_DEFINITION_ID_PREFIX}{asset_id}"
+
+
+def asset_belongs_to(
+    asset: Any, dataspace_uri: str, workspace_uri: str | None = None
+) -> bool:
+    """Return True if an EDC asset was published by this dataspace node.
+
+    Several SINDIT dataspace nodes (in different workspaces) can share one EDC
+    connector, and every SINDIT asset id starts with ``sindit-``, so the prefix
+    alone does not identify the owner. The owner is encoded in the asset's data
+    address (see :func:`build_http_asset`): ``dataspace_uri`` and, for assets
+    published since multi-workspace support, ``workspace_uri``.
+
+    Assets without a ``dataspace_uri`` (unknown owner) never match, so sync and
+    cleanup leave them alone rather than deleting another node's offers.
+    """
+    if not isinstance(asset, dict):
+        return False
+    asset_id = asset.get("@id")
+    if not isinstance(asset_id, str) or not asset_id.startswith(ASSET_ID_PREFIX):
+        return False
+    data_address = asset.get("dataAddress") or asset.get(f"{EDC_NS}dataAddress") or {}
+    if not isinstance(data_address, dict):
+        return False
+    query = data_address.get("queryParams") or data_address.get(f"{EDC_NS}queryParams")
+    if isinstance(query, dict):  # expanded JSON-LD value
+        query = query.get("@value")
+    if not isinstance(query, str):
+        return False
+    params = parse_qs(query)
+    owner_dataspace = (params.get("dataspace_uri") or [None])[0]
+    if owner_dataspace != str(dataspace_uri):
+        return False
+    owner_workspace = (params.get("workspace_uri") or [None])[0]
+    if owner_workspace and workspace_uri and owner_workspace != str(workspace_uri):
+        return False
+    return True
 
 
 def build_http_asset(
